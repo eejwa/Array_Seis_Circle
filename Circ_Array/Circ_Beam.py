@@ -6,12 +6,23 @@ import numpy as np
 @jit(nopython=True, fastmath=True)
 def coords_lonlat_rad_bearing(lat1, lon1, dist_deg, brng):
     '''
-    :lat1 - float, starting point latitiude.
-    :lon1 - float, starting point longitude.
-    :dist_deg - float, distance from starting point in degrees.
-    :brng - float, angle from north describing the direction where the new coordinate is located.
-    :return - latitude and longitude of a new cordinate that is the defined distance away and
+    returns the latitude and longitude of a new cordinate that is the defined distance away and
     at the correct azimuth from the starting point.
+
+    Param: lat1 (float)
+    Description: starting point latitiude.
+
+    Param: lon1 (float)
+    Description: starting point longitude.
+
+    Param: dist_deg (float)
+    Description:  distance from starting point in degrees.
+
+    Param: brng (float)
+    Description: angle from north describing the direction where the new coordinate is located.
+
+    Return:
+        latitude and longitude of the new cordinate.
     '''
 
     brng = np.radians(brng)  # convert bearing to radians
@@ -41,10 +52,22 @@ def coords_lonlat_rad_bearing(lat1, lon1, dist_deg, brng):
 def haversine_deg(lat1, lon1, lat2, lon2):
     '''
     Function to calculate the distance in degrees between two points on a sphere.
-    :lat1 - float, latitiude of point 1.
-    :lat1 - float, longitiude of point 1.
-    :lat2 - float, latitiude of point 2.
-    :lon2 - float, longitude of point 2.
+
+    Param: lat1 (float)
+    Description: latitiude of point 1.
+
+    Param: lat1 (float)
+    Description: longitiude of point 1.
+
+    Param: lat2 (float)
+    Description: latitiude of point 2.
+
+    Param: lon2 (float)
+    Description: longitude of point 2.
+
+    Return:
+        Distance between two points in degrees.
+
     '''
     dlat = np.radians(lat2 - lat1)
     dlon = np.radians(lon2 - lon1)
@@ -59,10 +82,18 @@ def haversine_deg(lat1, lon1, lat2, lon2):
 def get_slow_baz(slow_x, slow_y, dir_type):
     '''
     Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
-    param: slow_x - X component of slowness vector, float.
-    param: slow_y - Y component of slowness vector, float.
-    param: dir_type - how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
-    return: slowness magnitude and baz/az value.
+
+    Param: slow_x (float)
+    Description: X component of slowness vector.
+
+    Param: slow_y (float)
+    Description: Y component of slowness vector.
+
+    Param: dir_type (string)
+    Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+
+    Return:
+        slowness magnitude and baz/az value.
     '''
     slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
     azimut = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
@@ -87,9 +118,16 @@ def get_slow_baz(slow_x, slow_y, dir_type):
 def get_slow_baz_array(slow_x, slow_y, dir_type):
     '''
     Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
-    param: slow_x - X component of slowness vector, float.
-    param: slow_y - Y component of slowness vector, float.
-    param: dir_type - how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+
+    Param: slow_x (float)
+    Description: X component of slowness vector.
+
+    Param: slow_y (float)
+    Description: Y component of slowness vector.
+
+    Param: dir_type (string)
+    Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+
     return: slowness magnitude and baz/az value.
     '''
     slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
@@ -109,7 +147,7 @@ def get_slow_baz_array(slow_x, slow_y, dir_type):
         pass
 
 
-# define array response function, function  and try and speed up with numba:
+# replace some of this with other functions
 @jit(nopython=True)
 def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, distance, fmin, fmax, fstep, scale):
     """
@@ -117,23 +155,34 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
     frequency. It will also write to a file in xyz format! This will only work for SAC files as there
     is a Obspy function for other files already...
 
-    :type geometry: 2D numpy array.
-    :numpy array of [lon, lat,elevation] values for each station .
-    :type s[x/y](min/max): float.
-    :param s[x/y](min/max): the min/max value of the slowness of the wavefront in x/y direction.
-    :type sstep: float
-    :param sstep: slowness interval in x andy direction.
-    :type distance: float
-    :param distance: the distance of the event from the centre of the stations, this will be used to estimate the curvature
+    Param: geometry (2D numpy array)
+    Description: numpy array of [lon, lat,elevation] values for each station.
+
+    Param: s[x/y](min/max) (float).
+    Description: the min/max value of the slowness of the wavefront in x/y direction.
+
+    Param: sstep (float)
+    Description: slowness interval in x andy direction.
+
+    Param: distance (float)
+    Description: the distance of the event from the centre of the stations, this will be used to estimate the curvature
     of the wavefront.
-    :type fmin: float.
-    :param fmin: minimum frequency in signal.
-    :type fmax: float.
-    :param fmin: maximum frequency in signal.
-    :type fstep: float.
-    :param fmin: frequency sample distance.
-    :type scale: Bool.
-    :param scale: if True, the values will be normalised between 0 and 1.
+
+    Param: fmin (float)
+    Description: minimum frequency in signal.
+
+    Param: fmax (float)
+    Description maximum frequency in signal.
+
+    Param: fstep (float)
+    Description: frequency sample distance.
+
+    Param: scale: (Bool)
+    Description: if True, the values will be normalised between 0 and 1.
+
+    Return:
+        transff: 2D numpy array of power values in a slowness grid for the array response function.
+        ARF_arr: 2D numpy array of [slow_x,slow_y,power] can be written to an xyz file for GMT.
     """
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
@@ -141,8 +190,8 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
         geometry[:, 1]), np.mean(geometry[:, 2])
 
     # get number of plen(buff)oints.
-    nsx = int(((sxmax - sxmin) / s_space) + 1)
-    nsy = int(((symax - symin) / s_space) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space) + 1))
+    nsy = int((np.round((symax - symin) / s_space) + 1))
 
     nf = int(np.ceil((fmax + fstep / 10. - fmin) / fstep))
 
@@ -155,8 +204,6 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
     ARF_arr = np.zeros((nsx * nsy, 3))
 
     # do the processing... many nested loops...
-    # for i, sx in enumerate(np.arange(sxmin, sxmax + s_space / 10., s_space)):
-    # 	for j, sy in enumerate(np.arange(symin, symax + s_space / 10., s_space)):
     for i in range(slow_xs.shape[0]):
         for j in range(slow_ys.shape[0]):
 
@@ -198,6 +245,7 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
             else:
                 pass
 
+            # calculate distances
             sta_distances = np.empty(len(geometry))
 
             for x in range(geometry.shape[0]):
@@ -236,6 +284,37 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
 
 @jit(nopython=True, fastmath=True)
 def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, centre_y):
+    """
+    Calculates the time delay for each station relative to the time the phase should arrive at the centre
+    of the array.
+
+    Param: traces (2D numpy array of floats)
+    Description: a 2D numpy array containing the traces that the user wants to stack.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: abs_slow (float)
+    Description: horizontal slowness you want to align traces over.
+
+    Param: baz (float)
+    Description: backazimuth you want to align traces over.
+
+    Param: centre_x (float)
+    Description: mean longitude.
+
+    Param: centre_y (float)
+    Description:mean latitude.
+
+    Return:
+        times - numpy array of the arrival time for the phase at
+                each station relative to the centre.
+
+    """
+
 
     brng = np.radians(baz)  # convert bearing to radians
     d = np.radians(distance)  # convert degrees to radians
@@ -252,12 +331,6 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
         stla = float(geometry[int(x), 1])
         stlo = float(geometry[int(x), 0])
 
-        # dlat = np.radians(abs(stla-lat_new_deg))
-        # dlon = np.radians(abs(stlo-lon_new_deg))
-        # a = float(((np.sin(dlat/2))**2) + (np.cos(np.radians(lat_new_deg))) * (np.cos(np.radians(stla))) * ((np.sin(dlon/2))**2))
-        # c = float(2 * np.arctan2(np.sqrt(a), np.sqrt(1-a)))
-        # dist = float(np.degrees(c))
-
         dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
 
         # get the relative distance
@@ -265,7 +338,6 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
 
         # get the travel time for this distance
         dt = float(dist_rel) * float(abs_slow)
-        #dts[x] = float(dt)
 
         # the correction will be dt *-1
         shift = float(dt) * -1
@@ -277,6 +349,36 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
 
 @jit(nopython=True, fastmath=True)
 def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, sampling_rate):
+    """
+    shifts the traces using the predicted arrival times for a given backazimuth and slowness.
+
+    Param: traces (2D numpy array of floats)
+    Description: a 2D numpy array containing the traces that the user wants to stack.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: abs_slow (float)
+    Description: horizontal slowness you want to align traces over.
+
+    Param: baz (float)
+    Description: backazimuth you want to align traces over.
+
+    Param: centre_x (float)
+    Description: mean longitude.
+
+    Param: centre_y (float)
+    Description:mean latitude.
+
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Return:
+        shifted_traces - 2D numpy array of floats of the shifted traces.
+    """
 
     brng = np.radians(baz)  # convert bearing to radians
     d = np.radians(distance)  # convert degrees to radians
@@ -293,12 +395,6 @@ def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, 
         stla = float(geometry[int(x), 1])
         stlo = float(geometry[int(x), 0])
 
-        # dlat = np.radians(abs(stla-lat_new_deg))
-        # dlon = np.radians(abs(stlo-lon_new_deg))
-        # a = float(((np.sin(dlat/2))**2) + (np.cos(np.radians(lat_new_deg))) * (np.cos(np.radians(stla))) * ((np.sin(dlon/2))**2))
-        # c = float(2 * np.arctan2(np.sqrt(a), np.sqrt(1-a)))
-        # dist = float(np.degrees(c))
-
         dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
 
         # get the relative distance
@@ -306,12 +402,10 @@ def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, 
 
         # get the travel time for this distance
         dt = float(dist_rel) * float(abs_slow)
-        #dts[x] = float(dt)
 
         # the correction will be dt *-1
         shift = float(dt) * -1
 
-        # pts_shift = int(shifts[int(a)] * sampling_rate)
         pts_shift = int(shift * sampling_rate)
         # shift the traces with numpy.roll()
         shifted_trace = np.roll(traces[int(x)], pts_shift)
@@ -413,7 +507,26 @@ def pws_stack_baz_slow(traces, phase_traces, sampling_rate, geometry, distance, 
 
 @jit(nopython=True, fastmath=True)
 def get_max_power_loc(tp, sxmin, symin, s_space):
+    """
+    finds the location of the maximum power value within a given
+    slowness space.
 
+    Param: tp (2D array of floats)
+    Description: 2D array of values to find the maxima in.
+
+    Param: sxmin (float)
+    Description: minimum value on the x axis.
+
+    Param: symin (float)
+    Description: minimum value on the y axis.
+
+    Param: s_space (float)
+    Description: step interval. Assumes x and y axis spacing is the same.
+
+    return:
+        2D array of: [[loc_x,loc_y]]
+
+    """
 
     peaks = np.empty((1, 2))
 
@@ -631,9 +744,7 @@ def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxm
     ################# Return #################
     5 arrays with: [slow_x, slow_y, rel_power] for each x and y slowness combination in the grid for:
 
-    - pws_tp: phase weighted stacked power grid.
-    - lin_tp: linear stack power grid.
-    - f_tp: F-statistic power grid.
+    - tp: 2D numpy array of floats representing the power grid.
     - results_arr: 2D array containing power values for:
         [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
     - peaks: 2D array with 3 rows containing the X,Y points of the maximum power value for
@@ -900,15 +1011,17 @@ def calculate_locus(P1,P2):
     Function to calculate the locus angle between points P1 and P2.
     A locus is a line that separates two point and is orthogonal to the line P1-P2.
 
-    P1 - 1-D numpy array of floats for x and y coordinates of point 1.
-    P2 - 1-D numpy array of floats for x and y coordinates of point 2.
+    Param: P1 (1-D numpy array of floats)
+    Description: x and y coordinates of point 1.
+
+    Param: P2 (1-D numpy array of floats)
+    Description: x and y coordinates of point 2.
 
     Returns:
-
-    Theta: Angle pointing from P1 to P2 relative to vertical.
-    Midpoint: Coordinates of the midpoint between P1 and P2.
-    Phi_1: Locus angle (90 degrees from Theta).
-    Phi_2: Locus angle (180 degrees from Phi_1).
+        Theta: Angle pointing from P1 to P2 relative to vertical.
+        Midpoint: Coordinates of the midpoint between P1 and P2.
+        Phi_1: Locus angle (90 degrees from Theta).
+        Phi_2: Locus angle (180 degrees from Phi_1).
     """
     P1_x = P1[0]
     P1_y = P1[1]
@@ -950,9 +1063,36 @@ def calculate_locus(P1,P2):
 @jit(nopython=True, fastmath=True)
 def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_space):
     """
-    Function to calculate the vespagram of given traces using linear stacking.
+    Function to calculate the slowness vespagram of given traces using linear stacking.
 
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
 
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: baz (float)
+    Description: Constant backazimuth value to use.
+
+    Param: smax (float)
+    Description: Maximum magnitude of slowness.
+
+    Param: smin (float)
+    Description: Minimun magnitude of the slowness.
+
+    Param: s_space (float)
+    Description: The slowness interval for each step e.g. 0.05.
+
+    Return:
+        ves_lin: 2D numpy array of floats representing how the amplitude of the trace at a slowness
+                 varies with time.
     """
 
 
@@ -979,9 +1119,44 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
 @jit(nopython=True, fastmath=True)
 def Vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, baz, smin, smax, s_space, degree):
     """
-    Function to calculate the vespagram of given traces using phase weighted stacking.
+    Function to calculate the slowness vespagram of given traces using phase weighted stacking.
 
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
 
+    Param: phase_traces (2D numpy array of floats)
+    Description: a 2D numpy array containing the instantaneous phase at each time point
+                 that the user wants to use in the phase weighted stack. Shape of [n,p]
+                 where n is the number of traces and p is the points in each trace.
+
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: baz (float)
+    Description: Constant backazimuth value to use.
+
+    Param: smax (float)
+    Description: Maximum magnitude of slowness.
+
+    Param: smin (float)
+    Description: Minimun magnitude of the slowness.
+
+    Param: s_space (float)
+    Description: The slowness interval for each step e.g. 0.05.
+
+    Param: degree (float)
+    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    Return:
+        ves_pws: 2D numpy array of floats representing how the amplitude of the trace at a slowness
+                 varies with time.
     """
 
     nslow = int(((smax - smin) / s_space) + 1)
@@ -1004,9 +1179,36 @@ def Vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, baz, 
 @jit(nopython=True, fastmath=True)
 def Baz_vespagram_Lin(traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space):
     """
-    Function to calculate the vespagram of given traces using linear stacking.
+    Function to calculate the backazimuth vespagram of given traces using linear stacking.
 
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
 
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: slow (float)
+    Description: Constant slowness value to use.
+
+    Param: bmax (float)
+    Description: Maximum magnitude of backazimuth.
+
+    Param: bmin (float)
+    Description: Minimun magnitude of the backazimuth.
+
+    Param: b_space (float)
+    Description: The backazimuth interval for each step e.g. 0.05.
+
+    Return:
+        ves_lin: 2D numpy array of floats representing how the amplitude of the trace at a slowness
+                 varies with time.
     """
 
 
@@ -1033,9 +1235,44 @@ def Baz_vespagram_Lin(traces, sampling_rate, geometry, distance, slow, bmin, bma
 @jit(nopython=True, fastmath=True)
 def Baz_vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space, degree):
     """
-    Function to calculate the vespagram of given traces using phase weighted stacking.
+    Function to calculate the backazimuth vespagram of given traces using phase weighted stacking.
 
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
 
+    Param: phase_traces (2D numpy array of floats)
+    Description: a 2D numpy array containing the instantaneous phase at each time point
+                 that the user wants to use in the phase weighted stack. Shape of [n,p]
+                 where n is the number of traces and p is the points in each trace.
+
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: slow (float)
+    Description: Constant slowness value to use.
+
+    Param: bmax (float)
+    Description: Maximum magnitude of backazimuth.
+
+    Param: bmin (float)
+    Description: Minimun magnitude of the backazimuth.
+
+    Param: b_space (float)
+    Description: The backazimuth interval for each step e.g. 0.05.
+
+    Param: degree (float)
+    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    Return:
+        ves_pws: 2D numpy array of floats representing how the amplitude of the trace at a slowness
+                 varies with time.
     """
 
     nbaz = int(((bmax - bmin) / b_space) + 1)
