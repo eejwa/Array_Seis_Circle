@@ -12,10 +12,46 @@ from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure, binary_erosion
 
 class Circ_Array:
+    """
+    This is a class which has utility functions for general use in array seismology:
+
+        - myround: round number to closest value of given precision.
+
+        - get_stations: get list of stations in the stream.
+
+        - get_eventtime: get obspy dattime object of origin time.
+
+        - get_geometry: get array of lon,lat,elev for each station in array.
+
+        - get_distances: get array of epicentral distances from event to stations.
+
+        - get_station_density_KDE: get KDE of station density for each station.
+
+        - clip_traces: clip longer trace objects to be same length.
+
+        - get_traces: get 2D array of traces from the stream.
+
+        - get_phase_traces: get 2D array of instantaneous phase values from stream.
+
+        - get_slow_baz: calculate slowness and backazimuth.
+
+        - deg_km_az_baz: calculate distances and azimuths of two lon/lat coords.
+
+        - pred_baz_slow: predict slowness and backazimuth of list of phases.
+
+        - get_t_header_pred_time: get SAC header holding TT of target phase.
+
+        - get_predicted_times: extract times from SAC files of labeled phases.
+
+        - findpeaks_XY: get the top N peaks in an array.
+
+        - findpeaks_Pol: recover top N peaks if using a polar coord system.
+        
+        - pick_tw: manually pick time window to conduct analysis in.
+    """
+
     def __init__(self):
-        help = """This is a class which implements curved wavefront correction for array seismology methods such as beamforming.
-        For more information, see the documentation in the docs/ directory of this repository.
-        """
+        pass
 
     def myround(self, x, prec=2, base=.05):
         """

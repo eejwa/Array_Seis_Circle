@@ -7,11 +7,25 @@ import numpy as np
 import scipy
 
 class Plotting:
+    """
+    This class holds functions for several plotting situations:
+
+        - plot_record_section_SAC: plots record section of traces in a stream object.
+
+        - add_lines: add lines to theta-p plot.
+
+        - add_circles: add circles to theta-p plot.
+
+        - plot_TP_XY: plot theta-p plot in a cartesian coordinate system.
+
+        - plot_TP_Pol: plot theta-p plot in polar corrdinate system.
+
+        - plot_vespagram: plot vespagram of either backazimuth or slowness.
+    """
+
     def __init__(self):
-        help="""
-        This class will plot the record sections and outputs of the beamforming method.
-        Feel free to add to this later.
-        """
+        pass
+
 
     def plot_record_section_SAC(self, st, phase, tmin=150, tmax=150, align=False):
         '''
@@ -352,7 +366,7 @@ class Plotting:
         ax.set_title(title, fontsize=16)
 
         # if given peaks, plot them
-        if peaks !- None:
+        if peaks != None:
             b_peaks = list(peaks[:,0].astype(float))
             s_peaks = list(peaks[:,1].astype(float))
             ax.scatter(np.radians(b_peaks), s_peaks, color='red', marker='x', zorder=2)
