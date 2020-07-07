@@ -46,7 +46,7 @@ class Circ_Array:
         - findpeaks_XY: get the top N peaks in an array.
 
         - findpeaks_Pol: recover top N peaks if using a polar coord system.
-        
+
         - pick_tw: manually pick time window to conduct analysis in.
     """
 
@@ -818,7 +818,7 @@ class Circ_Array:
         return peaks_combined_vals
 
     # manually pick time window around phase
-    def pick_tw(self,stream, phase, tmin=150, tmax=150, align = False):
+    def pick_tw(self, stream, phase, tmin=150, tmax=150, align = False):
         '''
         Given an Obspy stream of traces, plot a record section and allow a time window to be picked around the phases of interest.
 
@@ -867,6 +867,11 @@ class Circ_Array:
         min_target_time = np.amin(Target_phase_times)
         max_target_time = np.amax(Target_phase_times)
 
+
+        print(avg_target_time)
+        print(min_target_time)
+        print(max_target_time)
+
         # plot a record section and pick time window
         # Window for plotting record section
         win_st = float(min_target_time - tmin)
@@ -897,7 +902,7 @@ class Circ_Array:
             # reduce amplitude of traces and plot them
             dat_plot = tr_plot.data * 0.1
             dat_plot = np.pad(
-                dat_plot, (int(start * (1 / tr.stats.sampling_rate))), mode='constant')
+                dat_plot, (int(win_st * (1 / tr.stats.sampling_rate))), mode='constant')
             dat_plot += dist
 
             # make sure time array is the same length as the data
