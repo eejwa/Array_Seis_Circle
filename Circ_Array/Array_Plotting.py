@@ -50,7 +50,7 @@ class Plotting:
         '''
 
         # normalise stream amplitudes
-        st = st.normalize()
+
 
         # get header with travel times for predicted phase
         Target_time_header = c.get_t_header_pred_time(stream=st, phase=phase)
@@ -78,9 +78,9 @@ class Plotting:
         stream_plot = st.copy
         stream_plot = st.trim(starttime=event_time + win_st,
                               endtime=event_time + win_end)
-
+        stream_plot = stream_plot.normalize()
         # for each trace in the stream
-        for i, tr in enumerate(st):
+        for i, tr in enumerate(stream_plot):
 
             # get distance of station from event location
             dist = tr.stats.sac.gcarc
@@ -94,9 +94,9 @@ class Plotting:
                 time = np.linspace(win_st, win_end, int((win_end - win_st) * tr.stats.sampling_rate))
 
             # reduce amplitude of traces and plot
-            dat_plot = tr_plot.data * 0.1
-            dat_plot = np.pad(
-                dat_plot, (int(start * (1 / tr.stats.sampling_rate))), mode='constant')
+            dat_plot = tr_plot.data *.5
+            # dat_plot = np.pad(
+            #     dat_plot, (int(start * (1 / tr.stats.sampling_rate))), mode='constant')
             dat_plot += dist
 
             # ensure time array is the same length as the data
