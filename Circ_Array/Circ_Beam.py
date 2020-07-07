@@ -611,8 +611,8 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
         geometry[:, 1]), np.mean(geometry[:, 2])
 
     # get number of plen(buff)oints.
-    nsx = int(((sxmax - sxmin) / s_space) + 1)
-    nsy = int(((symax - symin) / s_space) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
 
     # make empty array for output.
     results_arr = np.zeros((nsy * nsx, 7))
@@ -758,8 +758,8 @@ def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxm
         geometry[:, 1]), np.mean(geometry[:, 2])
 
     # get number of plen(buff)oints.
-    nsx = int(((sxmax - sxmin) / s_space) + 1)
-    nsy = int(((symax - symin) / s_space) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
 
     # make empty array for output.
     results_arr = np.zeros((nsy * nsx, 5))
