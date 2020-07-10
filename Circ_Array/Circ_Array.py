@@ -901,8 +901,8 @@ class Circ_Array:
 
             # reduce amplitude of traces and plot them
             dat_plot = tr_plot.data * 0.1
-            dat_plot = np.pad(
-                dat_plot, (int(win_st * (1 / tr.stats.sampling_rate))), mode='constant')
+            # dat_plot = np.pad(
+            #     dat_plot, (int(win_st * (1 / tr.stats.sampling_rate))), mode='constant')
             dat_plot += dist
 
             # make sure time array is the same length as the data
