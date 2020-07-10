@@ -12,7 +12,7 @@ model = TauPyModel(model="prem")
 
 from Circ_Array import Circ_Array
 from Circ_Beam import BF_Spherical_XY_all, shift_traces
-from Plotting import Plotting
+from Array_Plotting import Plotting
 c = Circ_Array()
 p = Plotting()
 

@@ -3,7 +3,7 @@
 import obspy
 import numpy as np
 
-from Plotting import Plotting
+from Array_Plotting import Plotting
 p = Plotting()
 
 st = obspy.read('./data/19990405/*SAC')

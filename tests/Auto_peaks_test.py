@@ -9,8 +9,8 @@ import time
 import scipy
 
 from Circ_Array import Circ_Array
-from Circ_Beam import BF_Spherical_XY, BF_Spherical_Pol
-from Plotting import Plotting
+from Circ_Beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
+from Array_Plotting import Plotting
 c = Circ_Array()
 p = Plotting()
 

@@ -9,7 +9,7 @@ import time
 
 from Circ_Array import Circ_Array
 from Circ_Beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
-from Plotting import Plotting
+from ArrayPlotting import Plotting
 c = Circ_Array()
 p = Plotting()
 
