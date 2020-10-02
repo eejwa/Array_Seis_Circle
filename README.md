@@ -1,8 +1,9 @@
 # Array_Seis_Circle
-(work in progress) python package for array seismology methods correcting for a curved wavefront.
+Python package for array seismology methods correcting for a curved wavefront.
 
-This is a work in progess and significant changes in the codes may occur, but these will be documented. I would suggest cloning this onto your machine and add the path to Circ_Array to
-your $PYTHON_PATH for use. 
+This is a work in progess and there may be some bugs in the code. This is mainly a result of me using this for specific purposes. There will be additional utilities added to this package as time goes on. 
+
+I would suggest cloning this onto your machine and add the path to Circ_Array to your $PYTHON_PATH for use. 
 
 ## Brief Descriptions of the directories and what is in them:
 
@@ -18,8 +19,7 @@ your $PYTHON_PATH for use.
   - doc_Circ_Beam.py: prints the doc string for the beamforming module.
 
 ./scripts/
-  - Currently empty, but will include example scripts
-    using the package for use in a work flow.
+  - Currently empty, but will include example scripts using the package for use in a work flow.
 
 ./tests/
   - Several testing scripts which also serve as example python codes using the package.
