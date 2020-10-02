@@ -546,7 +546,7 @@ def get_max_power_loc(tp, sxmin, symin, s_space):
 @jit(nopython=True, fastmath=True)
 def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, degree):
     '''
-    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming esque code to estimate the travel times at each station
+    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming-esque code to estimate the travel times at each station
     using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
     From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
     Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
@@ -593,7 +593,6 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
     Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
     ################# Return #################
-    5 arrays with: [slow_x, slow_y, rel_power] for each x and y slowness combination in the grid for:
 
     - pws_tp: phase weighted stacked power grid.
     - lin_tp: linear stack power grid.
@@ -691,11 +690,114 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
 
     return lin_tp, pws_tp, F_tp, results_arr, peaks
 
+@jit(nopython=True, fastmath=True)
+def BF_Spherical_XY_Lin(traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space):
+    '''
+    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming-esque code to estimate the travel times at each station
+    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
+    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
+    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
+    Need to be populated SAC files.
+
+    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
+    and the data is bandpass-filtered between frequencies fmin and fmax.
+
+    ################# Parameters #################
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
+
+
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: smxax (float)
+    Description: Maximum magnitude of slowness on x axis, used for creating the slowness grid.
+
+    Param: sxmin (float)
+    Description: Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
+
+    Param: syxax (float)
+    Description: Maximum magnitude of slowness on y axis, used for creating the slowness grid.
+
+    Param: symin (float)
+    Description: Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
+
+    Param: s_space (float)
+    Description: The slowness interval for each step e.g. 0.1.
+
+    ################# Return #################
+
+    - lin_tp: linear stack power grid.
+    - results_arr: 2D array containing power values for:
+        [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
+    - peaks: 2D array with 1 row containing the X,Y points of the maximum power value for
+             phase weighted, linear and F-statistic respectively.
+    '''
+
+    ntrace = traces.shape[0]
+
+    # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
+    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
+        geometry[:, 1]), np.mean(geometry[:, 2])
+
+    # get number of plen(buff)oints.
+    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
+
+    # make empty array for output.
+    results_arr = np.zeros((nsy * nsx, 5))
+    lin_tp = np.zeros((nsy, nsx))
+
+    slow_xs = np.linspace(sxmin, sxmax + s_space, nsx)
+    slow_ys = np.linspace(symin, symax + s_space, nsy)
+
+    for i in range(slow_ys.shape[0]):
+        for j in range(slow_xs.shape[0]):
+
+            sx = float(slow_xs[int(j)])
+            sy = float(slow_ys[int(i)])
+
+            # get the slowness and backazimuth of the vector
+            abs_slow, baz = get_slow_baz(sx, sy, "az")
+
+            point = int(int(i) + int(slow_xs.shape[0] * j))
+
+            # Call function to shift traces
+            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(abs_slow), baz=float(
+                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+
+            lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
+
+
+            # linear stack
+            power_lin = np.trapz(np.power(lin_stack, 2))
+
+            lin_tp[i, j] = power_lin
+
+            results_arr[point] = np.array(
+                [sx, sy, power_lin, baz, abs_slow])
+
+    # now find the peak in this:
+    peaks = np.empty((1, 2))
+    peaks[int(0)] = get_max_power_loc(tp=lin_tp, sxmin=sxmin, symin=symin, s_space=s_space)
+
+    results_arr[:, 2] /= results_arr[:, 2].max()
+
+    return lin_tp, results_arr, peaks
+
+
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, type="lin", phase_traces=None, degree=None):
+def BF_Spherical_XY_PWS(traces, phase_traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, degree):
     '''
-    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming esque code to estimate the travel times at each station
+    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming-esque code to estimate the travel times at each station
     using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
     From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
     Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
@@ -742,12 +844,11 @@ def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxm
     Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
     ################# Return #################
-    5 arrays with: [slow_x, slow_y, rel_power] for each x and y slowness combination in the grid for:
 
-    - tp: 2D numpy array of floats representing the power grid.
+    - pws_tp: phase weighted stacked power grid.
     - results_arr: 2D array containing power values for:
         [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
-    - peaks: 2D array with 3 rows containing the X,Y points of the maximum power value for
+    - peaks: 2D array with 1 rows containing the X,Y points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
     '''
 
@@ -763,8 +864,7 @@ def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxm
 
     # make empty array for output.
     results_arr = np.zeros((nsy * nsx, 5))
-    tp = np.zeros((nsy, nsx))
-
+    pws_tp = np.zeros((nsy, nsx))
 
     slow_xs = np.linspace(sxmin, sxmax + s_space, nsx)
     slow_ys = np.linspace(symin, symax + s_space, nsy)
@@ -781,63 +881,35 @@ def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxm
             point = int(int(i) + int(slow_xs.shape[0] * j))
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(abs_slow), baz=float(
+            shifted_traces_lin = shift_traces(
+                traces=traces, geometry=geometry, abs_slow=float(abs_slow), baz=float(
                 baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+
+            shifted_phase_traces = shift_traces(
+                traces=phase_traces, geometry=geometry, abs_slow=abs_slow, baz=baz, distance=distance, centre_x=centre_x,
+                centre_y=centre_y, sampling_rate=sampling_rate)
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
-            if type == 'pws':
-                shifted_phase_traces = shift_traces(
-                    traces=phase_traces, geometry=geometry, abs_slow=abs_slow, baz=baz, distance=distance, centre_x=centre_x, centre_y=centre_y, sampling_rate=sampling_rate)
+            phase_stack = np.absolute(
+                np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            phase_weight_stack = lin_stack * np.power(phase_stack, degree)
+            power_pws = np.trapz(np.power(phase_weight_stack, 2))
 
-                phase_stack = np.absolute(
-                    np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
-                phase_weight_stack = lin_stack * np.power(phase_stack, degree)
-                power_pws = np.trapz(np.power(phase_weight_stack, 2))
-                tp[i, j] = power_pws
-                results_arr[point] = np.array(
-                    [sx, sy, power_pws, baz, abs_slow])
+            pws_tp[i, j] = power_pws
 
-            elif type == 'lin':
-                power_lin = np.trapz(np.power(lin_stack, 2))
-                tp[i, j] = power_lin
-                results_arr[point] = np.array(
-                    [sx, sy, power_lin, baz, abs_slow])
-            elif type == 'F':
-                power_lin = np.trapz(np.power(lin_stack, 2))
-                Residuals_Trace_Beam = np.subtract(shifted_traces_lin, lin_stack)
-                Residuals_Trace_Beam_Power = np.sum(
-                    np.power(Residuals_Trace_Beam, 2), axis=0)
+            results_arr[point] = np.array(
+                [sx, sy, power_pws, baz, abs_slow])
 
-                Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
-
-                F = (shifted_traces_lin.shape[0] - 1) * (
-                    (shifted_traces_lin.shape[0] * power_lin) / (Residuals_Power_Int))
-
-                tp[i, j] = power_lin * F
-                results_arr[point] = np.array(
-                    [sx, sy, power_lin * F, baz, abs_slow])
-
-            else:
-                print("'type' must be either:")
-                print("\t - lin")
-                print("\t - pws")
-                print("\t - F")
-
-    # lin_tp = np.array(lin_tp)
-    # pws_tp = np.array(pws_tp)
-    # normalise the array
-    # lin_tp /= lin_tp.max()
-    # pws_tp /= pws_tp.max()
-    # F_tp /= F_tp.max()
 
     # now find the peak in this:
-
     peaks = np.empty((1, 2))
-    peaks = get_max_power_loc(tp=tp, sxmin=sxmin, symin=symin, s_space=s_space)
+    peaks[int(0)] = get_max_power_loc(tp=pws_tp, sxmin=sxmin, symin=symin, s_space=s_space)
 
     results_arr[:, 2] /= results_arr[:, 2].max()
-    return tp, results_arr, peaks
+
+    return pws_tp, results_arr, peaks
+
 
 
 
@@ -845,7 +917,7 @@ def BF_Spherical_XY_choice(traces, sampling_rate, geometry, distance, sxmin, sxm
 @jit(nopython=True, fastmath=True)
 def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space, degree):
     '''
-    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming esque code to estimate the travel times at each station
+    Given a slowness area [sxmin:sxmax,bazmin:bazmax] a beamforming-esque code to estimate the travel times at each station
     using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
     From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
     Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
@@ -895,14 +967,14 @@ def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance
     Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
     ################# Return #################
-    5 arrays with: [slow_x, slow_y, rel_power] for each x and y slowness combination in the grid for:
+    5 arrays with: [slow, baz, rel_power] for each slowness and backazimuth combination in the grid for:
 
     - pws_tp: phase weighted stacked power grid.
     - lin_tp: linear stack power grid.
     - f_tp: F-statistic power grid.
     - results_arr: 2D array containing power values for:
-        [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
-    - peaks: 2D array with 3 rows containing the X,Y points of the maximum power value for
+        [slow, baz, power_pws, power_F, power_lin]
+    - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
     '''
 
@@ -1002,6 +1074,243 @@ def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance
     return lin_tp, pws_tp, F_tp, results_arr, peaks
 
 
+
+@jit(nopython=True, fastmath=True)
+def BF_Spherical_Pol_Lin(traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space):
+    '''
+    Given a slowness area [sxmin:sxmax,bazmin:bazmax] a beamforming-esque code to estimate the travel times at each station
+    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
+    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
+    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
+    Need to be populated SAC files.
+
+    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
+    and the data is bandpass-filtered between frequencies fmin and fmax.
+
+    ################# Parameters #################
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
+
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: smax (float)
+    Description: Maximum magnitude of slowness.
+
+    Param: smin (float)
+    Description: Minimun magnitude of the slowness.
+
+    Param: bazmin (float)
+    Description: Minimum backazimuth value to search over.
+
+    Param: bazmax (float)
+    Description: Maximum backazimuth value to search over.
+
+    Param: s_space (float)
+    Description: The slowness interval for each step e.g. 0.05.
+
+    Param: baz_space (float)
+    Description: The backazimuth interval for each step e.g. 0.1.
+
+    ################# Return #################
+    3 arrays with: [slow_x, slow_y, rel_power] for each slowness and backazimuth combination in the grid for:
+
+    - lin_tp: linear stack power grid.
+    - results_arr: 2D array containing power values for:
+        [slow, baz, power_pws, power_F, power_lin]
+    - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
+             phase weighted, linear and F-statistic respectively.
+    '''
+
+    ntrace = traces.shape[0]
+
+    # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
+    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
+        geometry[:, 1]), np.mean(geometry[:, 2])
+
+    # get number of plen(buff)oints.
+    nslow = int(np.round(((smax - smin) / s_space) + 1))
+    nbaz = int(np.round(((bazmax - bazmin) / baz_space) + 1))
+
+    # make empty array for output.
+    lin_tp = np.zeros((nslow, nbaz))
+    results_arr = np.zeros((nbaz * nslow, 3))
+
+    slows = np.linspace(smin, smax + s_space, nslow)
+    bazs = np.linspace(bazmin, bazmax + baz_space, nbaz)
+
+    for i in range(slows.shape[0]):
+        for j in range(bazs.shape[0]):
+
+            baz = float(bazs[int(j)])
+            slow = float(slows[int(i)])
+
+            # get the slowness and backazimuth of the vector
+
+            # Call function to shift traces
+            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
+                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+
+            lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
+
+            power_lin = np.trapz(np.power(lin_stack, 2))
+            lin_tp[i, j] = power_lin
+
+            point = int(int(i) + int(slows.shape[0] * j))
+            results_arr[point] = np.array(
+                [baz, slow, power_lin])
+
+
+    # now find the peak in this:
+
+    peaks = np.zeros((1, 2))
+
+    iy_lin, ix_lin = np.where(lin_tp == np.amax(lin_tp))
+
+    slow_max_lin = slows[iy_lin[0]]
+    baz_max_lin = bazs[ix_lin[0]]
+
+
+    # Numba doesnt like strings...
+    # PWS
+    # Lin
+    # F_stat
+    peaks[int(0)] = np.array([baz_max_lin, slow_max_lin])
+
+    results_arr[:, 2] /= results_arr[:, 2].max()
+
+    return lin_tp, results_arr, peaks
+
+
+
+@jit(nopython=True, fastmath=True)
+def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space, degree):
+    '''
+    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming esque code to estimate the travel times at each station
+    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
+    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
+    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
+    Need to be populated SAC files.
+
+    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
+    and the data is bandpass-filtered between frequencies fmin and fmax.
+
+    ################# Parameters #################
+    Param: traces (2D numpy array of floats)
+    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+                 is the number of traces and p is the points in each trace.
+
+    Param: phase_traces (2D numpy array of floats)
+    Description: a 2D numpy array containing the instantaneous phase at each time point
+                 that the user wants to use in the phase weighted stack. Shape of [n,p]
+                 where n is the number of traces and p is the points in each trace.
+
+    Param: sampling_rate (float)
+    Description: sampling rate of the data points in s^-1.
+
+    Param: geometry (2D array of floats)
+    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    Param: distance (float)
+    Description: Epicentral distance from the event to the centre of the array.
+
+    Param: smax (float)
+    Description: Maximum magnitude of slowness.
+
+    Param: smin (float)
+    Description: Minimun magnitude of the slowness.
+
+    Param: bazmin (float)
+    Description: Minimum backazimuth value to search over.
+
+    Param: bazmax (float)
+    Description: Maximum backazimuth value to search over.
+
+    Param: s_space (float)
+    Description: The slowness interval for each step e.g. 0.05.
+
+    Param: baz_space (float)
+    Description: The backazimuth interval for each step e.g. 0.1.
+
+    Param: degree (float)
+    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    ################# Return #################
+    3 arrays with: [slow, baz, rel_power] for each slowness and backazimuth combination in the grid for:
+
+    - pws_tp: phase weighted stacked power grid.
+    - results_arr: 2D array containing power values for:
+        [slow_x, slow_y, power_pws, power_F, power_lin]
+    - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
+             phase weighted, linear and F-statistic respectively.
+    '''
+
+    ntrace = traces.shape[0]
+
+    # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
+    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
+        geometry[:, 1]), np.mean(geometry[:, 2])
+
+    # get number of plen(buff)oints.
+    nslow = int(np.round(((smax - smin) / s_space) + 1))
+    nbaz = int(np.round(((bazmax - bazmin) / baz_space) + 1))
+
+    # make empty array for output.
+    pws_tp = np.zeros((nslow, nbaz))
+    results_arr = np.zeros((nbaz * nslow, 3))
+
+    slows = np.linspace(smin, smax + s_space, nslow)
+    bazs = np.linspace(bazmin, bazmax + baz_space, nbaz)
+
+    for i in range(slows.shape[0]):
+        for j in range(bazs.shape[0]):
+
+            baz = float(bazs[int(j)])
+            slow = float(slows[int(i)])
+
+            # get the slowness and backazimuth of the vector
+
+            # Call function to shift traces
+            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
+                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+            shifted_phase_traces = shift_traces(
+                traces=phase_traces, geometry=geometry, abs_slow=slow, baz=baz, distance=distance, centre_x=centre_x, centre_y=centre_y, sampling_rate=sampling_rate)
+
+            lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
+            phase_stack = np.absolute(
+                np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            phase_weight_stack = lin_stack * np.power(phase_stack, degree)
+
+            power_pws = np.trapz(np.power(phase_weight_stack, 2))
+
+            pws_tp[i, j] = power_pws
+
+            point = int(int(i) + int(slows.shape[0] * j))
+            results_arr[point] = np.array(
+                [baz, slow, power_pws])
+
+    # now find the peak in this:
+
+    peaks = np.zeros((1, 2))
+
+    iy_pws, ix_pws = np.where(pws_tp == np.amax(pws_tp))
+
+
+    slow_max_pws = slows[iy_pws[0]]
+    baz_max_pws = bazs[ix_pws[0]]
+
+    peaks[int(0)] = np.array([baz_max_pws, slow_max_pws])
+
+    results_arr[:, 2] /= results_arr[:, 2].max()
+
+    return pws_tp, results_arr, peaks
 
 
 
