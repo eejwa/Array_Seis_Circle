@@ -104,7 +104,7 @@ for i,tr in enumerate(Traces):
 
 # run the beamforming!
 
-Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
+Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
                                                         sampling_rate), geometry=geometry, distance=mean_dist, sxmin=slow_x_min,
                                                         sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max, s_space=s_space, degree=2)
 
