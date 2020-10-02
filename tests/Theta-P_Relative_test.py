@@ -11,7 +11,7 @@ from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
 from Circ_Array import Circ_Array
-from Circ_Beam import BF_Spherical_XY_all, shift_traces
+from Circ_Beam import BF_Spherical_XY_all, shift_traces, BF_Spherical_XY_PWS, BF_Spherical_XY_Lin
 from Array_Plotting import Plotting
 c = Circ_Array()
 p = Plotting()
@@ -123,5 +123,28 @@ peaks = np.c_[peaks, np.array(["PWS", "LIN", "F"])]
 print(peaks)
 
 peaks = peaks[np.where(peaks == "PWS")[0]]
+p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow_min, symax=slow_max,
+          sstep=s_space, contour_levels=50, title="PWS Plot", predictions=None, log=False)
+
+
+start = time.time()
+Lin_arr, Results_arr, peaks = BF_Spherical_XY_Lin(traces=cut_shifted_traces, sampling_rate=np.float64(sampling_rate),
+                                                        geometry=geometry, distance=mean_dist,
+                                                        sxmin=slow_min,sxmax=slow_max, symin=slow_min,
+                                                        symax=slow_max, s_space=s_space)
+end = time.time()
+print("time to run:", end - start)
+
+p.plot_TP_XY(tp=Lin_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow_min, symax=slow_max,
+          sstep=s_space, contour_levels=50, title="LIN Plot", predictions=None, log=False)
+
+start = time.time()
+PWS_arr, Results_arr, peaks = BF_Spherical_XY_PWS(traces=cut_shifted_traces, phase_traces=cut_shifted_phase_traces,
+                                                  sampling_rate=np.float64(sampling_rate), geometry=geometry, distance=mean_dist,
+                                                  sxmin=slow_min,sxmax=slow_max, symin=slow_min, symax=slow_max,
+                                                  s_space=s_space, degree=4)
+end = time.time()
+print("time to run:", end - start)
+
 p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow_min, symax=slow_max,
           sstep=s_space, contour_levels=50, title="PWS Plot", predictions=None, log=False)
