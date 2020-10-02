@@ -295,7 +295,7 @@ class Plotting:
 
 
 
-    def plot_TP_Pol(self, tp, peaks, smin, smax, bazmin, bazmax, sstep, bazstep, title, log = False, contour_levels=30, predictions=None):
+    def plot_TP_Pol(self, tp, peaks, smin, smax, bazmin, bazmax, sstep, bazstep, title, log = False, contour_levels=30, predictions=np.array([])):
         """
         Given a 2D array of power values for the theta-p analysis, it plots the
         values within the given slowness backazimuth space with contours of power values.
@@ -342,7 +342,7 @@ class Plotting:
         bazs = np.linspace(bazmin, bazmax, nbaz, endpoint=True)
 
         # if given predictions separate into x and y points
-        if predictions != None:
+        if predictions.size !=0:
             Phases_b=predictions[:,2].astype(float)
             Phases_s=predictions[:,1].astype(float)
             Phases=predictions[:,0]
@@ -366,7 +366,7 @@ class Plotting:
         ax.set_title(title, fontsize=16)
 
         # if given peaks, plot them
-        if peaks != None:
+        if peaks.size != 0:
             b_peaks = list(peaks[:,0].astype(float))
             s_peaks = list(peaks[:,1].astype(float))
             ax.scatter(np.radians(b_peaks), s_peaks, color='red', marker='x', zorder=2)
@@ -375,7 +375,7 @@ class Plotting:
             pass
 
         # plot predictions if given
-        if predictions != None:
+        if predictions.size != 0:
             ax.scatter(np.radians(Phases_b),Phases_s,color='white',s=20, zorder=3, marker='+')
             for i,p in enumerate(Phases):
                 ax.text(np.radians(Phases_b[i]),Phases_s[i]+0.2, p, color='white', fontsize=10,zorder=3)
