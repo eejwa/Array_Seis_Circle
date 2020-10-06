@@ -1,7 +1,7 @@
 # Array_Seis_Circle
 Python package for array seismology methods correcting for a curved wavefront.
 
-This is a work in progess and there may be some bugs in the code. This is mainly a result of me using this for specific purposes. There will be additional utilities added to this package as time goes on. 
+The code is currently being improved and functions added regularly, therefore there may still be some bugs in the code. This is mainly a result of me using this for specific purposes. There will be additional utilities added to this package as time goes on. 
 
 I would suggest cloning this onto your machine and add the path to Circ_Array to your $PYTHON_PATH for use. 
 
