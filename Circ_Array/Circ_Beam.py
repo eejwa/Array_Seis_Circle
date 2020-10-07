@@ -283,10 +283,10 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
 
 
 @jit(nopython=True, fastmath=True)
-def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, centre_y):
+def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, type='circ'):
     """
     Calculates the time delay for each station relative to the time the phase should arrive at the centre
-    of the array.
+    of the array. Will use either a plane or curved wavefront approximation.
 
     Param: traces (2D numpy array of floats)
     Description: a 2D numpy array containing the traces that the user wants to stack.
@@ -307,7 +307,10 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
     Description: mean longitude.
 
     Param: centre_y (float)
-    Description:mean latitude.
+    Description: mean latitude.
+
+    Param: type (string)
+    Description: will calculate either using a curved (circ) or plane (plane) wavefront.
 
     Return:
         times - numpy array of the arrival time for the phase at
@@ -321,34 +324,52 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
     lat1 = np.radians(centre_y)  # Current lat point converted to radians
     lon1 = np.radians(centre_x)  # Current long point converted to radians
 
+    slow_x = abs_slow * np.sin(brng)
+    slow_y = abs_slow * np.cos(brng)
+
     lat_new, lon_new = coords_lonlat_rad_bearing(
         lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz)
 
     # create array for shifted traces
+    shifts = np.zeros(traces.shape[0])
     times = np.zeros(traces.shape[0])
 
     for x in range(geometry.shape[0]):
         stla = float(geometry[int(x), 1])
         stlo = float(geometry[int(x), 0])
 
-        dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
+        x_rel = stlo - centre_x
+        y_rel = stla - centre_y
+        if type == 'circ':
+            dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
 
-        # get the relative distance
-        dist_rel = float(dist) - float(distance)
+            # get the relative distance
+            dist_rel = float(dist) - float(distance)
 
-        # get the travel time for this distance
-        dt = float(dist_rel) * float(abs_slow)
+            # get the travel time for this distance
+            dt = float(dist_rel) * float(abs_slow)
 
-        # the correction will be dt *-1
-        shift = float(dt) * -1
+            # the correction will be dt *-1
+            shift = float(dt) * -1
 
-        times[int(x)] = shift
+            shifts[int(x)] = shift
+            times[int(x)] = dt
 
-    return times
+        elif type == 'plane':
+            dt = (x_rel * slow_x) + (y_rel * slow_y)
+
+            shift = float(dt)
+
+            times[int(x)] = shift
+
+            dt *= -1
+            times[int(x)] = dt
+
+    return shifts, times
 
 
 @jit(nopython=True, fastmath=True)
-def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, sampling_rate):
+def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, sampling_rate, type='circ'):
     """
     shifts the traces using the predicted arrival times for a given backazimuth and slowness.
 
@@ -375,6 +396,9 @@ def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, 
 
     Param: sampling_rate (float)
     Description: sampling rate of the data points in s^-1.
+
+    Param: type (string)
+    Description: will calculate either using a curved (circ) or plane (plane) wavefront.
 
     Return:
         shifted_traces - 2D numpy array of floats of the shifted traces.
@@ -545,15 +569,10 @@ def get_max_power_loc(tp, sxmin, symin, s_space):
 
 @jit(nopython=True, fastmath=True)
 def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, degree):
-    '''
-    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming-esque code to estimate the travel times at each station
-    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
-    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
-    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
-    Need to be populated SAC files.
+    """
+    Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
+    the coherent power. Stacks the traces using linear, phase weighted stacking and F statistic.
 
-    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
-    and the data is bandpass-filtered between frequencies fmin and fmax.
 
     ################# Parameters #################
     Param: traces (2D numpy array of floats)
@@ -601,7 +620,7 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
         [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
     - peaks: 2D array with 3 rows containing the X,Y points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
-    '''
+    """
 
     ntrace = traces.shape[0]
 
@@ -693,14 +712,8 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
 @jit(nopython=True, fastmath=True)
 def BF_Spherical_XY_Lin(traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space):
     '''
-    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming-esque code to estimate the travel times at each station
-    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
-    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
-    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
-    Need to be populated SAC files.
-
-    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
-    and the data is bandpass-filtered between frequencies fmin and fmax.
+    Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
+    the coherent power. Stacks the traces using linear stack.
 
     ################# Parameters #################
     Param: traces (2D numpy array of floats)
@@ -797,14 +810,8 @@ def BF_Spherical_XY_Lin(traces, sampling_rate, geometry, distance, sxmin, sxmax,
 @jit(nopython=True, fastmath=True)
 def BF_Spherical_XY_PWS(traces, phase_traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, degree):
     '''
-    Given a slowness area [sxmin:sxmax,symin:symax] a beamforming-esque code to estimate the travel times at each station
-    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
-    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
-    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
-    Need to be populated SAC files.
-
-    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
-    and the data is bandpass-filtered between frequencies fmin and fmax.
+    Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
+    the coherent power. Stacks the traces using phase weighted stacking.
 
     ################# Parameters #################
     Param: traces (2D numpy array of floats)
@@ -917,14 +924,8 @@ def BF_Spherical_XY_PWS(traces, phase_traces, sampling_rate, geometry, distance,
 @jit(nopython=True, fastmath=True)
 def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space, degree):
     '''
-    Given a slowness area [sxmin:sxmax,bazmin:bazmax] a beamforming-esque code to estimate the travel times at each station
-    using a circular wavefront approximation, align the traces, then instead of linearly stacking, phase weight stacking is performed.
-    From the stacked trace the power value is recorded and stored in a square array and written into an xyz file.
-    Analysis is on a stream of time series data for a given slowness range, slowness step, frequency band and time window.
-    Need to be populated SAC files.
-
-    Before the analysis is performed, the seismograms are cut to a time window between tmin and tmax,
-    and the data is bandpass-filtered between frequencies fmin and fmax.
+    Function to search over a range of slowness vectors described in polar coordinates and estimates the
+    coherent power. Stacks the traces using linear and phase weighted stacking and applies the F statistic.
 
     ################# Parameters #################
     Param: traces (2D numpy array of floats)
@@ -1313,6 +1314,47 @@ def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance
     return pws_tp, results_arr, peaks
 
 
+@jit(nopython=True, fastmath=True)
+def BF_Noise_Threshold_Relative(traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space):
+    """
+    Function to calculate the TP plot or power grid given traces and a range of slowness vectors described in
+    a Cartesian system (X/Y).
+
+    ################# Parameters #################
+    traces: 2D array of floats.
+    numpy array of traces
+    sampling_rate: int
+    Samples per second
+    geometry: 2D array of floats.
+    2D array of floats with each row containing: [lon, lat, elevation]
+    distance: float
+    Mean epicentral distance.
+    rel_x: float
+    The x component of the predicted slowness vector used to align the traces.
+    rel_y: float
+    The y component of the predicted slowness vector used to align the traces.
+    smxax : float
+    Maximum magnitude of slowness on x axis, used for creating the slowness grid
+    sxmin: float
+    Minimun magnitude of the slowness on x axis, used for creating the slowness grid
+    syxax : float
+    Maximum magnitude of slowness on y axis, used for creating the slowness grid
+    symin: float
+    Minimun magnitude of the slowness on y axis, used for creating the slowness grid
+    s_space: float
+    The slowness interval for each step e.g. 0.1.
+
+    ################# Return #################
+    lin_tp: 2D array of power values for each slowness vector.
+    noise_mean: mean of noise power estimates.
+    peaks: peak power location in the grid.
+    """
+
+
+
+
+
+
 
 @jit(nopython=True, fastmath=True)
 def calculate_locus(P1,P2):
@@ -1599,5 +1641,9 @@ def Baz_vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, s
         ves_pws[i] = pws_stack
 
     return ves_pws
+
+
+
+
 
 jit_module(nopython=True, error_model="numpy", fastmath=True)
