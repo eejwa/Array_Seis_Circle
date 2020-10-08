@@ -1,7 +1,7 @@
 # import packages
 import numpy as np
 from obspy.signal.util import util_geo_km
-from Circ_Beam import haversine_deg
+from circ_beam import haversine_deg
 from obspy.taup import TauPyModel
 from obspy import UTCDateTime
 from scipy.signal import hilbert
@@ -11,7 +11,7 @@ from sklearn.model_selection import GridSearchCV
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure, binary_erosion
 
-class Circ_Array:
+class circ_array:
     """
     This is a class which has utility functions for general use in array seismology:
 
