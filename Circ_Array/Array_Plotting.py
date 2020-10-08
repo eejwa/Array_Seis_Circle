@@ -1,20 +1,20 @@
 
-from Circ_Array import Circ_Array
-c=Circ_Array()
+from circ_array import circ_array
+c=circ_array()
 import obspy
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 
-class Plotting:
+class plotting:
     """
     This class holds functions for several plotting situations:
 
-        - plot_record_section_SAC: plots record section of traces in a stream object.
+        - plot_record_section_SAC: plots record section of traces in an obspy stream object.
 
-        - add_lines: add lines to theta-p plot.
+        - add_lines: add lines to $\theta-p$ plot.
 
-        - add_circles: add circles to theta-p plot.
+        - add_circles: add circles to $\theta-p$ plot.
 
         - plot_TP_XY: plot theta-p plot in a cartesian coordinate system.
 
@@ -49,9 +49,6 @@ class Plotting:
             Plots record section, does not return anything.
         '''
 
-        # normalise stream amplitudes
-
-
         # get header with travel times for predicted phase
         Target_time_header = c.get_t_header_pred_time(stream=st, phase=phase)
 
@@ -75,15 +72,18 @@ class Plotting:
 
         event_time = c.get_eventtime(st)
 
+        # copy stream and trim it around the time window
         stream_plot = st.copy
         stream_plot = st.trim(starttime=event_time + win_st,
                               endtime=event_time + win_end)
         stream_plot = stream_plot.normalize()
+
         # for each trace in the stream
         for i, tr in enumerate(stream_plot):
 
             # get distance of station from event location
             dist = tr.stats.sac.gcarc
+
             # if align, subtrace predcted times of the target from the other predicted times
             if align == True:
                 tr_plot = tr.copy().trim(starttime=event_time + (getattr(tr.stats.sac, Target_time_header) - tmin),
@@ -107,6 +107,7 @@ class Plotting:
                 if time.shape[0] < dat_plot.shape[0]:
                     dat_plot = np.array(dat_plot[:points_diff])
 
+            # plot data
             ax.plot(time, dat_plot, color='black', linewidth=0.5)
 
         # set the x axis
@@ -163,6 +164,7 @@ class Plotting:
         Return:
             Nothing.
         """
+
         for r in radii:
             circle = plt.Circle((x, y), r, color=colour, clip_on=True,
                         fill=False, linestyle='--')
@@ -204,7 +206,7 @@ class Plotting:
 
     def plot_TP_XY(self, tp, peaks, sxmin, sxmax, symin, symax, sstep, title, log = False, contour_levels=30, predictions=None):
         """
-        Given a 2D array of power values for the theta-p analysis, it plots the
+        Given a 2D array of power values for the $\theta-p$ analysis, it plots the
         values within the given slowness space with contours of power values.
 
         Param: tp (2D numpy array floats)
@@ -274,6 +276,7 @@ class Plotting:
         else:
             pass
 
+        # plot
         ax.set_xlabel("p$_{x}$ (s/$^{\circ}$)", fontsize=14)
         ax.set_ylabel("p$_{y}$ (s/$^{\circ}$)", fontsize=14)
         ax.set_title(title, fontsize=14)
@@ -352,6 +355,7 @@ class Plotting:
         else:
             pass
 
+        # initialise figure
         fig = plt.figure(figsize=(7,7))
         ax = fig.add_subplot(111, polar=True)
 
@@ -384,6 +388,7 @@ class Plotting:
             pass
 
 
+        # set orientation and dimensions of figure
         ax.set_thetalim(np.radians(bazmin),np.radians(bazmax))
         ax.set_rlim(smin,smax)
         ax.set_rorigin(0)
