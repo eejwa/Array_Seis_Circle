@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from Circ_Array import Circ_Array
+from circ_array import circ_array
 
-c = Circ_Array()
+c = circ_array()
 
 help(c)

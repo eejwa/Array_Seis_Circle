@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from Array_Plotting import Plotting
+from array_plotting import plotting
 
-p = Plotting()
+p = plotting()
 
 help(p)

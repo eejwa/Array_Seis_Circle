@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import Circ_Beam
+import circ_beam
 
 
-help(Circ_Beam)
+help(circ_beam)
