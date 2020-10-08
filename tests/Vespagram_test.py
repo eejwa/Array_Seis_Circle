@@ -7,11 +7,11 @@ import obspy
 import numpy as np
 import time
 
-from Circ_Array import Circ_Array
-from Circ_Beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
-from ArrayPlotting import Plotting
-c = Circ_Array()
-p = Plotting()
+from circ_array import circ_array
+from circ_beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
+from array_plotting import Plotting
+c = circ_array()
+p = plotting()
 
 
 # parameters

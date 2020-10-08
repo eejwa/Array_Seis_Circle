@@ -7,11 +7,11 @@ import obspy
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Circ_Array import Circ_Array
-c = Circ_Array()
-from Circ_Beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
-from Array_Plotting import Plotting
-p = Plotting()
+from circ_array import circ_array
+c = circ_array()
+from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
+from array_plotting import plotting
+p = plotting()
 
 st = obspy.read('./data/19980329/*SAC')
 geometry = c.get_geometry(st)

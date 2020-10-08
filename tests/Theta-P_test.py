@@ -7,11 +7,11 @@ import obspy
 import numpy as np
 import time
 
-from Circ_Array import Circ_Array
-from Circ_Beam import BF_Spherical_Pol_all, BF_Spherical_Pol_PWS, BF_Spherical_Pol_Lin
-from Array_Plotting import Plotting
-c = Circ_Array()
-p = Plotting()
+from circ_array import circ_array
+from circ_beam import BF_Spherical_Pol_all, BF_Spherical_Pol_PWS, BF_Spherical_Pol_Lin
+from array_plotting import plotting
+c = circ_Array()
+p = plotting()
 
 
 # parameters

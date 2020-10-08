@@ -6,9 +6,9 @@ import obspy
 import numpy as np
 import time
 
-from Circ_Array import Circ_Array
-from Circ_Beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
-from Array_Plotting import Plotting
+from circ_array import circ_array
+from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
+from array_plotting import plotting
 c = Circ_Array()
 
 

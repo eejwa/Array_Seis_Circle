@@ -10,11 +10,11 @@ import time
 from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
-from Circ_Array import Circ_Array
-from Circ_Beam import BF_Spherical_XY_all, shift_traces, BF_Spherical_XY_PWS, BF_Spherical_XY_Lin
-from Array_Plotting import Plotting
-c = Circ_Array()
-p = Plotting()
+from circ_array import circ_array
+from circ_beam import BF_Spherical_XY_all, shift_traces, BF_Spherical_XY_PWS, BF_Spherical_XY_Lin
+from array_plotting import plotting
+c = circ_array()
+p = plotting()
 
 
 # parameters

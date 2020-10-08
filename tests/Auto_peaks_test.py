@@ -8,11 +8,11 @@ import numpy as np
 import time
 import scipy
 
-from Circ_Array import Circ_Array
-from Circ_Beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
-from Array_Plotting import Plotting
-c = Circ_Array()
-p = Plotting()
+from circ_array import circ_array
+from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
+from array_plotting import plotting
+c = circ_array()
+p = plotting()
 
 # first we need to get data and make a Theta-P plot:
 
