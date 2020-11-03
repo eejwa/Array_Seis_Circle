@@ -22,8 +22,8 @@ Filt = True
 Res_dir = "./Results/numpy_arrays/"
 
 # frequency band
-fmin = 0.10
-fmax = 0.40
+fmin = 0.15
+fmax = 0.60
 
 # cut min/max - for some reason the aligning function does not
 # work if the traces are too long
@@ -44,7 +44,7 @@ t_max = 30
 Align = True
 
 # Number Bootstrap samples
-Boots = 250
+Boots = 100
 
 # what to multiply noise estimate by
 threshold_multiplier = 3
@@ -55,4 +55,4 @@ peak_number = 3
 
 # DBSCAN parameters
 epsilon = 0.2
-MinPts = 0.15
+MinPts = 0.25

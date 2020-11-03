@@ -108,17 +108,6 @@ Lin_list = []
 Noise_list = []
 threshold_peaks_list = []
 
-# plot_time=np.linspace(-t_min,t_max,int((t_max+t_min)*sampling_rate))
-#
-# fig=plt.figure(figsize=(4,8))
-#
-# for i,tr in enumerate(cut_shifted_traces):
-#     plt.plot(plot_time, tr + distances[i],color='black')
-#
-# plt.axvline(0,0,len(cut_shifted_traces))
-# plt.show()
-#
-# exit()
 
 for i in range(0, processes_per_core):
     print(i)
@@ -152,12 +141,6 @@ for i in range(0, processes_per_core):
 
         Traces.append(tr.data)
 
-        # fig = plt.figure(figsize = (7,4))
-        # ax = fig.add_subplot(211)
-        # ax.plot(tr.data.astype(float))
-        # ax = fig.add_subplot(212)
-        # ax.plot(resample(tr.data.astype(float),samples_new))
-        # plt.show()
     Traces = np.array(Traces)
     geometry = np.array(geometry)
     distances = np.array(distances)
@@ -174,9 +157,6 @@ for i in range(0, processes_per_core):
                                                                    symin=slow_min, symax=slow_max,
                                                                    s_space=s_space)
 
-    # plt.imshow(lin_tp)
-    # plt.show()
-
     Threshold_lin_array = np.copy(lin_tp)
     Threshold_lin_array[lin_tp <=noise_mean * 3] = 0
 
@@ -189,14 +169,6 @@ for i in range(0, processes_per_core):
     sy_min = float(PRED_BAZ_Y) + slow_min
     sy_max = float(PRED_BAZ_Y) + slow_max
 
-    steps_x = int((sx_max - sx_min) / s_space) + 1
-    steps_y = int((sy_max - sy_min) / s_space) + 1
-    slow_x = np.linspace(sx_min, sx_max, steps_x)
-    slow_y = np.linspace(sy_min, sy_max, steps_y)
-
-    xpoints = slow_x
-    ypoints = slow_y
-
     peaks = c.findpeaks_XY(Smoothed_thresh_lin_array, xmin=sx_min,
                            xmax=sx_max, ymin=sy_min, ymax=sy_max,
                            xstep=s_space, ystep=s_space, N=peak_number)
@@ -206,20 +178,6 @@ for i in range(0, processes_per_core):
                            xmax=sx_max, ymin=sy_min, ymax=sy_max,
                            xstep=s_space, ystep=s_space, N=peak_number)
 
-    fig = plt.figure(figsize=(10,4))
-    ax = fig.add_subplot(121)
-    ax.contourf(xpoints, ypoints, Smoothed_thresh_lin_array, 35)
-    ax.scatter(peaks[:,0],peaks[:,1], c='red')
-    ax.set_title("Smoothed")
-
-    ax = fig.add_subplot(122)
-    ax.contourf(xpoints, ypoints, Threshold_lin_array, 35)
-    ax.scatter(no_smooth_peaks[:,0], no_smooth_peaks[:,1], c='red')
-    ax.set_title("Not Smoothed")
-    plt.show()
-
-    print(no_smooth_peaks)
-    print(peaks)
     sys.stdout.flush()
 
     # add the arrays to a list

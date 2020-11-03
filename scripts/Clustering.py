@@ -62,25 +62,12 @@ Lin_Mean = np.mean(All_Lin_arr, axis=0)
 core_samples, labels = dbscan(X=All_Thresh_Peaks_arr,eps=epsilon,min_samples=int(Boots * MinPts))
 no_clusters = np.amax(labels) + 1
 
-## get error values and means of clusters
-print(labels.shape, All_Thresh_Peaks_arr.shape)
-
-
-# All_Thresh_Peaks_arr[:,0] += PRED_BAZ_X
-# All_Thresh_Peaks_arr[:,1] += PRED_BAZ_Y
-
 from cluster_utilities import cluster_utilities
 cu = cluster_utilities(labels = labels, points = All_Thresh_Peaks_arr)
 
 means_xy, means_baz_slow = cu.cluster_means()
 bazs_std, slows_std = cu.cluster_std_devs()
 ellipse_areas = cu.cluster_ellipse_areas(std_dev=2)
-
-print('number of arrivals: \n', no_clusters, '\n')
-print('means [slow_x,slow_y]: \n',means_xy, '\n[means baz,slow]: \n', means_baz_slow, '\n')
-print('baz std dev: ',bazs_std, '\nslow std dev: ', slows_std, '\n')
-print('Ellipse areas: ',ellipse_areas)
-
 
 # plot!
 
@@ -100,5 +87,4 @@ p.plot_clusters_XY(labels=labels, tp=Lin_Mean, peaks=All_Thresh_Peaks_arr,
                    sxmin=x_min, sxmax=x_max, symin=y_min, symax=y_max,
                    sstep=s_space, title="Cluster test plot", predictions=predictions)
 
-plt.savefig("Cluster.pdf")
 plt.show()
