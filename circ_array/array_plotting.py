@@ -456,6 +456,7 @@ class plotting:
         ntime = int(np.round(((tmax - tmin) * sampling_rate) + 1))
         times = np.linspace(tmin, tmax, ntime, endpoint=True)
 
+
         # if given the predictions separate into x and y points
         if predictions is not None:
             if type == 'slow':
@@ -481,9 +482,6 @@ class plotting:
         else:
             pass
 
-        return
-
-
         # smooth the vespagram and find peaks
         smoothed_vesp = scipy.ndimage.filters.gaussian_filter(
         vespagram, 2, mode='constant')
@@ -502,7 +500,7 @@ class plotting:
         else:
             pass
 
-        plt.colorbar(v)
+        # plt.colorbar(v)
 
         # if wanted, plot predictions
         if predictions is not None:
@@ -525,6 +523,8 @@ class plotting:
             self.ax.set_ylabel("$\\theta (^{\circ})$")
         else:
             print("type needs to be 'baz' or 'slow'")
+
+        return
 
 
     def plot_clusters_XY(self, labels, tp, peaks, sxmin, sxmax, symin, symax, sstep, title, log = False, contour_levels=30, predictions=None, ellipse=False, std_devs=[1,2,3]):
