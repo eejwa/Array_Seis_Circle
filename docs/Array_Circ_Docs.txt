@@ -1,0 +1,345 @@
+Help on circ_array in module circ_array object:
+
+class circ_array(builtins.object)
+ |  This is a class which has utility functions for general use in array seismology:
+ |  
+ |      - myround: round number to closest value of given precision.
+ |  
+ |      - get_stations: get list of stations in the stream.
+ |  
+ |      - get_eventtime: get obspy dattime object of origin time.
+ |  
+ |      - get_geometry: get array of lon,lat,elev for each station in array.
+ |  
+ |      - get_distances: get array of epicentral distances from event to stations.
+ |  
+ |      - get_station_density_KDE: get KDE of station density for each station.
+ |  
+ |      - clip_traces: clip longer trace objects to be same length.
+ |  
+ |      - get_traces: get 2D array of traces from the stream.
+ |  
+ |      - get_phase_traces: get 2D array of instantaneous phase values from stream.
+ |  
+ |      - get_slow_baz: calculate slowness and backazimuth.
+ |  
+ |      - deg_km_az_baz: calculate distances and azimuths of two lon/lat coords.
+ |  
+ |      - pred_baz_slow: predict slowness and backazimuth of list of phases.
+ |  
+ |      - get_t_header_pred_time: get SAC header holding TT of target phase.
+ |  
+ |      - get_predicted_times: extract times from SAC files of labeled phases.
+ |  
+ |      - findpeaks_XY: get the top N peaks in an array.
+ |  
+ |      - findpeaks_Pol: recover top N peaks if using a polar coord system.
+ |  
+ |      - pick_tw: manually pick time window to conduct analysis in.
+ |  
+ |  Methods defined here:
+ |  
+ |  __init__(self)
+ |      Initialize self.  See help(type(self)) for accurate signature.
+ |  
+ |  clip_traces(self, stream)
+ |      The traces in the stream may be of different length which isnt great for stacking etc.
+ |      This function will trim the traces to the same length on the smallest trace size.
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: any stream object which have traces with data in them.
+ |      
+ |      Return:
+ |          stream - Obspy stream with data of equal lengths.
+ |  
+ |  deg_km_az_baz(self, lat1, lon1, lat2, lon2)
+ |      Description: Function to return the ditances in degrees and km over a spherical Earth
+ |                   with the backazimuth and azimuth.
+ |                   Distances calculated using the haversine formula.
+ |      
+ |      Param: lat(1/2) (float)
+ |      Description: latitude of point (1/2)
+ |      
+ |      Param: lon(1/2) (float)
+ |      Description: longitude of point (1/2)
+ |      
+ |      Return:
+ |             dist_deg: distance between points in degrees.
+ |             dist_km: distance between points in km.
+ |             az: azimuth at location 1 pointing to point 2.
+ |             baz" backzimuth at location 2 pointing to point 1.
+ |  
+ |  findpeaks_Pol(self, Array, smin, smax, bmin, bmax, sstep, bstep, N=10)
+ |      Peak finding algorith for a 2D array of values. The peaks will be searched for
+ |      within a range of points from a predicted arrival. This is edited for the polar
+ |      coordinate search output.
+ |      
+ |      Param: Array (2-D numpy array of floats).
+ |      Description: 2-D array of floats representing power or some other parameter.
+ |      
+ |      Param: smin (float)
+ |      Description: Minumum horizontal slowness.
+ |      
+ |      Param: smax (float)
+ |      Description: Maximum horizontal slowness.
+ |      
+ |      Param: bmin (float)
+ |      Description: Minumum backazimuth.
+ |      
+ |      Param: bmax (float)
+ |      Description: Maximum backazimuth.
+ |      
+ |      Param: step (float)
+ |      Description: increments of slowness values.
+ |      
+ |      Param: btep (float)
+ |      Description: increments of backazimuth values.
+ |      
+ |      Param: N (int)
+ |      Description: The top N peaks will be returned.
+ |      
+ |      Return:
+ |          The top N peaks of the array in the form of [baz,slow].
+ |  
+ |  findpeaks_XY(self, Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10)
+ |      Peak finding algorith for a 2D array of values. The peaks will be searched for
+ |      within a range of points from a predicted arrival. Edited from stack overflow
+ |      answer: https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array.
+ |      
+ |      Param: Array (2-D numpy array of floats).
+ |      Description: 2-D array of floats representing power or some other parameter.
+ |      
+ |      Param: xmin (float)
+ |      Description: Minumum x point of the area to search for peaks.
+ |      
+ |      Param: sl_xmax (float)
+ |      Description: Maximum x point of the area to search for peaks.
+ |      
+ |      Param: sl_ymin (float)
+ |      Description: Minumum y point of the area to search for peaks.
+ |      
+ |      Param: sl_ymax (float)
+ |      Description: Maximum y point of the area to search for peaks.
+ |      
+ |      Param: step (float)
+ |      Description: increments of points in x/y axis used in the array.
+ |      
+ |      Param: N (int)
+ |      Description: The top N peaks will be returned.
+ |      
+ |      Return:
+ |          The top N peaks of the array of the format [[x,y]].
+ |  
+ |  get_distances(self, stream, type='deg')
+ |      Given a stream, this function creates an array containing the epicentral distances for each of the stations
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: stream containing SAC file with the gcarc and dist headers populated.
+ |      
+ |      Param: type (string)
+ |      Description: do you want distances in degrees (deg) or kilometres (km).
+ |      
+ |      Return:
+ |          distances = numpy array of floats describing the epicentral distances of each station
+ |                      from the event.
+ |  
+ |  get_eventtime(self, stream)
+ |      Function to recover dates and times from sac file and return an obspy
+ |      date-time object.
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: stream of SAC files with nzyear, nzjday, nzhour, nzmin, nzsec, nzmsec populated
+ |      
+ |      Return:
+ |          Obspy datetime object of the date stored.
+ |  
+ |  get_geometry(self, stream, return_center=False, distance='degrees', verbose='False', relative='False')
+ |      Collects array geometry information and returns an array of lon, lat and elevation.
+ |      Method to calculate the array geometry and the center coordinates in km or degrees.
+ |      
+ |      Param: stream (Obspy Stream object)
+ |      Description: must be in SAC format and have stla, stlo and stel headers populated.
+ |      
+ |      Param: distance (string)
+ |      Description:  defines how the distances are given, either 'km' or 'degrees'. Defaults to degrees.
+ |      
+ |      Param: return_center (Bool)
+ |      Description: if true, it will only return the centre lon, lat and height.
+ |      
+ |      Param: relative (Bool)
+ |      Description: If true, the station locations will be relative to the mean lon, lat and elevation.
+ |      
+ |      Returns:
+ |      
+ |      The geometry of the stations as 2d :class:`np.ndarray`
+ |      The first dimension are the station indexes with the same order
+ |      as the traces in the stream object. The second index are the
+ |      values of [lat, lon, elev] in km or degrees.
+ |      
+ |      if return_center is true, only the centre lon lat elev will be returned.
+ |  
+ |  get_phase_traces(self, stream)
+ |      Given an obspy stream, this will return a 2D array of the waveforms
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: stream containing SAC files.
+ |      
+ |      Return:
+ |          2D numpy array of floats describing the traces.
+ |  
+ |  get_predicted_times(self, stream, phase)
+ |      Collect the predicted arrival times for all SAC files in the stream and return arrays for
+ |      the predicted times for the target phase and all time headers. The min, max and average predicted
+ |      times for the target phase will be returned.
+ |      
+ |      Param: stream (Obspy Stream Object)
+ |      Description: Stream of SAC files with the time (tn) and labels (ktn) populated.
+ |      
+ |      Param: phase (string)
+ |      Description: The phase you are interested in analysing (e.g. SKS). Must be stored in the SAC headers tn and tkn.
+ |      
+ |      Returns:
+ |          Target_phase_times - an array of the predicted travel times for the target phase for each station in the array.
+ |          time_header_times - array of the prediected travel times for all phases for each station in the array.
+ |  
+ |  get_slow_baz(self, slow_x, slow_y, dir_type)
+ |      Description:
+ |          Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
+ |      
+ |      Param: slow_x (array of floats)
+ |      Description: X component of slowness vector.
+ |      
+ |      Param: slow_y (array of floats)
+ |      Description: Y component of slowness vector.
+ |      
+ |      Param: dir_type (string)
+ |      Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+ |      
+ |      Return: slowness magnitude and baz/az value.
+ |  
+ |  get_station_density_KDE(self, geometry)
+ |      Given a geometry, this function will calculate the density of the station distribution
+ |      for each station. This can be used to weight the stacking or other uses the user can
+ |      think of.
+ |      
+ |      Param: geometry (2D array of floats)
+ |      Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+ |      
+ |      Param: type (string)
+ |      Description: do you want distances in degrees (deg) or kilometres (km).
+ |      
+ |      Return:
+ |          station_densities = numpy array of natural log of densities.
+ |  
+ |  get_stations(self, stream)
+ |      Function to return all the stations in the Obspy stream provided
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: Stream object of SAC files with the headers
+ |                   stla,stlo and stel populated
+ |      
+ |      Return: List of strings of station names.
+ |  
+ |  get_t_header_pred_time(self, stream, phase)
+ |      Gives a stream of SAC files and phase, it will return the header
+ |      where the travel time predictions for that phase is stored.
+ |      
+ |      Param: stream (Obspy stream)
+ |      Description: stream of SAC files with the tn and ktn headers populated.
+ |      
+ |      Param: phase (string)
+ |      Description: phase of interest
+ |      
+ |      Return:
+ |          Target_time_header: string of the time header where the travel time predictions
+ |                              for the phase is stored.
+ |  
+ |  get_traces(self, stream)
+ |      Given an obspy stream, this will return a 2D array of the waveforms
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: stream containing SAC files.
+ |      
+ |      Return:
+ |          2D numpy array of floats describing the traces.
+ |  
+ |  myround(self, x, prec=2, base=0.05)
+ |      Rounds the number 'x' to the nearest 'base' with precision 'prec'
+ |      
+ |      Param: x (float)
+ |      Description: number to be rounded
+ |      Param: prec (int)
+ |      Description: number of decimal places for the rounded number.
+ |      Param: base (float)
+ |      Description: the interval to be rounded nearest to.
+ |      
+ |      Return:
+ |              The number rounded to the nearest 'base' value.
+ |  
+ |  pick_tw(self, stream, phase, tmin=150, tmax=150, align=False)
+ |      Given an Obspy stream of traces, plot a record section and allow a time window to be picked around the phases of interest.
+ |      
+ |      Param: stream (Obspy stream object)
+ |      Description: Sac files only.
+ |      
+ |      Param: phase (string)
+ |      Description: Phase of interest (e.g. SKS)
+ |      
+ |      Return:
+ |          The selected time window as numpy array [window_start, window_end].
+ |  
+ |  pred_baz_slow(self, stream, phases, one_eighty=True)
+ |      Predicts the baz and horizontal slownesses of the given phases using the infomation in the Obspy stream.
+ |      
+ |      Param: stream (Obspy Stream object)
+ |      Description: must be in SAC format.
+ |      
+ |      Param: phases (list of strings)
+ |      Description: phases for which the baz and horizontal slowness will be calculated
+ |      
+ |      Param one_eighty (Bool)
+ |      Description: if there is more than one arrival with the same name, will it arrive from a backazimuth 180 degrees away (e.g. major arc for S2KS).
+ |      
+ |      Return: list of: ["Phase", "Ray_parameter", "Backazimuth", "Backazimuth_X",
+ |                        "Backazimuth_Y", "Azimuth_X", "Azimuth_Y", "Mean_Ep_Dist",
+ |                        "Predicted_Travel_Time"]
+ |  
+ |  write_to_file(self, filepath, st, peaks, prediction, phase, time_window)
+ |      Description:
+ |          Function to write event and station information with slowness vector
+ |          properties to a results file.
+ |      
+ |      Param: outfile (string)
+ |      Description: Name and path of results file
+ |      
+ |      Param: st (Obspy stream object)
+ |      Description: Stream object of SAC files assumed to have headers populated
+ |                   as described in the README.
+ |      
+ |      Param: peaks (2D numpy array of floats)
+ |      Description: 2D array of floats [[baz, slow]]
+ |                   for the arrival locations.
+ |      
+ |      Param: prediction (2D numpy array of floats)
+ |      Description: 2D numpy array of floats of the predicted arrival
+ |                   in [[baz, slow]].
+ |      
+ |      Param: phase (string)
+ |      Description: target phase (e.g. SKS)
+ |      
+ |      Param: time_window (1D numpy array of floats)
+ |      Description: numpy array of floats describing the start and end
+ |                    of time window in seconds.
+ |      
+ |      Return:
+ |          Nothing.
+ |  
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |  
+ |  __dict__
+ |      dictionary for instance variables (if defined)
+ |  
+ |  __weakref__
+ |      list of weak references to the object (if defined)
+

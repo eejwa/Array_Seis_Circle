@@ -1,0 +1,115 @@
+Help on cluster_utilities in module cluster_utilities object:
+
+class cluster_utilities(builtins.object)
+ |  cluster_utilities(labels, points)
+ |  
+ |  This class holds functions to give information about the clusters such as their mean,
+ |  standard deviations, area, ellipse properties.
+ |  
+ |  Methods defined here:
+ |  
+ |  __init__(self, labels, points)
+ |      All functions require the data points and their associated labels.
+ |      Labels are given as output of clustering algorithms and are a list
+ |      of integers. Each integer represents a cluster.
+ |      
+ |      Param: labels - 1D numpy array
+ |      Description: contains the cluster labels for each datapoint
+ |      e.g. labels = np.array([0, 0, 1, 1, 1, 0])
+ |      
+ |      Param: points - 2D numpy array
+ |      Description: Contains datapoints used for the cluster analysis
+ |      e.g. points = np.array([[0,0], [1,0], [1,2], [2,2], [3,2], [0,1]])
+ |  
+ |  cluster_ellipse_areas(self, std_dev)
+ |      Given data points and cluster labels, return the area of the error ellipse with
+ |      the given standard deviation.
+ |      
+ |      Param: std_dev - integer.
+ |      Description: - standard deviation of error ellipse (typically 1,2, or 3).
+ |      
+ |      Param: rel_x - float
+ |      Description: x component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Param: rel_y - float
+ |      Description: y component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Return:
+ |              ellipse_areas - 1D array of the area for the error ellipse of the points in each cluster.
+ |  
+ |  cluster_means(self)
+ |      Given data points and cluster labels, return the mean slowness vector
+ |      properties of each cluster.
+ |      
+ |      Param: points - 2D numpy array of floats.
+ |      Description: Array of points used to find clusters.
+ |      
+ |      Param: labels - 1D numpy array of integers.
+ |      Description: - Labels of each point for which cluster it is in.
+ |      
+ |      Param: rel_x - float
+ |      Description: x component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Param: rel_y - float
+ |      Description: y component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Return:
+ |              means_xy - 2D array of the mean slow_x and slow_y for each cluster.
+ |      
+ |              means_baz_slow - 2D array of the meanbackazimuth and horizontal slowness
+ |                               for each cluster.
+ |  
+ |  cluster_std_devs(self)
+ |      Given data points and cluster labels, return the standard deviations of
+ |      backazimuth and horizontal slownesses of each cluster.
+ |      
+ |      Param: points - 2D numpy array of floats.
+ |      Description: Array of points used to find clusters.
+ |      
+ |      Param: labels - 1D numpy array of integers.
+ |      Description: - Labels of each point for which cluster it is in.
+ |      
+ |      Param: rel_x - float
+ |      Description: x component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Param: rel_y - float
+ |      Description: y component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Return:
+ |              bazs_std - 1D array of the standard deviation for backazimuth values in each cluster.
+ |      
+ |              slows_std - 1D array of the standard deviation for horizontal slowness values
+ |                          in each cluster.
+ |  
+ |  covariance_matrices(self)
+ |      Given the labels and point locations, returns the covariance
+ |      matrices for each cluster.
+ |      
+ |      Param: rel_x - float
+ |      Description: x component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Param: rel_y - float
+ |      Description: y component of slowness vector used to align traces for relative beamforming.
+ |      
+ |      Return:
+ |          1D array of covariance matrices.
+ |  
+ |  eigsorted(self, cov)
+ |      Given a covariance matrix, calculate the eigenvalues and eigenvectors.
+ |      
+ |      Param: cov - 2D numpy array of floats
+ |      Description: covariance matrix of an ndarray of points. Can be found from the np.cov function.
+ |      
+ |      Return:
+ |          vals - eigenvalues in decending order.
+ |          vecs - eigenvectors in decending order.
+ |  
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |  
+ |  __dict__
+ |      dictionary for instance variables (if defined)
+ |  
+ |  __weakref__
+ |      list of weak references to the object (if defined)
+

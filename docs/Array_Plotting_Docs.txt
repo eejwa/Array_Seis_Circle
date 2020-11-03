@@ -1,0 +1,241 @@
+Help on plotting in module array_plotting object:
+
+class plotting(builtins.object)
+ |  plotting(ax)
+ |  
+ |  This class holds functions for several plotting situations:
+ |  
+ |      - plot_record_section_SAC: plots record section of traces in an obspy stream object.
+ |  
+ |      - add_lines: add lines to $     heta-p$ plot.
+ |  
+ |      - add_circles: add circles to $ heta-p$ plot.
+ |  
+ |      - plot_TP_XY: plot theta-p plot in a cartesian coordinate system.
+ |  
+ |      - plot_TP_Pol: plot theta-p plot in polar corrdinate system.
+ |  
+ |      - plot_vespagram: plot vespagram of either backazimuth or slowness.
+ |  
+ |  Methods defined here:
+ |  
+ |  __init__(self, ax)
+ |      Initialize self.  See help(type(self)) for accurate signature.
+ |  
+ |  add_circles(self, radii, x, y, colour)
+ |      Adds circles of radius in the radii list with the centre at point xy with the defined colour
+ |      to the axis the funtion is used in.
+ |      
+ |      Param: radii (array of floats)
+ |      Description: array of circle radii.
+ |      
+ |      Param: x/y (float)
+ |      Description: centre for circles.
+ |      
+ |      Param: colour (string)
+ |      Description: colour of circles
+ |      
+ |      Return:
+ |          Nothing.
+ |  
+ |  add_lines(self, radius, x, y, angles, colour)
+ |      Adds lines of length 'radius' from point xy with a variety of angles all
+ |      with defined colour.
+ |      
+ |      Param: radius (float)
+ |      Description: radius/length for lines.
+ |      
+ |      Param: x/y (float)
+ |      Description: centre for lines.
+ |      
+ |      Param: angles (array floats)
+ |      
+ |      Param: colour (string)
+ |      Description: colour of lines
+ |      
+ |      Returns nothing.
+ |  
+ |  plot_TP_Pol(self, tp, peaks, smin, smax, bazmin, bazmax, sstep, bazstep, title, log=False, contour_levels=30, predictions=array([], dtype=float64))
+ |      Given a 2D array of power values for the theta-p analysis, it plots the
+ |      values within the given slowness backazimuth space with contours of power values.
+ |      
+ |      Param: tp (2D numpy array floats)
+ |      Description: 2D array of power values of the theta-p plot.
+ |      
+ |      Param: peaks (1D numpy array floats)
+ |      Description: slowness and backazimuth locations of the peak location.
+ |      
+ |      Param: smin/smax (float)
+ |      Description: minimum/maximum slowness value.
+ |      
+ |      Param: bazmin/bazmax (float)
+ |      Description: Miniumum/maximum backazimuth values.
+ |      
+ |      Param: sstep (float)
+ |      Description: increment of slowness steps.
+ |      
+ |      Param: sstep (float)
+ |      Description: increment of backazimuth steps.
+ |      
+ |      Param: title (string)
+ |      Description: title of the plot.
+ |      
+ |      Param: log (Bool)
+ |      Description: True if you want the plot to be log scaled, False if linear scaling.
+ |      
+ |      Param: contour_levels (float)
+ |      Description: number of contours.
+ |      
+ |      Param predictions (list of lists)
+ |      Description: output of function 'pred_baz_slow' for the phases you
+ |                   want to plot on the t-p plot.
+ |  
+ |  plot_TP_XY(self, tp, peaks, sxmin, sxmax, symin, symax, sstep, title, log=False, contour_levels=30, predictions=None)
+ |      Given a 2D array of power values for the $      heta-p$ analysis, it plots the
+ |      values within the given slowness space with contours of power values.
+ |      
+ |      Param: tp (2D numpy array floats)
+ |      Description: 2D array of power values of the theta-p plot.
+ |      
+ |      Param: peaks (1D numpy array floats)
+ |      Description: x and y locations of the peak location.
+ |      
+ |      Param: s(x/y)min (float)
+ |      Description: minimum x and y slowness value.
+ |      
+ |      Param: s(x/y)max (float)
+ |      Description: maximum x and y slowness value.
+ |      
+ |      Param: sstep (float)
+ |      Description: increment of steps in the slowness grid.
+ |      
+ |      Param: title (string)
+ |      Description: title of the plot.
+ |      
+ |      Param: log (Bool)
+ |      Description: True if you want the plot to be log scaled, False if linear scaling.
+ |      
+ |      Param: contour_levels (float)
+ |      Description: number of contours.
+ |      
+ |      Param predictions (list of lists)
+ |      Description: output of function 'pred_baz_slow' for the phases you
+ |                   want to plot on the t-p plot.
+ |  
+ |  plot_clusters_XY(self, labels, tp, peaks, sxmin, sxmax, symin, symax, sstep, title, log=False, contour_levels=30, predictions=None, ellipse=False, std_devs=[1, 2, 3])
+ |      Given a 2D array of power values for the $      heta-p$ analysis, it plots the
+ |      values within the given slowness space with contours of power values.
+ |      
+ |      Params: labels (1D numpy array of integers)
+ |      Description: array of integers describing which cluster they belong to.
+ |                   e.g. [-1 0 -1 0 0 -1]
+ |      
+ |      Param: tp (2D numpy array floats)
+ |      Description: 2D array of power values of the theta-p plot.
+ |      
+ |      Param: peaks (2D numpy array floats)
+ |      Description: x and y locations of the peaks. 0 axis should be same length as the labels.
+ |      
+ |      Param: s(x/y)min (float)
+ |      Description: minimum x and y slowness value.
+ |      
+ |      Param: s(x/y)max (float)
+ |      Description: maximum x and y slowness value.
+ |      
+ |      Param: sstep (float)
+ |      Description: increment of steps in the slowness grid.
+ |      
+ |      Param: title (string)
+ |      Description: title of the plot.
+ |      
+ |      Param: log (Bool)
+ |      Description: True if you want the plot to be log scaled, False if linear scaling.
+ |      
+ |      Param: contour_levels (float)
+ |      Description: number of contours.
+ |      
+ |      Param predictions (list of lists)
+ |      Description: output of function 'pred_baz_slow' for the phases you
+ |                   want to plot on the t-p plot.
+ |      
+ |      Param: ellipse (Bool)
+ |      Description: Plot error ellipses (True) or not (False).
+ |      
+ |      Param: std_dev (list of integers)
+ |      Description: std_dev of the error ellipse.
+ |      
+ |      Return:
+ |          Nothing.
+ |  
+ |  plot_record_section_SAC(self, st, phase, tmin=150, tmax=150, align=False)
+ |      Plots a distance record section of all traces in the stream. The time window will
+ |      be around the desired phase.
+ |      
+ |      Param: st (Obspy Stream Object)
+ |      Description: Stream of SAC files with the time (tn) and labels (ktn) populated.
+ |      
+ |      Param: phase (string)
+ |      Description: The phase you are interested in analysing (e.g. SKS). Travel time must
+ |                   be stored in the SAC headers tn and phase name in tkn.
+ |      
+ |      Param: tmin (float)
+ |      Description: Time before the minumum predicted time of the phase you are interested in.
+ |      
+ |      Param: tmax (float)
+ |      Description: Time after the maximum predicted time of the phase you are interested in.
+ |      
+ |      Return:
+ |          Plots record section, does not return anything.
+ |  
+ |  plot_vespagram(self, vespagram, ymin, ymax, y_space, tmin, tmax, sampling_rate, title, type, predictions=None, npeaks=5, log=False, contour_levels=30, envelope=True)
+ |      Given a 2D numpy array of values representing a vespagram, plot it with peaks and predictions.
+ |      
+ |      Param: vespagram (2D numpy array of floats)
+ |      Description: amplitude values of a stack at each [slowness,time] point.
+ |      
+ |      Param: ymin/ymax (float)
+ |      Description: min/max of y values (either backazimuth or slowness).
+ |      
+ |      Param: y_space (float)
+ |      Description: y value increments (either backazimuth or slowness).
+ |      
+ |      Param: xmin/xmax (float)
+ |      Description: min/max time values.
+ |      
+ |      Param: sampling_rate (float)
+ |      Description: sampling rate of data in s^-1.
+ |      
+ |      Param: title (string)
+ |      Description: title of the plot.
+ |      
+ |      Param: predictions (list of lists)
+ |      Description: output of function 'pred_baz_slow' for the phases you
+ |                   want to plot on the t-p plot.
+ |      
+ |      Param: npeaks (int)
+ |      Description: the number of peaks to plot on the graph.
+ |      
+ |      Param: log (Bool)
+ |      Description: True if you want the plot to be log scaled, False if linear scaling.
+ |      
+ |      Param: type (string)
+ |      Description: is the y axis changing in backazimuth (baz) or slowness (slow).
+ |      
+ |      Param: contour_levels (float)
+ |      Description: number of contours.
+ |      
+ |      Param: envelope (Bool)
+ |      Description: do you want to plot the envelope of the amplitudes or not.
+ |      
+ |      Return:
+ |          Nothing, but plots the vespagram.
+ |  
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |  
+ |  __dict__
+ |      dictionary for instance variables (if defined)
+ |  
+ |  __weakref__
+ |      list of weak references to the object (if defined)
+
