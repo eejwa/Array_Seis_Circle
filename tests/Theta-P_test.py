@@ -6,13 +6,12 @@
 import obspy
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 from circ_array import circ_array
 from circ_beam import BF_Spherical_Pol_all, BF_Spherical_Pol_PWS, BF_Spherical_Pol_Lin
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
-
 
 # parameters
 # phase of interest
@@ -43,9 +42,6 @@ max_target_time = int(np.nanmax(Target_phase_times, axis=0))
 stime = event_time + min_target_time
 etime = event_time + max_target_time + 30
 
-print(stime)
-print(etime)
-
 # trim the stream
 # Normalise and cut seismogram around defined window
 st = st.copy().trim(starttime=stime, endtime=etime)
@@ -63,7 +59,7 @@ slow_min = float(S) - 2
 slow_max = float(S) + 2
 baz_min = float(BAZ) - 30
 baz_max = float(BAZ) + 30
-b_space = 0.05
+b_space = 1
 s_space = 0.1
 
 # filter
@@ -85,10 +81,18 @@ Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol_all(traces=Traces
 end = time.time()
 
 print("time", end-start)
+peaks = np.c_[peaks, np.array(["PWS", "LIN", "F"])]
+
 peaks = peaks[np.where(peaks == "PWS")[0]]
+
+
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(111, projection='polar')
+p = plotting(ax = ax)
+
 p.plot_TP_Pol(tp=PWS_arr, peaks=peaks, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
               sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
-
+plt.show()
 
 
 
@@ -102,12 +106,15 @@ Lin_arr, Results_arr, peaks = BF_Spherical_Pol_Lin(traces=Traces, sampling_rate=
 end = time.time()
 
 print("time", end-start)
-peaks = peaks[np.where(peaks == "LIN")[0]]
 
-print(Lin_arr.shape)
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(111, projection='polar')
+p = plotting(ax = ax)
+
 p.plot_TP_Pol(tp=Lin_arr, peaks=peaks, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
-              sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
+              sstep=s_space, bazstep=b_space, contour_levels=50, title="Lin Plot", predictions=predictions, log=False)
 
+plt.show()
 
 
 
@@ -119,6 +126,12 @@ PWS_arr, Results_arr, peaks = BF_Spherical_Pol_PWS(traces=Traces, phase_traces=P
 end = time.time()
 
 print("time", end-start)
-peaks = peaks[np.where(peaks == "PWS")[0]]
+
+
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(111, projection='polar')
+p = plotting(ax = ax)
+
 p.plot_TP_Pol(tp=PWS_arr, peaks=peaks, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
               sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
+plt.show()

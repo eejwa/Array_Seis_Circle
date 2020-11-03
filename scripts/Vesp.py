@@ -8,7 +8,7 @@ from circ_array import circ_array
 from circ_beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
+
 
 from Parameters_Vesp import *
 
@@ -59,7 +59,8 @@ sampling_rate=st[0].stats.sampling_rate
 
 if Vesp_type == 'slow':
     kwarg_dict = {'traces':Traces, 'sampling_rate':sampling_rate, 'geometry':geometry,
-                             'distance':mean_dist, 'baz':float(BAZ), 'smin':smin, 'smax':smax, 's_space':s_step}
+                             'distance':mean_dist, 'baz':float(BAZ), 'smin':smin, 'smax':smax,
+                             's_space':s_step}
 
     if Stack_type == 'Lin':
 
@@ -71,6 +72,7 @@ if Vesp_type == 'slow':
     ymin = smin
     ymax = smax
     y_step = s_step
+    
 elif Vesp_type == 'baz':
     kwarg_dict = {'traces':Traces, 'sampling_rate':sampling_rate, 'geometry':geometry,
                              'distance':mean_dist, 'slow':float(S), 'bmin':bmin, 'bmax':bmax, 'b_space':b_step}
@@ -91,6 +93,18 @@ else:
     print('Vesp_type needs to be "slow" or "baz"')
     exit()
 
+import matplotlib.pyplot as plt
+
+plt.imshow(vesp)
+plt.show()
+
+fig =plt.figure(figsize=(10,8))
+ax = fig.add_subplot(111)
+p = plotting(ax)
+
+
+
 p.plot_vespagram(vespagram=vesp, ymin=ymin, ymax=ymax, y_space=y_step, tmin=min_target, tmax=max_target,
                  sampling_rate=sampling_rate, title="%s Vespagram. %s Stacking" %(Vesp_type, Stack_type),
                  predictions=predictions, type='slow', envelope=True)
+plt.show()

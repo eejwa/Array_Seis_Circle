@@ -7,6 +7,7 @@
 import obspy
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
@@ -14,7 +15,7 @@ from circ_array import circ_array
 from circ_beam import BF_Spherical_XY_all, shift_traces, BF_Spherical_XY_PWS, BF_Spherical_XY_Lin
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
+
 
 
 # parameters
@@ -120,12 +121,17 @@ print("time to run:", end - start)
 
 peaks = np.c_[peaks, np.array(["PWS", "LIN", "F"])]
 
-print(peaks)
-
 peaks = peaks[np.where(peaks == "PWS")[0]]
+
+
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111)
+p = plotting(ax = ax)
+
 p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow_min, symax=slow_max,
           sstep=s_space, contour_levels=50, title="PWS Plot", predictions=None, log=False)
 
+plt.show()
 
 start = time.time()
 Lin_arr, Results_arr, peaks = BF_Spherical_XY_Lin(traces=cut_shifted_traces, sampling_rate=np.float64(sampling_rate),
@@ -135,8 +141,14 @@ Lin_arr, Results_arr, peaks = BF_Spherical_XY_Lin(traces=cut_shifted_traces, sam
 end = time.time()
 print("time to run:", end - start)
 
+
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111)
+p = plotting(ax = ax)
+
 p.plot_TP_XY(tp=Lin_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow_min, symax=slow_max,
           sstep=s_space, contour_levels=50, title="LIN Plot", predictions=None, log=False)
+plt.show()
 
 start = time.time()
 PWS_arr, Results_arr, peaks = BF_Spherical_XY_PWS(traces=cut_shifted_traces, phase_traces=cut_shifted_phase_traces,
@@ -146,5 +158,11 @@ PWS_arr, Results_arr, peaks = BF_Spherical_XY_PWS(traces=cut_shifted_traces, pha
 end = time.time()
 print("time to run:", end - start)
 
+
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111)
+p = plotting(ax = ax)
+
 p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow_min, symax=slow_max,
           sstep=s_space, contour_levels=50, title="PWS Plot", predictions=None, log=False)
+plt.show()

@@ -122,7 +122,7 @@ peaks = c.findpeaks_XY(Smoothed_thresh_lin_array, xmin=slow_min,
                        xmax=slow_max, ymin=slow_min, ymax=slow_max,
                        xstep=s_space, ystep=s_space, N=3)
 
-fig = plt.figure(figsize=(8,8))
+fig = plt.figure(figsize=(10,8))
 ax = fig.add_subplot(111)
 p = plotting(ax = ax)
 

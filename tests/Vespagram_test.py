@@ -6,12 +6,12 @@
 import obspy
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 from circ_array import circ_array
 from circ_beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
 
 
 # parameters
@@ -78,37 +78,52 @@ sampling_rate=st[0].stats.sampling_rate
 vesp_lin = Vespagram_Lin(traces=Traces, sampling_rate=sampling_rate, geometry=geometry,
                          distance=mean_dist, baz=float(BAZ), smin=smin, smax=smax, s_space=s_step)
 
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(211)
+p = plotting(ax = ax)
 
 p.plot_vespagram(vespagram=vesp_lin, ymin=smin, ymax=smax, y_space=s_step, tmin=min_target, tmax=max_target,
-                 sampling_rate=sampling_rate, title="", predictions=predictions, type='slow',
+                 sampling_rate=sampling_rate, title="Slow - Lin", predictions=predictions, type='slow',
                  envelope=True)
-
 
 vesp_pws = Vespagram_PWS(traces=Traces, phase_traces=Phase_traces, sampling_rate=sampling_rate, geometry=geometry,
                          distance=mean_dist, baz=float(BAZ), smin=smin, smax=smax, s_space=s_step, degree=2)
 
+ax = fig.add_subplot(212)
+p = plotting(ax = ax)
 p.plot_vespagram(vespagram=vesp_pws, ymin=smin, ymax=smax, y_space=s_step, tmin=min_target, tmax=max_target,
-                 sampling_rate=sampling_rate, title="", predictions=predictions, type='slow',
+                 sampling_rate=sampling_rate, title="Slow - PWS", predictions=predictions, type='slow',
                  envelope=True)
+plt.tight_layout()
 
+plt.show()
 # backazimuth vespagrams
 
 bmin=float(BAZ)-30
 bmax=float(BAZ)+30
 b_step=0.05
 
+
 vesp_lin = Baz_vespagram_Lin(traces=Traces, sampling_rate=sampling_rate, geometry=geometry,
                          distance=mean_dist, slow=float(S), bmin=bmin, bmax=bmax, b_space=b_step)
 
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(211)
+p = plotting(ax = ax)
 
 p.plot_vespagram(vespagram=vesp_lin, ymin=bmin, ymax=bmax, y_space=b_step, tmin=min_target, tmax=max_target,
-                 sampling_rate=sampling_rate, title="", predictions=predictions, type='baz',
+                 sampling_rate=sampling_rate, title="Baz - Lin", predictions=predictions, type='baz',
                  envelope=True)
 
 
 vesp_pws = Baz_vespagram_PWS(traces=Traces, phase_traces=Phase_traces, sampling_rate=sampling_rate, geometry=geometry,
                          distance=mean_dist, slow=float(S), bmin=bmin, bmax=bmax, b_space=b_step, degree=2)
 
+
+ax = fig.add_subplot(212)
+p = plotting(ax = ax)
 p.plot_vespagram(vespagram=vesp_pws, ymin=bmin, ymax=bmax, y_space=b_step, tmin=min_target, tmax=max_target,
-                 sampling_rate=sampling_rate, title="", predictions=predictions, npeaks=5, type='baz',
+                 sampling_rate=sampling_rate, title="Baz - PWS", predictions=predictions, npeaks=5, type='baz',
                  envelope=True)
+plt.tight_layout()
+plt.show()

@@ -37,7 +37,7 @@ b_step = 1
 degree=2
 
 # Slowness (slow) or Backazimuth (baz) vespagram?
-Vesp_type = 'baz'
+Vesp_type = 'slow'
 
 # what stacking do you want? linear (LIN), phase-weighted (PWS) or all (All)
 Stack_type = 'Lin'

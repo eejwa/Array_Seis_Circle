@@ -11,9 +11,8 @@ from circ_array import circ_array
 c = circ_array()
 from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
 from array_plotting import plotting
-p = plotting()
 
-st = obspy.read('./data/19980329/*SAC')
+st = obspy.read('./data/19970525/*SAC')
 geometry = c.get_geometry(st)
 
 
@@ -28,6 +27,9 @@ ax = fig.add_subplot(1, 1, 1)
 s = ax.scatter(lons,lats,c=density)
 plt.colorbar(s)
 ax.set_facecolor('black')
+ax.set_title('Density plot')
+ax.set_xlabel('Longitude ($^{\circ}$)')
+ax.set_ylabel('Latitude ($^{\circ}$)')
 plt.show()
 
 
@@ -108,8 +110,14 @@ Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(traces=Traces,
                                                         sampling_rate), geometry=geometry, distance=mean_dist, sxmin=slow_x_min,
                                                         sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max, s_space=s_space, degree=2)
 
+fig = plt.figure(figsize=(10,5))
+ax = fig.add_subplot(121)
+p = plotting(ax)
 p.plot_TP_XY(tp=Lin_arr, peaks=peaks, sxmin=slow_x_min, sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max,
-          sstep=s_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
-
+          sstep=s_space, contour_levels=50, title="Lin Plot", predictions=predictions, log=False)
+ax = fig.add_subplot(122)
+p = plotting(ax)
 p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_x_min, sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max,
           sstep=s_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
+plt.tight_layout()
+plt.show()

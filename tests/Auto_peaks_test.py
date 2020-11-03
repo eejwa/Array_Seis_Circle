@@ -7,12 +7,12 @@ import obspy
 import numpy as np
 import time
 import scipy
+import matplotlib.pyplot as plt
 
 from circ_array import circ_array
 from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
 
 # first we need to get data and make a Theta-P plot:
 
@@ -94,19 +94,22 @@ smoothed_arr = scipy.ndimage.filters.gaussian_filter(
 
 # Ok! Now find the top 2 peaks using the findpeaks function.
 peaks_auto = c.findpeaks_XY(Array=smoothed_arr, xmin=slow_x_min, xmax=slow_x_max, ymin=slow_y_min, ymax=slow_y_max, xstep=s_space, ystep=s_space, N=2)
-print(peaks_auto)
+print('peaks:\n',peaks_auto)
+
+
+fig = plt.figure(figsize=(10,5))
+ax = fig.add_subplot(121)
+p = plotting(ax)
 
 # plot to see if they're any good.
 p.plot_TP_XY(tp=PWS_arr, peaks=peaks_auto, sxmin=slow_x_min, sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max,
           sstep=s_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
 
-
-
 slow_min = float(S) - 2
 slow_max = float(S) + 2
 baz_min = float(BAZ) - 30
 baz_max = float(BAZ) + 30
-b_space = 0.1
+b_space = 1
 
 Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol_all(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
                                                         sampling_rate), geometry=geometry, distance=mean_dist, smin=slow_min,
@@ -117,7 +120,11 @@ smoothed_arr = scipy.ndimage.filters.gaussian_filter(
     PWS_arr, 2, mode='constant')
 
 peaks_auto = c.findpeaks_Pol(Array=smoothed_arr, bmin=baz_min, bmax=baz_max, smin=slow_min, smax=slow_max, sstep=s_space, bstep=b_space, N=2)
-print(peaks_auto)
+print('peaks:\n',peaks_auto)
 
+ax2 = fig.add_subplot(122, projection='polar')
+p = plotting(ax2)
 p.plot_TP_Pol(tp=PWS_arr, peaks=peaks_auto, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
               sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
+
+plt.show()

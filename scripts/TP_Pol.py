@@ -14,7 +14,7 @@ from circ_array import circ_array
 from circ_beam import BF_Spherical_Pol_all, BF_Spherical_Pol_Lin, BF_Spherical_Pol_PWS, shift_traces
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
+
 
 # import parameters
 from Parameters_TP_Pol import *
@@ -188,8 +188,13 @@ print(slow_vec_obs)
 
 c.write_to_file(filepath=filepath, st=st, peaks=slow_vec_obs, prediction=pred_file, phase=phase, time_window=window)
 
-
+import matplotlib.pyplot as plt
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(111, projection='polar')
+p = plotting(ax)
 p.plot_TP_Pol(tp=Plot_arr, peaks=peaks, smin=s_min, smax=s_max,
               bazmin=b_min, bazmax=b_max,
               sstep=s_space, bazstep=b_space, contour_levels=20,
               title="%s Plot" %Stack_type, predictions=predictions, log=False)
+
+plt.show()
