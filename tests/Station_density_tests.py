@@ -39,8 +39,8 @@ phase = 'SKS'
 phases = ['SKS','SKKS','ScS','Sdiff','sSKS','sSKKS','PS']
 
 # frequency band
-fmin = 0.10
-fmax = 0.40
+fmin = 0.13
+fmax = 0.52
 
 # define area around predictions to do analysis
 box_len = 3

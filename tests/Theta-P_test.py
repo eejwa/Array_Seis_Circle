@@ -10,7 +10,7 @@ import time
 from circ_array import circ_array
 from circ_beam import BF_Spherical_Pol_all, BF_Spherical_Pol_PWS, BF_Spherical_Pol_Lin
 from array_plotting import plotting
-c = circ_Array()
+c = circ_array()
 p = plotting()
 
 
@@ -85,8 +85,7 @@ Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol_all(traces=Traces
 end = time.time()
 
 print("time", end-start)
-peaks = peaks[0]
-
+peaks = peaks[np.where(peaks == "PWS")[0]]
 p.plot_TP_Pol(tp=PWS_arr, peaks=peaks, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
               sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
 
@@ -103,7 +102,8 @@ Lin_arr, Results_arr, peaks = BF_Spherical_Pol_Lin(traces=Traces, sampling_rate=
 end = time.time()
 
 print("time", end-start)
-peaks = peaks
+peaks = peaks[np.where(peaks == "LIN")[0]]
+
 print(Lin_arr.shape)
 p.plot_TP_Pol(tp=Lin_arr, peaks=peaks, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
               sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
@@ -119,7 +119,6 @@ PWS_arr, Results_arr, peaks = BF_Spherical_Pol_PWS(traces=Traces, phase_traces=P
 end = time.time()
 
 print("time", end-start)
-peaks = peaks
-
+peaks = peaks[np.where(peaks == "PWS")[0]]
 p.plot_TP_Pol(tp=PWS_arr, peaks=peaks, smin=slow_min, smax=slow_max, bazmin=baz_min, bazmax=baz_max,
               sstep=s_space, bazstep=b_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)

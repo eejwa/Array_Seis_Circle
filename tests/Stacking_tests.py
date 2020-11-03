@@ -9,13 +9,13 @@ import matplotlib.pyplot as plt
 
 from circ_array import circ_array
 from circ_beam import pws_stack_baz_slow, linear_stack_baz_slow
-c = Circ_Array()
+c = circ_array()
 
-phase = 'ScS'
+phase = 'SKS'
 phases = ['SKS','SKKS','ScS','Sdiff','sSKS','sSKKS','PS']
 
 
-st = obspy.read('./data/19970529/*SAC')
+st = obspy.read('./data/19970525/*SAC')
 
 # get array metadata
 event_time = c.get_eventtime(st)

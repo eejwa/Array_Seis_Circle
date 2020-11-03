@@ -83,7 +83,7 @@ sampling_rate=st[0].stats.sampling_rate
 print(Traces.shape)
 #run the beamforming!
 
-Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
+Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
                                                         sampling_rate), geometry=geometry, distance=mean_dist, sxmin=slow_x_min,
                                                         sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max, s_space=s_space, degree=2)
 
@@ -93,7 +93,7 @@ smoothed_arr = scipy.ndimage.filters.gaussian_filter(
     PWS_arr, 2, mode='constant')
 
 # Ok! Now find the top 2 peaks using the findpeaks function.
-peaks_auto = c.findpeaks_XY(Array=smoothed_arr, xmin=slow_x_min, xmax=slow_x_max, ymin=slow_y_min, ymax=slow_y_max, step=s_space, N=2)
+peaks_auto = c.findpeaks_XY(Array=smoothed_arr, xmin=slow_x_min, xmax=slow_x_max, ymin=slow_y_min, ymax=slow_y_max, xstep=s_space, ystep=s_space, N=2)
 print(peaks_auto)
 
 # plot to see if they're any good.
@@ -108,7 +108,7 @@ baz_min = float(BAZ) - 30
 baz_max = float(BAZ) + 30
 b_space = 0.1
 
-Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
+Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol_all(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
                                                         sampling_rate), geometry=geometry, distance=mean_dist, smin=slow_min,
                                                         smax=slow_max, bazmin=baz_min, bazmax=baz_max, s_space=s_space, baz_space=b_space, degree=2)
 

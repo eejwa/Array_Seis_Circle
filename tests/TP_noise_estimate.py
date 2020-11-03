@@ -17,7 +17,6 @@ model = TauPyModel(model="prem")
 
 from array_plotting import plotting
 c = circ_array()
-p = plotting()
 
 
 # parameters
@@ -119,8 +118,16 @@ Threshold_lin_array[lin_tp <=noise_mean * 3] = 0
 Smoothed_thresh_lin_array = scipy.ndimage.filters.gaussian_filter(
                             Threshold_lin_array, 1, mode='constant')
 
-print(Threshold_lin_array)
+peaks = c.findpeaks_XY(Smoothed_thresh_lin_array, xmin=slow_min,
+                       xmax=slow_max, ymin=slow_min, ymax=slow_max,
+                       xstep=s_space, ystep=s_space, N=3)
 
-p.plot_TP_XY(tp=Smoothed_thresh_lin_array, peaks=max_peak, sxmin=slow_min, sxmax=slow_max,
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111)
+p = plotting(ax = ax)
+
+p.plot_TP_XY(tp=Smoothed_thresh_lin_array, peaks=peaks, sxmin=slow_min, sxmax=slow_max,
              symin=slow_min, symax=slow_max, sstep=s_space, contour_levels=10,
              title="Smoothed threshold $\theta - p$ plot", predictions=None, log=False)
+
+plt.show()
