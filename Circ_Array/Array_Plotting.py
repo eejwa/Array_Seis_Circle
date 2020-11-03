@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 
+plt.set_cmap('turbo')
+
+
 class plotting:
     """
     This class holds functions for several plotting situations:
@@ -23,7 +26,8 @@ class plotting:
         - plot_vespagram: plot vespagram of either backazimuth or slowness.
     """
 
-    def __init__(self):
+    def __init__(self, ax):
+        self.ax = ax
         pass
 
 
@@ -66,10 +70,6 @@ class plotting:
         win_st = float(min_target_time - tmin)
         win_end = float(max_target_time + tmax)
 
-        # plot!
-        fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(111)
-
         event_time = c.get_eventtime(st)
 
         # copy stream and trim it around the time window
@@ -108,14 +108,14 @@ class plotting:
                     dat_plot = np.array(dat_plot[:points_diff])
 
             # plot data
-            ax.plot(time, dat_plot, color='black', linewidth=0.5)
+            self.ax.plot(time, dat_plot, color='black', linewidth=0.5)
 
         # set the x axis
         if align == True:
-            plt.xlim(-tmin, tmax)
+            self.ax.set_xlim(-tmin, tmax)
 
         else:
-            plt.xlim(win_st, win_end)
+            self.ax.set_xlim(win_st, win_end)
 
         # plot predictions
         for i,time_header in enumerate(time_header_times):
@@ -132,22 +132,20 @@ class plotting:
             try:
                 # sort array on distance
                 t = t[t[:,1].argsort()]
-                ax.plot(t[:, 0].astype(float),
+                self.ax.plot(t[:, 0].astype(float),
                     t[:, 1].astype(float), color='C'+str(i), label=t[0, 2])
             except:
                 print("t%s: No arrival" %i)
 
 
         # plt.title('Record Section Picking Window | Depth: %s Mag: %s' %(stream[0].stats.sac.evdp, stream[0].stats.sac.mag))
-        plt.ylabel('Epicentral Distance ($^\circ$)', fontsize=14)
-        plt.xlabel('Time (s)', fontsize=14)
+        self.ax.set_ylabel('Epicentral Distance ($^\circ$)', fontsize=14)
+        self.ax.set_xlabel('Time (s)', fontsize=14)
         plt.legend(loc='best')
-
-        plt.show()
 
         return
 
-    def add_circles(self, radii, x, y, colour, ax):
+    def add_circles(self, radii, x, y, colour):
         """
         Adds circles of radius in the radii list with the centre at point xy with the defined colour
         to the axis the funtion is used in.
@@ -168,16 +166,16 @@ class plotting:
         for r in radii:
             circle = plt.Circle((x, y), r, color=colour, clip_on=True,
                         fill=False, linestyle='--')
-            ax.add_artist(circle)
+            self.ax.add_artist(circle)
 
         for b in range(45, 315, 60):
-            ax.text((r) * np.sin(np.radians(b)), (r) *
+            self.ax.text((r) * np.sin(np.radians(b)), (r) *
                     np.cos(np.radians(b)), str(r), clip_on=True, color=colour, fontsize=10)
 
         return
 
 
-    def add_lines(self, radius, x, y, angles, colour, ax):
+    def add_lines(self, radius, x, y, angles, colour):
         """
         Adds lines of length 'radius' from point xy with a variety of angles all
         with defined colour.
@@ -197,7 +195,7 @@ class plotting:
         """
 
         for a in angles:
-            ax.plot([x, radius * np.cos(np.radians(a))],
+            self.ax.plot([x, radius * np.cos(np.radians(a))],
                     [y, radius * np.sin(np.radians(a))], linestyle='--', color=colour, zorder=1)
 
         return
@@ -261,38 +259,42 @@ class plotting:
         radii = [2, 4, 6, 8, 10]
         angles = range(0, 360, 30)
 
-        x_peaks = list(peaks[:,0].astype(float))
-        y_peaks = list(peaks[:,1].astype(float))
-
-        # initiate figure
-        fig = plt.figure(figsize=(8,8))
-        ax = fig.add_subplot(111)
-
         # if log, convert the values
         if log == True:
-            ax.contourf(slow_x, slow_y, np.log(tp), contour_levels)
+            p = self.ax.contourf(slow_x, slow_y, np.log(tp), contour_levels)
+            cbar = plt.colorbar(p, label='Power', ticks = np.linspace(0,tp.max(),11), drawedges=True, ax=self.ax)
+
         elif log == False:
-            ax.contourf(slow_x, slow_y, tp, contour_levels)
+            p = self.ax.contourf(slow_x, slow_y, tp, contour_levels)
+            cbar = plt.colorbar(p, label='Power', ticks = np.linspace(0,tp.max(),11), drawedges=True, ax=self.ax)
+
         else:
             pass
 
         # plot
-        ax.set_xlabel("p$_{x}$ (s/$^{\circ}$)", fontsize=14)
-        ax.set_ylabel("p$_{y}$ (s/$^{\circ}$)", fontsize=14)
-        ax.set_title(title, fontsize=14)
-        self.add_circles(radii=radii, x=0, y=0, colour='w', ax=ax)
-        self.add_lines(radius=10, x=0, y=0, angles=angles, colour='w', ax=ax)
-        ax.scatter(x_peaks, y_peaks, color='red', marker='x', zorder=2)
+        self.ax.set_xlabel("p$_{x}$ (s/$^{\circ}$)", fontsize=14)
+        self.ax.set_ylabel("p$_{y}$ (s/$^{\circ}$)", fontsize=14)
+        self.ax.set_title(title, fontsize=14)
+        self.add_circles(radii=radii, x=0, y=0, colour='w')
+        self.add_lines(radius=10, x=0, y=0, angles=angles, colour='w')
+
+        if peaks is not None:
+            x_peaks = list(peaks[:,0].astype(float))
+            y_peaks = list(peaks[:,1].astype(float))
+            self.ax.scatter(x_peaks, y_peaks, color='red', marker='x', zorder=2)
+
+        else:
+            pass
         if predictions is not None:
-            ax.scatter(Phases_x,Phases_y,color='white',s=20, zorder=3, marker='+')
+            self.ax.scatter(Phases_x,Phases_y,color='white',s=80, zorder=3, marker='x')
             for i,p in enumerate(Phases):
-                ax.text(Phases_x[i],Phases_y[i]-0.2,p , color='white', fontsize=10,zorder=3)
+                self.ax.text(Phases_x[i],Phases_y[i]-0.2,p , color='white', fontsize=16,zorder=3)
         else:
             pass
 
-        ax.set_xlim(sxmin,sxmax)
-        ax.set_ylim(symin,symax)
-        plt.show()
+        self.ax.set_xlim(sxmin,sxmax)
+        self.ax.set_ylim(symin,symax)
+        self.ax.set_aspect('equal', 'box')
 
         return
 
@@ -356,51 +358,48 @@ class plotting:
             pass
 
         # initialise figure
-        fig = plt.figure(figsize=(7,7))
-        ax = fig.add_subplot(111, polar=True)
+        # fig = plt.figure(figsize=(7,7))
+        # ax = fig.add_subplot(111, polar=True)
 
         # if log, convert values
         if log == True:
-            ax.contourf(np.radians(bazs), slows, np.log(tp), contour_levels)
+            self.ax.contourf(np.radians(bazs), slows, np.log(tp), contour_levels)
         elif log == False:
-            ax.contourf(np.radians(bazs), slows, tp, contour_levels)
+            self.ax.contourf(np.radians(bazs), slows, tp, contour_levels)
         else:
             pass
 
-        ax.set_title(title, fontsize=16)
+        self.ax.set_title(title, fontsize=16)
 
         # if given peaks, plot them
         if peaks.size != 0:
             b_peaks = list(peaks[:,0].astype(float))
             s_peaks = list(peaks[:,1].astype(float))
-            ax.scatter(np.radians(b_peaks), s_peaks, color='red', marker='x', zorder=2)
+            self.ax.scatter(np.radians(b_peaks), s_peaks, color='red', marker='x', zorder=2)
 
         else:
             pass
 
         # plot predictions if given
         if predictions.size != 0:
-            ax.scatter(np.radians(Phases_b),Phases_s,color='white',s=20, zorder=3, marker='+')
+            self.ax.scatter(np.radians(Phases_b),Phases_s,color='white',s=20, zorder=3, marker='+')
             for i,p in enumerate(Phases):
-                ax.text(np.radians(Phases_b[i]),Phases_s[i]+0.2, p, color='white', fontsize=10,zorder=3)
+                self.ax.text(np.radians(Phases_b[i]),Phases_s[i]+0.2, p, color='white', fontsize=10,zorder=3)
 
         else:
             pass
 
 
         # set orientation and dimensions of figure
-        ax.set_thetalim(np.radians(bazmin),np.radians(bazmax))
-        ax.set_rlim(smin,smax)
-        ax.set_rorigin(0)
-        ax.set_theta_zero_location("N")
-        ax.set_theta_direction(-1)
+        self.ax.set_thetalim(np.radians(bazmin),np.radians(bazmax))
+        self.ax.set_rlim(smin,smax)
+        self.ax.set_rorigin(0)
+        self.ax.set_theta_zero_location("N")
+        self.ax.set_theta_direction(-1)
 
         # add axis labels
-        ax.text(np.radians(bazmin - 7.5),(smin+smax)/2.,"$\it{p} \ (s/^{\circ})$", fontsize=14, rotation=90-bazmin, ha='center',va='center')
-        ax.text(np.radians((bazmin+bazmax)/2),smin-0.25,"$\\theta \ (^{\circ})$", fontsize=14, rotation=180-((bazmax+bazmin)/2), ha='center',va='center')
-
-        plt.show()
-
+        self.ax.text(np.radians(bazmin - 7.5),(smin+smax)/2.,"$\it{p} \ (s/^{\circ})$", fontsize=14, rotation=90-bazmin, ha='center',va='center')
+        self.ax.text(np.radians((bazmin+bazmax)/2),smin-0.25,"$\\theta \ (^{\circ})$", fontsize=14, rotation=180-((bazmax+bazmin)/2), ha='center',va='center')
 
         return
 
@@ -482,6 +481,8 @@ class plotting:
         else:
             pass
 
+        return
+
 
         # smooth the vespagram and find peaks
         smoothed_vesp = scipy.ndimage.filters.gaussian_filter(
@@ -490,14 +491,14 @@ class plotting:
 
 
         # Plot vespagram
-        fig = plt.figure(figsize=(8,8))
-        ax = fig.add_subplot(111)
+        # fig = plt.figure(figsize=(8,8))
+        # ax = fig.add_subplot(111)
 
         # take log of values if requested
         if log == True:
-            v = ax.contourf(times, ys, np.log(vespagram), contour_levels)
+            v = self.ax.contourf(times, ys, np.log(vespagram), contour_levels)
         elif log == False:
-            v = ax.contourf(times, ys, vespagram, contour_levels)
+            v = self.ax.contourf(times, ys, vespagram, contour_levels)
         else:
             pass
 
@@ -505,24 +506,125 @@ class plotting:
 
         # if wanted, plot predictions
         if predictions is not None:
-            ax.scatter(Phases_x,Phases_y,color='white',s=20, zorder=3, marker='+')
+            self.ax.scatter(Phases_x,Phases_y,color='white',s=20, zorder=3, marker='+')
             for i,p in enumerate(Phases):
-                ax.text(Phases_x[i],Phases_y[i]-0.2,p , color='white', fontsize=10,zorder=3)
+                self.ax.text(Phases_x[i],Phases_y[i]-0.2,p , color='white', fontsize=10,zorder=3)
         else:
             pass
 
         # plot peaks
-        ax.scatter(peaks[:,0],peaks[:,1],marker='x',color='red',label="peaks")
+        self.ax.scatter(peaks[:,0],peaks[:,1],marker='x',color='red',label="peaks")
 
-        ax.set_title(title)
-        ax.set_xlim(tmin,tmax)
-        ax.set_xlabel("Time (s)")
-        ax.set_ylim(ymin,ymax)
+        self.ax.set_title(title)
+        self.ax.set_xlim(tmin,tmax)
+        self.ax.set_xlabel("Time (s)")
+        self.ax.set_ylim(ymin,ymax)
         if type=='slow':
-            ax.set_ylabel("p ($s/^{\circ}$)")
+            self.ax.set_ylabel("p ($s/^{\circ}$)")
         elif type=='baz':
-            ax.set_ylabel("$\\theta (^{\circ})$")
+            self.ax.set_ylabel("$\\theta (^{\circ})$")
         else:
             print("type needs to be 'baz' or 'slow'")
 
-        plt.show()
+
+    def plot_clusters_XY(self, labels, tp, peaks, sxmin, sxmax, symin, symax, sstep, title, log = False, contour_levels=30, predictions=None, ellipse=False, std_devs=[1,2,3]):
+        """
+        Given a 2D array of power values for the $\theta-p$ analysis, it plots the
+        values within the given slowness space with contours of power values.
+
+        Params: labels (1D numpy array of integers)
+        Description: array of integers describing which cluster they belong to.
+                     e.g. [-1 0 -1 0 0 -1]
+
+        Param: tp (2D numpy array floats)
+        Description: 2D array of power values of the theta-p plot.
+
+        Param: peaks (2D numpy array floats)
+        Description: x and y locations of the peaks. 0 axis should be same length as the labels.
+
+        Param: s(x/y)min (float)
+        Description: minimum x and y slowness value.
+
+        Param: s(x/y)max (float)
+        Description: maximum x and y slowness value.
+
+        Param: sstep (float)
+        Description: increment of steps in the slowness grid.
+
+        Param: title (string)
+        Description: title of the plot.
+
+        Param: log (Bool)
+        Description: True if you want the plot to be log scaled, False if linear scaling.
+
+        Param: contour_levels (float)
+        Description: number of contours.
+
+        Param predictions (list of lists)
+        Description: output of function 'pred_baz_slow' for the phases you
+                     want to plot on the t-p plot.
+
+        Param: ellipse (Bool)
+        Description: Plot error ellipses (True) or not (False).
+
+        Param: std_dev (list of integers)
+        Description: std_dev of the error ellipse.
+
+        Return:
+            Nothing.
+
+        """
+
+        ## Plot the tp plot without the peaks
+
+        self.plot_TP_XY(tp=tp, peaks=None, sxmin=sxmin, sxmax=sxmax, symin=symin,
+                        symax=symax, sstep=sstep, title=title, log = log,
+                        contour_levels=contour_levels, predictions=predictions)
+
+        x_thresh = np.array(peaks)[:, 0].astype(float)
+        y_thresh = np.array(peaks)[:, 1].astype(float)
+
+        from cluster_utilities import cluster_utilities
+        cu = cluster_utilities(labels = labels, points = peaks)
+
+        means_xy, means_baz_slow = cu.cluster_means()
+        covariance_matrices_clusters = cu.covariance_matrices()
+        # create palette for the cluster points
+        palette = np.array(['black', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5'])
+        palette_inv = np.array(['grey','green','purple','orange','red','blue'])
+
+        # loop over the number of clusters
+
+        for l in set(list(labels)):
+            x_plot = x_thresh[np.where(labels == l)[0]]
+            y_plot = y_thresh[np.where(labels == l)[0]]
+            print(x_plot)
+            print(y_plot)
+            if l == -1:
+                label = 'Noise'
+            else:
+                label = 'Cluster ' + str(l+1)
+
+            self.ax.scatter(x_plot, y_plot,
+               marker='o', s=30, linewidth=0.5, c=palette[l+1], edgecolors='black', zorder=2, label=label)
+
+
+
+        for i, mean in enumerate(means_xy):
+
+            if ellipse == True:
+            # calculate ellipse using function
+                for std_dev in std_devs:
+                    ellipse_1 = plot_cov_ellipse(
+                        cov=covariance_matrices_clusters[i], pos=mean, nstd=std_dev, linewidth=1.5)
+                    self.ax.add_artist(ellipse_1)
+            else:
+                pass
+
+            self.ax.scatter(mean[0], mean[1], marker="X", linewidth=0.5, edgecolors='black',
+                       c=palette_inv[i], s=80, zorder=3, label='Mean Cluster ' + str(i+1))
+
+
+        self.ax.legend(loc='best')
+
+        return
