@@ -10,9 +10,7 @@ class cluster_utilities:
 
     """
     This class holds functions to give information about the clusters such as their mean,
-    standard deviations, area, ellipse properties:
-
-        -
+    standard deviations, area, ellipse properties.
     """
 
     def __init__(self, labels, points):
