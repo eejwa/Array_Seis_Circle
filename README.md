@@ -32,7 +32,7 @@ I would suggest cloning this onto your machine and add the path to Circ_Array to
     - Bootstrap samples the waveforms and recovers potential slowness vectors via beamforming
       and estimating a noise value.
       - Takes parameters from Parameters_Bootstrap.py.
-      - Can be run over multiple cores with `mpirun -np N Bootstrap_Peak_Recover_XY.py`,
+      - Can be run over multiple cores with `$ mpirun -np N Bootstrap_Peak_Recover_XY.py`,
         where N is the number of cores.
       - These are stored in a numpy array in a results directory defined by the user.
 
@@ -86,7 +86,7 @@ I would suggest cloning this onto your machine and add the path to Circ_Array to
     - ```conda activate Boots_Cluster ```
 
   - Because this package is likely to change quickly in the near future, I recommend adding
-    the path to the circ_array directory to your python path. This will mean the modules can be imported anywhere via python. 
+    the path to the circ_array directory to your python path. This will mean the modules can be imported anywhere via python.
 
 ### ./setup.py
   - Currently only says to add the path to Circ_Array to your python path.
