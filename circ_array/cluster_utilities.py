@@ -1,6 +1,7 @@
 
 import numpy as np
-import scipy
+from scipy.stats import circmean, circstd, circvar
+
 from circ_array import circ_array
 c=circ_array()
 import obspy
@@ -29,7 +30,7 @@ class cluster_utilities:
         e.g. points = np.array([[0,0], [1,0], [1,2], [2,2], [3,2], [0,1]])
 
         """
-        assert(labels.shape == points.shape[0])
+        # assert(labels.shape == points.shape[0])
         self.labels = labels
         self.points = points
 
@@ -50,7 +51,7 @@ class cluster_utilities:
         # return eigenvalues and eigenvectors in decending order
         return vals[order], vecs[:, order]
 
-    def cluster_means(self, self.points, self.labels, rel_x, rel_y):
+    def cluster_means(self):
         """
         Given data points and cluster labels, return the mean slowness vector
         properties of each cluster.
@@ -77,15 +78,12 @@ class cluster_utilities:
         means_xy = []
         means_baz_slow = []
 
-        for p in range(np.amax(labels) + 1):
+        for p in range(np.amax(self.labels) + 1):
 
-            p_x, p_y = np.mean(points[np.where(labels == p)][:, 0]), np.mean(
-                points[np.where(labels == p)][:, 1])
+            p_x, p_y = np.mean(self.points[np.where(self.labels == p)][:, 0]), np.mean(
+                self.points[np.where(self.labels == p)][:, 1])
 
-            p_x += rel_x
-            p_y += rel_y
-
-            mean_abs_slow, mean_baz = get_slow_baz(p_x, p_y, dir_type='az')
+            mean_abs_slow, mean_baz = c.get_slow_baz(p_x, p_y, dir_type='az')
 
             mean_abs_slow = np.around(mean_abs_slow, 2)
             mean_baz = np.around(mean_baz, 1)
@@ -93,10 +91,10 @@ class cluster_utilities:
             means_xy.append(np.array([p_x, p_y]))
             means_baz_slow.append(np.array([mean_baz, mean_abs_slow]))
 
-        return means_xy, means_baz_slow
+        return np.around(means_xy,2), np.around(means_baz_slow,2)
 
 
-    def cluster_std_devs(self, self.points, self.labels, rel_x, rel_y):
+    def cluster_std_devs(self):
         """
         Given data points and cluster labels, return the standard deviations of
         backazimuth and horizontal slownesses of each cluster.
@@ -123,17 +121,17 @@ class cluster_utilities:
         bazs_std= []
         slows_std = []
 
-        for p in range(np.amax(labels) + 1):
+        for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = points[np.where(
-                labels == p)][:, 0], points[np.where(labels == p)][:, 1]
+            points_x, points_y = self.points[np.where(
+                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
 
-            points_x += rel_x
-            points_y += rel_y
+            # points_x += rel_x
+            # points_y += rel_y
 
             points_cluster = np.array([points_x, points_y]).T
 
-            abs_slows, bazs = get_slow_baz_array(points_x, points_y, dir_type='az')
+            abs_slows, bazs = c.get_slow_baz(points_x, points_y, dir_type='az')
 
 
             abs_slow_std_dev = np.around(np.std(abs_slows), 2)
@@ -143,19 +141,46 @@ class cluster_utilities:
             bazs_std.append(baz_std_dev)
             slows_std.append(abs_slow_std_dev)
 
-        return bazs_std, slows_std
+        return np.around(bazs_std,2), np.around(slows_std,2)
 
 
-    def cluster_ellipse_areas(self, self.points, self.labels, std_dev, rel_x, rel_y):
+    def covariance_matrices(self):
+        """
+        Given the labels and point locations, returns the covariance
+        matrices for each cluster.
+
+        Param: rel_x - float
+        Description: x component of slowness vector used to align traces for relative beamforming.
+
+        Param: rel_y - float
+        Description: y component of slowness vector used to align traces for relative beamforming.
+
+        Return:
+            1D array of covariance matrices.
+        """
+
+        covariance_matrices = []
+
+        for p in range(np.amax(self.labels) + 1):
+
+            points_x, points_y = self.points[np.where(
+                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            #
+            # points_x += rel_x
+            # points_y += rel_y
+
+            co_mat = np.cov(np.array([points_x, points_y]).T, rowvar=False)
+
+            covariance_matrices.append(co_mat)
+
+        covariance_matrices = np.array(covariance_matrices)
+
+        return np.around(covariance_matrices, 2)
+
+    def cluster_ellipse_areas(self, std_dev):
         """
         Given data points and cluster labels, return the area of the error ellipse with
         the given standard deviation.
-
-        Param: points - 2D numpy array of floats.
-        Description: Array of points used to find clusters.
-
-        Param: labels - 1D numpy array of integers.
-        Description: - Labels of each point for which cluster it is in.
 
         Param: std_dev - integer.
         Description: - standard deviation of error ellipse (typically 1,2, or 3).
@@ -173,20 +198,20 @@ class cluster_utilities:
 
         ellipse_areas = []
 
-        for p in range(np.amax(labels) + 1):
+        for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = points[np.where(
-                labels == p)][:, 0], points[np.where(labels == p)][:, 1]
+            points_x, points_y = self.points[np.where(
+                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
 
-            points_x += rel_x
-            points_y += rel_y
+            # points_x += rel_x
+            # points_y += rel_y
 
             points_cluster = np.array([points_x, points_y]).T
 
             co_mat = np.cov(np.array([points_x, points_y]).T, rowvar=False)
 
             # calculate the area of the ellipse
-            vals, vecs = eigsorted(co_mat)
+            vals, vecs = self.eigsorted(co_mat)
 
             # calculate the width and height of the ellipse
             width, height = 2 * std_dev * np.sqrt(vals)
@@ -195,10 +220,10 @@ class cluster_utilities:
 
             ellipse_areas.append(Area_error_ellipse)
 
-        return ellipse_areas
+        return np.around(ellipse_areas, 2)
 
 
-def cluster_baz_slow_95_conf(self, self.points, self.labels, std_dev, rel_x, rel_y):
+def cluster_baz_slow_95_conf(self, std_dev):
     """
     Given data points and cluster labels, return the 95% confidence range for baz and
     horizontal slowness in the cluster.
@@ -232,13 +257,13 @@ def cluster_baz_slow_95_conf(self, self.points, self.labels, std_dev, rel_x, rel
     bazs_95_confidence = []
     slows_95_confidence = []
 
-    for p in range(np.amax(labels) + 1):
+    for p in range(np.amax(self.labels) + 1):
 
-        points_x, points_y = points[np.where(
-            labels == p)][:, 0], points[np.where(labels == p)][:, 1]
+        points_x, points_y = self.points[np.where(
+            self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
 
-        points_x += rel_x
-        points_y += rel_y
+        # points_x += rel_x
+        # points_y += rel_y
 
         points_cluster = np.array([points_x, points_y]).T
 
