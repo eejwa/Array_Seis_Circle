@@ -393,20 +393,23 @@ class circ_array:
         # find slowness mag via pythaogoras
         slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
         # angle from trigonometry
-        azimut = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
+        azimuth = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
 
         # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
-        baz = azimut % -360 + 180
+        baz = azimuth % -360 + 180
+
+        azimuth = np.array(azimuth)
+        baz = np.array(baz)
 
         # make baz positive if it's negative:
         baz[baz < 0] += 360
-        azimut[azimut < 0] += 360
+        azimuth[azimuth < 0] += 360
 
         if dir_type == "baz":
             return slow_mag, baz
         elif dir_type == "az":
             print("azimuth")
-            return slow_mag, azimut
+            return slow_mag, azimuth
         else:
             pass
 
@@ -958,3 +961,106 @@ class circ_array:
         plt.show()
 
         return window
+
+    def write_to_file(self, filepath, st, peaks, prediction, phase, time_window):
+        """
+        Description:
+            Function to write event and station information with slowness vector
+            properties to a results file.
+
+        Param: outfile (string)
+        Description: Name and path of results file
+
+        Param: st (Obspy stream object)
+        Description: Stream object of SAC files assumed to have headers populated
+                     as described in the README.
+
+        Param: peaks (2D numpy array of floats)
+        Description: 2D array of floats [[baz, slow]]
+                     for the arrival locations.
+
+        Param: prediction (2D numpy array of floats)
+        Description: 2D numpy array of floats of the predicted arrival
+                     in [[baz, slow]].
+
+        Param: phase (string)
+        Description: target phase (e.g. SKS)
+
+        Param: time_window (1D numpy array of floats)
+        Description: numpy array of floats describing the start and end
+                      of time window in seconds.
+
+        Return:
+            Nothing.
+        """
+
+        import os
+
+        if not os.path.exists(os.path.dirname(filepath)):
+            os.makedirs(os.path.dirname(filepath))
+        else:
+            pass
+
+        event_time = self.get_eventtime(st)
+        geometry = self.get_geometry(st)
+        distances = self.get_distances(st,type='deg')
+        mean_dist = np.mean(distances)
+        stations = self.get_stations(st)
+        centre_x, centre_y =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
+        sampling_rate=st[0].stats.sampling_rate
+        evdp = st[0].stats.sac.evdp
+        evla = st[0].stats.sac.evla
+        evlo = st[0].stats.sac.evlo
+
+        name = str(event_time.year) + f'{event_time.month:02d}' + f'{event_time.day:02d}'+ "_" + f'{event_time.hour:02d}' + f'{event_time.minute:02d}' + f'{event_time.second:02d}'
+        stat_string = ','.join(stations)
+        newlines = []
+
+        # make the line string
+        for peak in peaks:
+            baz_obs = peak[0]
+            baz_pred = prediction[0]
+            baz_diff = baz_obs - baz_pred
+
+            slow_obs = peak[1]
+            slow_pred = prediction[1]
+            slow_diff = slow_obs - slow_pred
+            print(name, evlo, evla, evdp, centre_x, centre_y,  baz_pred, baz_obs, baz_diff, slow_pred, slow_obs, slow_diff, ','.join(stations), time_window[0], time_window[1], phase)
+            newline = name + f" {evlo:.2f} {evla:.2f} {evdp:.2f} {centre_x:.2f} {centre_y:.2f} {baz_pred:.2f} {baz_obs:.2f} {baz_diff:.2f} {slow_pred:.2f} {slow_obs:.2f} {slow_diff:.2f} " + stat_string + f" {time_window[0]:.2f} {time_window[1]:.2f} " + phase + " \n"
+# %(name, evlo, evla, evdp, centre_x, centre_y,  baz_pred, baz_obs, baz_diff, slow_pred, slow_obs, slow_diff, ','.join(stations), time_window[0], time_window[1], phase)
+            # there will be multiple lines so add these to this list.
+            newlines.append(newline)
+
+        header = "name evlo evla evdp stlo_mean stla_mean pred_baz baz_obs baz_diff pred_slow slow_obs slow_diff stations start_window end_window phase \n"
+
+        # now loop over file to see if I have this observation already
+        found = False
+        added = False # just so i dont write it twice if i find the criteria in multiple lines
+        ## write headers to the file if it doesnt exist
+        line_list = []
+
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as Multi_file:
+                for line in Multi_file:
+                    if name in line and phase in line and f"{centre_y:.2f}" in line:
+                        print("name and phase and stla in line, replacing")
+                        if added == False:
+                            line_list.extend(newlines)
+                            added= True
+                        else:
+                            print('already added to file')
+                        found = True
+                    else:
+                        line_list.append(line)
+        else:
+            with open(filepath, 'w') as Multi_file:
+                Multi_file.write(header)
+                line_list.append(header)
+        if not found:
+            print("name or phase or stla not in line. Adding to the end.")
+            line_list.extend(newlines)
+        else:
+            pass
+
+        with open(filepath, 'w') as Multi_file2:
+            Multi_file2.write("".join(line_list))
