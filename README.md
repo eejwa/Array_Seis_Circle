@@ -83,7 +83,7 @@ I would suggest cloning this onto your machine and add the path to circ_array to
   - The conda environment can be created using the conda environment yml file by:
     - ```$ conda env create -f Bootstrap_Cluster.yml ```
   - Then this environment can be activated by:
-    - ```conda activate Boots_Cluster ```
+    - ```$ conda activate Boots_Cluster ```
 
   - Because this package is likely to change quickly in the near future, I recommend adding
     the path to the circ_array directory to your python path. This will mean the modules can be imported anywhere via python.
