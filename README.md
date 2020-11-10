@@ -79,14 +79,27 @@ I would suggest cloning this onto your machine and add the path to circ_array to
   - Example_uses.ipynb: Jupyter notebook showing uses of the package and functions.
 
 ### Installation
-  - I recommend using [anaconda](https://www.anaconda.com/products/individual) or [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage the python packages.
-  - The conda environment can be created using the conda environment yml file by:
+  - Install python using [anaconda](https://www.anaconda.com/products/individual) or [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage the python packages.
+  - Once you have either anaconda or miniconda, make or move to a directory you want to install the code in.
+  - Move to the directory you want to store the code and download the git repository:
+    - ```git clone https://github.com/eejwa/Array_Seis_Circle.git```
+
+  - This should have created a directory called "Array_Seis_Circle". Enter this directory:
+    - ```$ cd ./Array_Seis_Circle/```
+  
+  - You can install all the python packages you need via the conda environment yml file in the directory. To create a separate conda environment with the packages, run the following in the terminal.  
     - ```$ conda env create -f Bootstrap_Cluster.yml ```
+    - This contains some hefty packages like sklearn so may take a while on the 'configure environment stage'. Don't worry! It will happen eventually.
   - Then this environment can be activated by:
     - ```$ conda activate Boots_Cluster ```
-
-  - Because this package is likely to change quickly in the near future, I recommend adding
-    the path to the circ_array directory to your python path. This will mean the modules can be imported anywhere via python.
-
+    - You will have to activate this environment every time you need to use the code. 
+    
+  - To use the codes, add the path to Array_Seis_Circle to your $PYTHONPATH by:
+    - ```export $PYTHONPATH="${PYTHONPATH}:/path/to/Array_Seis_Circle/circ_array"```
+    - You can find the path to the directory by typing "pwd" while in the Array_Seis_Circle directory. 
+    
+  - Ok! now time to check if things work!
+    - Run a few scripts in the 'test' and 'scripts' directory. 
+    
 ### ./setup.py
   - Currently only says to add the path to Circ_Array to your python path.
