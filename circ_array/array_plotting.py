@@ -1,10 +1,9 @@
 
-from circ_array import circ_array
-c=circ_array()
 import obspy
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+import circ_array as c
 
 plt.set_cmap('turbo')
 

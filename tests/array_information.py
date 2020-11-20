@@ -10,9 +10,7 @@ This python script will test:
 # import packages
 
 import obspy
-from circ_array import circ_array
-
-c = circ_array()
+import circ_array as c
 
 # read in data as an obspy stream
 

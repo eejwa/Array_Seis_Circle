@@ -1,10 +1,9 @@
 
 import numpy as np
 from scipy.stats import circmean, circstd, circvar
-
-from circ_array import circ_array
-c=circ_array()
 import obspy
+
+import circ_array as c
 
 class cluster_utilities:
 

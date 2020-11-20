@@ -23,8 +23,8 @@ import shutil
 
 from Parameters_Bootstrap import *
 
-from circ_array import circ_array
-ca = circ_array()
+import circ_array as ca
+
 
 st = obspy.read(filepath)
 

@@ -8,10 +8,9 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import BF_Spherical_Pol_all, BF_Spherical_Pol_PWS, BF_Spherical_Pol_Lin
 from array_plotting import plotting
-c = circ_array()
 
 # parameters
 # phase of interest

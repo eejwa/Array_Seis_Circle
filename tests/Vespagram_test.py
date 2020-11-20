@@ -8,10 +8,9 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
 from array_plotting import plotting
-c = circ_array()
 
 
 # parameters
