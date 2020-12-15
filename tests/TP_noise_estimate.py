@@ -6,7 +6,7 @@ This python script will test:
     - Using the noise estimate as a threshold filter.
 """
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import BF_Noise_Threshold_Relative_XY, shift_traces
 import obspy
 import matplotlib.pyplot as plt
@@ -16,7 +16,6 @@ from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
 from array_plotting import plotting
-c = circ_array()
 
 
 # parameters

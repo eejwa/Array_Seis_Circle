@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import BF_Noise_Threshold_Relative_XY, shift_traces
 import obspy
 import matplotlib.pyplot as plt
@@ -14,7 +14,6 @@ import os
 from obspy.taup import TauPyModel
 model = TauPyModel(model=pred_model)
 from mpi4py import MPI
-c = circ_array()
 
 
 ## to be run with mpi

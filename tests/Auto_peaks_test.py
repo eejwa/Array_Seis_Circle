@@ -9,10 +9,9 @@ import time
 import scipy
 import matplotlib.pyplot as plt
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
 from array_plotting import plotting
-c = circ_array()
 
 # first we need to get data and make a Theta-P plot:
 

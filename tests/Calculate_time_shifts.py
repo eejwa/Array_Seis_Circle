@@ -14,9 +14,8 @@ from sklearn.metrics import mean_squared_error as mse
 from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import calculate_time_shifts
-c = circ_array()
 
 # parameters
 # phase of interest

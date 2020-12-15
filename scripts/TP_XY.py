@@ -11,10 +11,9 @@ from Parameters_TP_XY import *
 from obspy.taup import TauPyModel
 model = TauPyModel(model=pred_model)
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import BF_Spherical_XY_all, BF_Spherical_XY_Lin, BF_Spherical_XY_PWS, shift_traces
 from array_plotting import plotting
-c = circ_array()
 import matplotlib.pyplot as plt
 
 # import parameters

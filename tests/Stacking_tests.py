@@ -7,9 +7,8 @@ import obspy
 import numpy as np
 import matplotlib.pyplot as plt
 
-from circ_array import circ_array
+import circ_array as c
 from circ_beam import pws_stack_baz_slow, linear_stack_baz_slow
-c = circ_array()
 
 phase = 'SKS'
 phases = ['SKS','SKKS','ScS','Sdiff','sSKS','sSKKS','PS']
