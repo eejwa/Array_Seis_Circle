@@ -1,9 +1,9 @@
 
+import circ_array as c
 import obspy
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import circ_array as c
 
 plt.set_cmap('turbo')
 
@@ -248,8 +248,8 @@ class plotting:
             Phases_y=predictions[:,4].astype(float)
             Phases=predictions[:,0]
 
-            Phases_x = np.where((Phases_x > sxmin) & (Phases_x < sxmax), Phases_x,Phases_x)
-            Phases_y = np.where((Phases_y > symin) & (Phases_y < symax), Phases_y,Phases_y)
+            Phases_x = np.where((Phases_x > sxmin) & (Phases_x < sxmax), Phases_x, Phases_x)
+            Phases_y = np.where((Phases_y > symin) & (Phases_y < symax), Phases_y, Phases_y)
         else:
             pass
 
@@ -271,11 +271,13 @@ class plotting:
             pass
 
         # plot
+        import matplotlib.patheffects as PathEffects
+
         self.ax.set_xlabel("p$_{x}$ (s/$^{\circ}$)", fontsize=14)
         self.ax.set_ylabel("p$_{y}$ (s/$^{\circ}$)", fontsize=14)
         self.ax.set_title(title, fontsize=14)
-        self.add_circles(radii=radii, x=0, y=0, colour='w')
-        self.add_lines(radius=10, x=0, y=0, angles=angles, colour='w')
+        self.add_circles(radii=radii, x=0, y=0, colour='white')
+        self.add_lines(radius=10, x=0, y=0, angles=angles, colour='white')
 
         if peaks is not None:
             x_peaks = list(peaks[:,0].astype(float))
@@ -285,9 +287,12 @@ class plotting:
         else:
             pass
         if predictions is not None:
-            self.ax.scatter(Phases_x,Phases_y,color='white',s=80, zorder=3, marker='x')
+            self.ax.scatter(Phases_x,Phases_y,color='white',s=80, zorder=3, marker='X',
+                            edgecolors='black', linewidth=0.5)
             for i,p in enumerate(Phases):
-                self.ax.text(Phases_x[i],Phases_y[i]-0.2,p , color='white', fontsize=16,zorder=3)
+                txt = self.ax.text(Phases_x[i],Phases_y[i]-0.2,p , color='white', fontsize=16,zorder=3)
+                txt.set_path_effects([PathEffects.withStroke(linewidth=0.5, foreground='black')])
+
         else:
             pass
 
@@ -624,6 +629,92 @@ class plotting:
                        c=palette_inv[i], s=80, zorder=3, label='Mean Cluster ' + str(i+1))
 
 
+        self.ax.legend(loc='best')
+
+
+        return
+
+    def plot_stations(self, st):
+        """
+        Given an obspy stream object with the proper headers
+        populated (see below), plots a map with station locations.
+
+        Param: st (Obspy stream object)
+        Description: Obspy stream object populated with SAC files
+        with the headers for station location included.
+
+        Return:
+            - Nothing
+        """
+        import cartopy
+        import cartopy.crs as ccrs
+
+        stlas = []
+        stlos = []
+        for tr in st:
+            stlas.append(tr.stats.sac.stla)
+            stlos.append(tr.stats.sac.stlo)
+
+        stlas = np.array(stlas)
+        stlos = np.array(stlos)
+
+        stla_mean = np.mean(stlas)
+        stlo_mean = np.mean(stlos)
+
+        self.ax.add_feature(cartopy.feature.OCEAN)
+        self.ax.add_feature(cartopy.feature.LAND, edgecolor='black', color='lightgrey')
+        self.ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
+
+        self.ax.scatter(stlos, stlas, transform=ccrs.Geodetic(), marker='^', color='green', zorder=3, s=60, label='%s stations' %st[0].stats.network)
+        self.ax.legend(loc='best')
+
+        return
+
+    def plot_paths(self, st):
+        """
+        Given an obspy stream object with the proper headers
+        populated (see below), plots a map with the great
+        circle paths from the event to each station.
+
+        Param: st (Obspy stream object)
+        Description: Obspy stream object populated with SAC files
+        with the headers for station location and event
+        location included.
+
+        Return:
+            - Nothing
+        """
+        import cartopy
+        import cartopy.crs as ccrs
+
+        stlas = []
+        stlos = []
+        for tr in st:
+            stlas.append(tr.stats.sac.stla)
+            stlos.append(tr.stats.sac.stlo)
+
+        stlas = np.array(stlas)
+        stlos = np.array(stlos)
+
+        stla_mean = np.mean(stlas)
+        stlo_mean = np.mean(stlos)
+
+        evla = st[0].stats.sac.evla
+        evlo = st[0].stats.sac.evlo
+
+        lons_all = np.array([evlo, np.amin(stlos), np.amin(stlos)])
+        lats_all = np.array([evla, np.amin(stlas), np.amin(stlas)])
+
+        centre_lon = (evlo + stlo_mean)/2
+
+        for i, stla in enumerate(stlas):
+            lons = [evlo, stlos[i]]
+            lats = [evla, stla]
+            self.ax.plot(lons, lats, transform=ccrs.Geodetic(), color='black', linewidth=0.5)
+        self.ax.coastlines()
+        self.ax.gridlines()
+        self.ax.scatter(stlos, stlas, transform=ccrs.Geodetic(), marker='^', color='green', zorder=3, s=10, label='Stations')
+        self.ax.scatter(evlo, evla, transform=ccrs.Geodetic(), marker='*', color='red', zorder=3, s=80, label='Event')
         self.ax.legend(loc='best')
 
         return
