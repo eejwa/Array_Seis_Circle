@@ -276,17 +276,16 @@ def clip_traces(stream):
     Return:
         stream - Obspy stream with data of equal lengths.
     """
+    import numpy as np
 
-    shapes = []
+    stimes = []
+    etimes = []
 
     for trace in stream:
-        shapes.append(trace.data.shape)
+        stimes.append(trace.stats.starttime)
+        etimes.append(trace.stats.endtime)
 
-    # get the minimum
-    min_length = np.amin(shapes)
-
-    for tr in stream:
-        tr.data = tr.data[:min_length]
+    stream = stream.trim(starttime=np.max(stimes), endtime=np.amin(etimes))
 
     return stream
 
