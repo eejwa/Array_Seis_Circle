@@ -8,10 +8,16 @@ import obspy
 import numpy as np
 import time
 from obspy.taup import TauPyModel
+
 model = TauPyModel(model="prem")
 
 import circ_array as c
-from circ_beam import BF_Spherical_Pol_all, BF_Spherical_Pol_Lin, BF_Spherical_Pol_PWS, shift_traces
+from circ_beam import (
+    BF_Spherical_Pol_all,
+    BF_Spherical_Pol_Lin,
+    BF_Spherical_Pol_PWS,
+    shift_traces,
+)
 from array_plotting import plotting
 
 
@@ -23,15 +29,15 @@ st = obspy.read(filepath)
 # get array metadata
 event_time = c.get_eventtime(st)
 geometry = c.get_geometry(st)
-distances = c.get_distances(st,type='deg')
+distances = c.get_distances(st, type="deg")
 mean_dist = np.mean(distances)
 stations = c.get_stations(st)
-centre_x, centre_y =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
-sampling_rate=st[0].stats.sampling_rate
+centre_x, centre_y = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
+sampling_rate = st[0].stats.sampling_rate
 evdp = st[0].stats.sac.evdp
 
 # get travel time information and define a window
-Target_phase_times, time_header_times = c.get_predicted_times(st,phase)
+Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
 
 min_target = int(np.nanmin(Target_phase_times, axis=0)) - cut_min
 max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
@@ -45,13 +51,14 @@ st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
 
 # get predicted slownesses and backazimuths
-predictions = c.pred_baz_slow(
-    stream=st, phases=phases, one_eighty=True)
+predictions = c.pred_baz_slow(stream=st, phases=phases, one_eighty=True)
 
 print(predictions)
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
-P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = predictions[row, :][0]
+P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = predictions[
+    row, :
+][0]
 
 
 if Man_Pick == True:
@@ -70,8 +77,7 @@ else:
     exit()
 
 # filter
-st = st.filter('bandpass', freqmin=fmin, freqmax=fmax,
-                  corners=4, zerophase=True)
+st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=4, zerophase=True)
 
 
 if Align == True:
@@ -81,27 +87,41 @@ if Align == True:
     Phase_traces = c.get_phase_traces(st)
 
     # align the traces and phase traces
-    Shifted_Traces = shift_traces(traces=Traces, geometry=geometry, abs_slow=float(S), baz=float(BAZ),
-                                  distance=float(mean_dist), centre_x=float(centre_x), centre_y=float(centre_y),
-                                  sampling_rate=sampling_rate)
+    Shifted_Traces = shift_traces(
+        traces=Traces,
+        geometry=geometry,
+        abs_slow=float(S),
+        baz=float(BAZ),
+        distance=float(mean_dist),
+        centre_x=float(centre_x),
+        centre_y=float(centre_y),
+        sampling_rate=sampling_rate,
+    )
 
-    Shifted_Phase_Traces = shift_traces(traces=Phase_traces, geometry=geometry, abs_slow=float(S), baz=float(BAZ),
-                                     distance=float(mean_dist), centre_x=float(centre_x), centre_y=float(centre_y),
-                                     sampling_rate=sampling_rate)
+    Shifted_Phase_Traces = shift_traces(
+        traces=Phase_traces,
+        geometry=geometry,
+        abs_slow=float(S),
+        baz=float(BAZ),
+        distance=float(mean_dist),
+        centre_x=float(centre_x),
+        centre_y=float(centre_y),
+        sampling_rate=sampling_rate,
+    )
 
     ## cut the shifted traces within the defined time window
     ## from the rel_tmin and rel_tmax
 
-    arrivals = model.get_travel_times(source_depth_in_km=evdp,
-                                      distance_in_degree=mean_dist, phase_list=[phase])
-
+    arrivals = model.get_travel_times(
+        source_depth_in_km=evdp, distance_in_degree=mean_dist, phase_list=[phase]
+    )
 
     pred_point = int(sampling_rate * (arrivals[0].time - min_target))
-    point_before= int(pred_point + (rel_tmin * sampling_rate))
-    point_after= int(pred_point + (rel_tmax * sampling_rate))
+    point_before = int(pred_point + (rel_tmin * sampling_rate))
+    point_after = int(pred_point + (rel_tmax * sampling_rate))
 
-    cut_traces = Shifted_Traces[:,point_before:point_after]
-    cut_phase_traces = Shifted_Phase_Traces[:,point_before:point_after]
+    cut_traces = Shifted_Traces[:, point_before:point_after]
+    cut_phase_traces = Shifted_Phase_Traces[:, point_before:point_after]
 
     s_min = 0
     s_max = float(S) + slow_max
@@ -129,16 +149,26 @@ elif Align == False:
 
 # define kwarg dictionary
 
-kwarg_dict = {'traces':cut_traces,  'sampling_rate':np.float64(sampling_rate),
-        'geometry':geometry, 'distance':mean_dist,
-        'smin':s_min, 'smax':s_max, 'bazmin':b_min,
-        'bazmax':b_max, 's_space':s_space, 'baz_space':b_space}
+kwarg_dict = {
+    "traces": cut_traces,
+    "sampling_rate": np.float64(sampling_rate),
+    "geometry": geometry,
+    "distance": mean_dist,
+    "smin": s_min,
+    "smax": s_max,
+    "bazmin": b_min,
+    "bazmax": b_max,
+    "s_space": s_space,
+    "baz_space": b_space,
+}
 
 
-if Stack_type == 'Both':
+if Stack_type == "Both":
     # run the beamforming!
     start = time.time()
-    Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol_all(phase_traces=cut_phase_traces, degree=2, **kwarg_dict)
+    Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_Pol_all(
+        phase_traces=cut_phase_traces, degree=2, **kwarg_dict
+    )
     end = time.time()
 
     peaks = np.c_[peaks, np.array(["PWS", "LIN", "F"])]
@@ -148,7 +178,7 @@ if Stack_type == 'Both':
     peaks = peaks[np.where(peaks == "PWS")[0]]
 
 
-elif Stack_type == 'Lin':
+elif Stack_type == "Lin":
 
     start = time.time()
     Lin_arr, Results_arr, peaks = BF_Spherical_Pol_Lin(**kwarg_dict)
@@ -159,10 +189,12 @@ elif Stack_type == 'Lin':
 
     peaks = peaks[np.where(peaks == "LIN")[0]]
 
-elif Stack_type == 'PWS':
+elif Stack_type == "PWS":
 
     start = time.time()
-    PWS_arr, Results_arr, peaks = BF_Spherical_Pol_PWS(phase_traces=cut_phase_traces, degree=2, **kwarg_dict)
+    PWS_arr, Results_arr, peaks = BF_Spherical_Pol_PWS(
+        phase_traces=cut_phase_traces, degree=2, **kwarg_dict
+    )
     end = time.time()
 
     peaks = np.c_[peaks, np.array(["PWS"])]
@@ -174,26 +206,44 @@ elif Stack_type == 'PWS':
 # write to file
 
 if Align == True:
-    peaks[:,0] = float(peaks[:,0]) + float(BAZ)
-    peaks[:,1] = float(peaks[:,1]) + float(S)
+    peaks[:, 0] = float(peaks[:, 0]) + float(BAZ)
+    peaks[:, 1] = float(peaks[:, 1]) + float(S)
 
 ## write to file
 filepath = Res_dir + "Pol_Results.txt"
 
 
-slow_vec_obs = np.array(peaks[:,:2]).astype(float)
-pred_file = np.array([BAZ,S]).astype(float)
+slow_vec_obs = np.array(peaks[:, :2]).astype(float)
+pred_file = np.array([BAZ, S]).astype(float)
 print(slow_vec_obs)
 
-c.write_to_file(filepath=filepath, st=st, peaks=slow_vec_obs, prediction=pred_file, phase=phase, time_window=window)
+c.write_to_file(
+    filepath=filepath,
+    st=st,
+    peaks=slow_vec_obs,
+    prediction=pred_file,
+    phase=phase,
+    time_window=window,
+)
 
 import matplotlib.pyplot as plt
-fig = plt.figure(figsize=(10,8))
-ax = fig.add_subplot(111, projection='polar')
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection="polar")
 p = plotting(ax)
-p.plot_TP_Pol(tp=Plot_arr, peaks=peaks, smin=s_min, smax=s_max,
-              bazmin=b_min, bazmax=b_max,
-              sstep=s_space, bazstep=b_space, contour_levels=20,
-              title="%s Plot" %Stack_type, predictions=predictions, log=False)
+p.plot_TP_Pol(
+    tp=Plot_arr,
+    peaks=peaks,
+    smin=s_min,
+    smax=s_max,
+    bazmin=b_min,
+    bazmax=b_max,
+    sstep=s_space,
+    bazstep=b_space,
+    contour_levels=20,
+    title="%s Plot" % Stack_type,
+    predictions=predictions,
+    log=False,
+)
 
 plt.show()

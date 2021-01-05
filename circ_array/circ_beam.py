@@ -1,11 +1,12 @@
-#/usr/bin/env python
+# /usr/bin/env python
 
 from numba import jit, jit_module
 import numpy as np
 
+
 @jit(nopython=True, fastmath=True)
 def coords_lonlat_rad_bearing(lat1, lon1, dist_deg, brng):
-    '''
+    """
     Returns the latitude and longitude of a new cordinate that is the defined distance away and
     at the correct bearing from the starting point.
 
@@ -23,17 +24,19 @@ def coords_lonlat_rad_bearing(lat1, lon1, dist_deg, brng):
 
     Return:
         latitude and longitude of the new cordinate.
-    '''
+    """
 
     brng = np.radians(brng)  # convert bearing to radians
     d = np.radians(dist_deg)  # convert degrees to radians
     lat1 = np.radians(lat1)  # Current lat point converted to radians
     lon1 = np.radians(lon1)  # Current long point converted to radians
 
-    lat2 = np.arcsin((np.sin(lat1) * np.cos(d)) +
-                     (np.cos(lat1) * np.sin(d) * np.cos(brng)))
-    lon2 = lon1 + np.arctan2(np.sin(brng) * np.sin(d) *
-                             np.cos(lat1), np.cos(d) - np.sin(lat1) * np.sin(lat2))
+    lat2 = np.arcsin(
+        (np.sin(lat1) * np.cos(d)) + (np.cos(lat1) * np.sin(d) * np.cos(brng))
+    )
+    lon2 = lon1 + np.arctan2(
+        np.sin(brng) * np.sin(d) * np.cos(lat1), np.cos(d) - np.sin(lat1) * np.sin(lat2)
+    )
 
     lat2 = np.degrees(lat2)
     lon2 = np.degrees(lon2)
@@ -50,7 +53,7 @@ def coords_lonlat_rad_bearing(lat1, lon1, dist_deg, brng):
 
 @jit(nopython=True, fastmath=True)
 def haversine_deg(lat1, lon1, lat2, lon2):
-    '''
+    """
     Function to calculate the distance in degrees between two points on a sphere.
 
     Param: lat1 (float)
@@ -67,12 +70,13 @@ def haversine_deg(lat1, lon1, lat2, lon2):
 
     Return:
         Distance between two points in degrees.
-    '''
+    """
 
     dlat = np.radians(lat2 - lat1)
     dlon = np.radians(lon2 - lon1)
-    a = (np.sin(dlat / 2))**2 + np.cos(np.radians(lat1)) * \
-        np.cos(np.radians(lat2)) * (np.sin(dlon / 2))**2
+    a = (np.sin(dlat / 2)) ** 2 + np.cos(np.radians(lat1)) * np.cos(
+        np.radians(lat2)
+    ) * (np.sin(dlon / 2)) ** 2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     d = np.degrees(c)
     return d
@@ -80,7 +84,7 @@ def haversine_deg(lat1, lon1, lat2, lon2):
 
 @jit(nopython=True, fastmath=True)
 def get_slow_baz(slow_x, slow_y, dir_type):
-    '''
+    """
     Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
 
     Param: slow_x (float)
@@ -94,7 +98,7 @@ def get_slow_baz(slow_x, slow_y, dir_type):
 
     Return:
         slowness magnitude and baz/az value.
-    '''
+    """
 
     slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
     azimut = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
@@ -118,7 +122,7 @@ def get_slow_baz(slow_x, slow_y, dir_type):
 
 @jit(nopython=True, fastmath=True)
 def get_slow_baz_array(slow_x, slow_y, dir_type):
-    '''
+    """
     Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
 
     Param: slow_x (float)
@@ -131,7 +135,7 @@ def get_slow_baz_array(slow_x, slow_y, dir_type):
     Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
 
     return: slowness magnitude and baz/az value.
-    '''
+    """
 
     slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
     azimut = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
@@ -153,7 +157,9 @@ def get_slow_baz_array(slow_x, slow_y, dir_type):
 
 # replace some of this with other functions
 @jit(nopython=True)
-def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, distance, fmin, fmax, fstep, scale):
+def ARF_process_f_s_spherical(
+    geometry, sxmin, sxmax, symin, symax, sstep, distance, fmin, fmax, fstep, scale
+):
     """
     Returns array transfer function as a function of slowness difference.
     This will only work for SAC files.
@@ -189,14 +195,17 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
     """
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
     nsx = int(np.round(((sxmax - sxmin) / s_space) + 1))
     nsy = int((np.round((symax - symin) / s_space) + 1))
     # number of frequencies
-    nf = int(np.ceil((fmax + fstep / 10. - fmin) / fstep))
+    nf = int(np.ceil((fmax + fstep / 10.0 - fmin) / fstep))
 
     # make empty array for output.
     buff = np.zeros(nf)
@@ -212,7 +221,7 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
             sx = slow_xs[int(i)]
             sy = slow_ys[int(j)]
             # get the slowness and backazimuth of the vector
-            abs_slow = np.sqrt(sx**2 + sy**2)
+            abs_slow = np.sqrt(sx ** 2 + sy ** 2)
             azimut = np.degrees(np.arctan2(sx, sy))  # * (180. / math.pi)
 
             # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
@@ -234,10 +243,13 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
             # Current long point converted to radians
             lon1 = np.radians(centre_x)
 
-            lat_new = np.arcsin((np.sin(lat1) * np.cos(d)) +
-                                (np.cos(lat1) * np.sin(d) * np.cos(brng)))
-            lon_new = lon1 + np.arctan2(np.sin(brng) * np.sin(d) *
-                                        np.cos(lat1), np.cos(d) - np.sin(lat1) * np.sin(lat_new))
+            lat_new = np.arcsin(
+                (np.sin(lat1) * np.cos(d)) + (np.cos(lat1) * np.sin(d) * np.cos(brng))
+            )
+            lon_new = lon1 + np.arctan2(
+                np.sin(brng) * np.sin(d) * np.cos(lat1),
+                np.cos(d) - np.sin(lat1) * np.sin(lat_new),
+            )
 
             lat_new_deg = np.degrees(lat_new)
             lon_new_deg = np.degrees(lon_new)
@@ -258,22 +270,26 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
 
                 dlat = np.radians(abs(stla - lat_new_deg))
                 dlon = np.radians(abs(stlo - lon_new_deg))
-                a = float((np.sin(dlat / 2))**2 + np.cos(np.radians(lat_new_deg))
-                          * np.cos(np.radians(stla)) * (np.sin(dlon / 2))**2)
+                a = float(
+                    (np.sin(dlat / 2)) ** 2
+                    + np.cos(np.radians(lat_new_deg))
+                    * np.cos(np.radians(stla))
+                    * (np.sin(dlon / 2)) ** 2
+                )
                 c = float(2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
                 dist = float(np.degrees(c))
 
                 sta_distances[int(x)] = float(dist)
 
             # calculate ARF
-            for k, f in enumerate(np.arange(fmin, fmax + fstep / 10., fstep)):
+            for k, f in enumerate(np.arange(fmin, fmax + fstep / 10.0, fstep)):
                 _sum = 0j
                 for l in range(sta_distances.shape[0]):
                     _sum += np.exp(
                         # Note: the coords need to be in [x,y] i.e. for each coord, 0=x dist and 1=y dist from the centre of the array.
                         # the zero is the amplitude (i.e. the ARF has no amplitude only the distribution)
-                        complex(0., (sta_distances[int(l)] * abs_slow) *
-                                2 * np.pi * f))
+                        complex(0.0, (sta_distances[int(l)] * abs_slow) * 2 * np.pi * f)
+                    )
                 buff[int(k)] = abs(_sum) ** 2
             transff[i, j] = np.trapz(buff)  # cumtrapz(buff, dx=fstep)[-1]
 
@@ -288,7 +304,9 @@ def ARF_process_f_s_spherical(geometry, sxmin, sxmax, symin, symax, sstep, dista
 
 
 @jit(nopython=True, fastmath=True)
-def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, type='circ'):
+def calculate_time_shifts(
+    traces, geometry, abs_slow, baz, distance, centre_x, centre_y, type="circ"
+):
     """
     Calculates the time delay for each station relative to the time the phase
     should arrive at the centre of the array. Will use either a plane or curved
@@ -332,7 +350,8 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
     print(slow_x, slow_y)
 
     lat_new, lon_new = coords_lonlat_rad_bearing(
-        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz)
+        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
+    )
 
     # create array for shifted traces
     shifts = np.zeros(traces.shape[0])
@@ -342,11 +361,10 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
         stla = float(geometry[int(x), 1])
         stlo = float(geometry[int(x), 0])
 
-
         x_rel = stlo - centre_x
         y_rel = stla - centre_y
-        if type == 'circ':
-            print('circ')
+        if type == "circ":
+            print("circ")
             dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
 
             # get the relative distance
@@ -361,8 +379,8 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
             shifts[int(x)] = shift
             times[int(x)] = dt
 
-        elif type == 'plane':
-            print('plane')
+        elif type == "plane":
+            print("plane")
             dt = (x_rel * slow_x) + (y_rel * slow_y)
 
             shift = float(dt)
@@ -372,13 +390,23 @@ def calculate_time_shifts(traces, geometry, abs_slow, baz, distance, centre_x, c
             dt *= -1
             times[int(x)] = dt
         else:
-            print('not plane or circ')
+            print("not plane or circ")
 
     return shifts, times
 
 
 @jit(nopython=True, fastmath=True)
-def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, sampling_rate, type='circ'):
+def shift_traces(
+    traces,
+    geometry,
+    abs_slow,
+    baz,
+    distance,
+    centre_x,
+    centre_y,
+    sampling_rate,
+    type="circ",
+):
     """
     Shifts the traces using the predicted arrival times for a given backazimuth and slowness.
 
@@ -419,7 +447,8 @@ def shift_traces(traces, geometry, abs_slow, baz, distance, centre_x, centre_y, 
     lon1 = np.radians(centre_x)  # Current long point converted to radians
 
     lat_new, lon_new = coords_lonlat_rad_bearing(
-        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz)
+        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
+    )
 
     # create array for shifted traces
     shifted_traces = np.zeros(traces.shape)
@@ -477,20 +506,31 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
     """
 
     ntrace = traces.shape[0]
-    centre_x = np.mean(geometry[:,0])
-    centre_y = np.mean(geometry[:,1])
+    centre_x = np.mean(geometry[:, 0])
+    centre_y = np.mean(geometry[:, 1])
 
     # shift the traces according to the baz and slow
-    shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
-        baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+    shifted_traces_lin = shift_traces(
+        traces=traces,
+        geometry=geometry,
+        abs_slow=float(slow),
+        baz=float(baz),
+        distance=float(distance),
+        centre_x=float(centre_x),
+        centre_y=float(centre_y),
+        sampling_rate=sampling_rate,
+    )
 
     # Stack the traces (i.e. take mean)
     lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
     return lin_stack
 
+
 @jit(nopython=True, fastmath=True)
-def pws_stack_baz_slow(traces, phase_traces, sampling_rate, geometry, distance, slow, baz, degree):
+def pws_stack_baz_slow(
+    traces, phase_traces, sampling_rate, geometry, distance, slow, baz, degree
+):
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
 
@@ -521,26 +561,44 @@ def pws_stack_baz_slow(traces, phase_traces, sampling_rate, geometry, distance, 
     """
     ntrace = traces.shape[0]
 
-    centre_x = np.mean(geometry[:,0])
-    centre_y = np.mean(geometry[:,1])
+    centre_x = np.mean(geometry[:, 0])
+    centre_y = np.mean(geometry[:, 1])
 
     # shift the traces according to the baz and slow
-    shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
-        baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+    shifted_traces_lin = shift_traces(
+        traces=traces,
+        geometry=geometry,
+        abs_slow=float(slow),
+        baz=float(baz),
+        distance=float(distance),
+        centre_x=float(centre_x),
+        centre_y=float(centre_y),
+        sampling_rate=sampling_rate,
+    )
 
     # shift the phase traces
-    shifted_phase_traces = shift_traces(traces=phase_traces, geometry=geometry, abs_slow=float(slow), baz=float(
-        baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+    shifted_phase_traces = shift_traces(
+        traces=phase_traces,
+        geometry=geometry,
+        abs_slow=float(slow),
+        baz=float(baz),
+        distance=float(distance),
+        centre_x=float(centre_x),
+        centre_y=float(centre_y),
+        sampling_rate=sampling_rate,
+    )
 
     # get linear and phase stacks
     lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-    phase_stack = np.absolute(
-        np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+    phase_stack = (
+        np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+    )
 
     # calculate phase weighted stack
     phase_weight_stack = lin_stack * np.power(phase_stack, degree)
 
     return phase_weight_stack
+
 
 @jit(nopython=True, fastmath=True)
 def get_max_power_loc(tp, sxmin, symin, s_space):
@@ -578,7 +636,19 @@ def get_max_power_loc(tp, sxmin, symin, s_space):
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, degree):
+def BF_Spherical_XY_all(
+    traces,
+    phase_traces,
+    sampling_rate,
+    geometry,
+    distance,
+    sxmin,
+    sxmax,
+    symin,
+    symax,
+    s_space,
+    degree,
+):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using linear, phase weighted stacking and F statistic.
@@ -635,12 +705,15 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
     ntrace = traces.shape[0]
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
-    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
-    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space), 0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space), 0) + 1)
 
     # make empty array for output.
     results_arr = np.zeros((nsy * nsx, 7))
@@ -665,33 +738,51 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
             point = int(int(i) + int(slow_xs.shape[0] * j))
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(abs_slow), baz=float(
-                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+            shifted_traces_lin = shift_traces(
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(abs_slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-
 
             # linear stack
             power_lin = np.trapz(np.power(lin_stack, 2))
 
             # phase weighted stack
             shifted_phase_traces = shift_traces(
-                traces=phase_traces, geometry=geometry, abs_slow=abs_slow, baz=baz, distance=distance, centre_x=centre_x, centre_y=centre_y, sampling_rate=sampling_rate)
+                traces=phase_traces,
+                geometry=geometry,
+                abs_slow=abs_slow,
+                baz=baz,
+                distance=distance,
+                centre_x=centre_x,
+                centre_y=centre_y,
+                sampling_rate=sampling_rate,
+            )
 
-            phase_stack = np.absolute(
-                np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            phase_stack = (
+                np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            )
             phase_weight_stack = lin_stack * np.power(phase_stack, degree)
             power_pws = np.trapz(np.power(phase_weight_stack, 2))
 
             # F statistic
             Residuals_Trace_Beam = np.subtract(shifted_traces_lin, lin_stack)
             Residuals_Trace_Beam_Power = np.sum(
-                np.power(Residuals_Trace_Beam, 2), axis=0)
+                np.power(Residuals_Trace_Beam, 2), axis=0
+            )
 
             Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
 
             F = (shifted_traces_lin.shape[0] - 1) * (
-                (shifted_traces_lin.shape[0] * power_lin) / (Residuals_Power_Int))
+                (shifted_traces_lin.shape[0] * power_lin) / (Residuals_Power_Int)
+            )
 
             # store values
             lin_tp[i, j] = power_lin
@@ -699,13 +790,20 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
             F_tp[i, j] = power_lin * F
 
             results_arr[point] = np.array(
-                [sx, sy, power_pws, power_lin * F, power_lin, baz, abs_slow])
+                [sx, sy, power_pws, power_lin * F, power_lin, baz, abs_slow]
+            )
 
     # now find the peak in this:
     peaks = np.empty((3, 2))
-    peaks[int(0)] = get_max_power_loc(tp=lin_tp, sxmin=sxmin, symin=symin, s_space=s_space)
-    peaks[int(1)] = get_max_power_loc(tp=pws_tp, sxmin=sxmin, symin=symin, s_space=s_space)
-    peaks[int(2)] = get_max_power_loc(tp=F_tp, sxmin=sxmin, symin=symin, s_space=s_space)
+    peaks[int(0)] = get_max_power_loc(
+        tp=lin_tp, sxmin=sxmin, symin=symin, s_space=s_space
+    )
+    peaks[int(1)] = get_max_power_loc(
+        tp=pws_tp, sxmin=sxmin, symin=symin, s_space=s_space
+    )
+    peaks[int(2)] = get_max_power_loc(
+        tp=F_tp, sxmin=sxmin, symin=symin, s_space=s_space
+    )
 
     results_arr[:, 2] /= results_arr[:, 2].max()
     results_arr[:, 3] /= results_arr[:, 3].max()
@@ -713,9 +811,12 @@ def BF_Spherical_XY_all(traces, phase_traces, sampling_rate, geometry, distance,
 
     return lin_tp, pws_tp, F_tp, results_arr, peaks
 
+
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_Lin(traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space):
-    '''
+def BF_Spherical_XY_Lin(
+    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space
+):
+    """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using linear stack.
 
@@ -757,17 +858,20 @@ def BF_Spherical_XY_Lin(traces, sampling_rate, geometry, distance, sxmin, sxmax,
         [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
     - peaks: 2D array with 1 row containing the X,Y points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
-    '''
+    """
 
     ntrace = traces.shape[0]
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
-    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
-    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space), 0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space), 0) + 1)
 
     # make empty array for output.
     results_arr = np.zeros((nsy * nsx, 5))
@@ -789,33 +893,52 @@ def BF_Spherical_XY_Lin(traces, sampling_rate, geometry, distance, sxmin, sxmax,
             point = int(int(i) + int(slow_xs.shape[0] * j))
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(abs_slow), baz=float(
-                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+            shifted_traces_lin = shift_traces(
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(abs_slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-
 
             # linear stack
             power_lin = np.trapz(np.power(lin_stack, 2))
 
             lin_tp[i, j] = power_lin
 
-            results_arr[point] = np.array(
-                [sx, sy, power_lin, baz, abs_slow])
+            results_arr[point] = np.array([sx, sy, power_lin, baz, abs_slow])
 
     # now find the peak in this:
     peaks = np.empty((1, 2))
-    peaks[int(0)] = get_max_power_loc(tp=lin_tp, sxmin=sxmin, symin=symin, s_space=s_space)
+    peaks[int(0)] = get_max_power_loc(
+        tp=lin_tp, sxmin=sxmin, symin=symin, s_space=s_space
+    )
 
     results_arr[:, 2] /= results_arr[:, 2].max()
 
     return lin_tp, results_arr, peaks
 
 
-
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_PWS(traces, phase_traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, degree):
-    '''
+def BF_Spherical_XY_PWS(
+    traces,
+    phase_traces,
+    sampling_rate,
+    geometry,
+    distance,
+    sxmin,
+    sxmax,
+    symin,
+    symax,
+    s_space,
+    degree,
+):
+    """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using phase weighted stacking.
 
@@ -863,17 +986,20 @@ def BF_Spherical_XY_PWS(traces, phase_traces, sampling_rate, geometry, distance,
         [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
     - peaks: 2D array with 1 rows containing the X,Y points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
-    '''
+    """
 
     ntrace = traces.shape[0]
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
-    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
-    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space), 0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space), 0) + 1)
 
     # make empty array for output.
     results_arr = np.zeros((nsy * nsx, 5))
@@ -895,41 +1021,66 @@ def BF_Spherical_XY_PWS(traces, phase_traces, sampling_rate, geometry, distance,
 
             # Call function to shift traces
             shifted_traces_lin = shift_traces(
-                traces=traces, geometry=geometry, abs_slow=float(abs_slow), baz=float(
-                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(abs_slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
 
             shifted_phase_traces = shift_traces(
-                traces=phase_traces, geometry=geometry, abs_slow=abs_slow, baz=baz, distance=distance, centre_x=centre_x,
-                centre_y=centre_y, sampling_rate=sampling_rate)
+                traces=phase_traces,
+                geometry=geometry,
+                abs_slow=abs_slow,
+                baz=baz,
+                distance=distance,
+                centre_x=centre_x,
+                centre_y=centre_y,
+                sampling_rate=sampling_rate,
+            )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
-            phase_stack = np.absolute(
-                np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            phase_stack = (
+                np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            )
             phase_weight_stack = lin_stack * np.power(phase_stack, degree)
             power_pws = np.trapz(np.power(phase_weight_stack, 2))
 
             pws_tp[i, j] = power_pws
 
-            results_arr[point] = np.array(
-                [sx, sy, power_pws, baz, abs_slow])
-
+            results_arr[point] = np.array([sx, sy, power_pws, baz, abs_slow])
 
     # now find the peak in this:
     peaks = np.empty((1, 2))
-    peaks[int(0)] = get_max_power_loc(tp=pws_tp, sxmin=sxmin, symin=symin, s_space=s_space)
+    peaks[int(0)] = get_max_power_loc(
+        tp=pws_tp, sxmin=sxmin, symin=symin, s_space=s_space
+    )
 
     results_arr[:, 2] /= results_arr[:, 2].max()
 
     return pws_tp, results_arr, peaks
 
 
-
-
-
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space, degree):
-    '''
+def BF_Spherical_Pol_all(
+    traces,
+    phase_traces,
+    sampling_rate,
+    geometry,
+    distance,
+    smin,
+    smax,
+    bazmin,
+    bazmax,
+    s_space,
+    baz_space,
+    degree,
+):
+    """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
     coherent power. Stacks the traces using linear and phase weighted stacking and applies the F statistic.
 
@@ -983,13 +1134,16 @@ def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance
         [slow, baz, power_pws, power_F, power_lin]
     - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
-    '''
+    """
 
     ntrace = traces.shape[0]
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
     nslow = int(np.round(((smax - smin) / s_space) + 1))
@@ -1013,19 +1167,37 @@ def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance
             # get the slowness and backazimuth of the vector
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
-                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+            shifted_traces_lin = shift_traces(
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
             shifted_phase_traces = shift_traces(
-                traces=phase_traces, geometry=geometry, abs_slow=slow, baz=baz, distance=distance, centre_x=centre_x, centre_y=centre_y, sampling_rate=sampling_rate)
+                traces=phase_traces,
+                geometry=geometry,
+                abs_slow=slow,
+                baz=baz,
+                distance=distance,
+                centre_x=centre_x,
+                centre_y=centre_y,
+                sampling_rate=sampling_rate,
+            )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-            phase_stack = np.absolute(
-                np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            phase_stack = (
+                np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            )
             phase_weight_stack = lin_stack * np.power(phase_stack, degree)
 
             Residuals_Trace_Beam = np.subtract(shifted_traces_lin, lin_stack)
             Residuals_Trace_Beam_Power = np.sum(
-                np.power(Residuals_Trace_Beam, 2), axis=0)
+                np.power(Residuals_Trace_Beam, 2), axis=0
+            )
 
             Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
 
@@ -1035,12 +1207,14 @@ def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance
             lin_tp[i, j] = power_lin
             pws_tp[i, j] = power_pws
             F = (shifted_traces_lin.shape[0] - 1) * (
-                (shifted_traces_lin.shape[0] * power_lin) / (Residuals_Power_Int))
+                (shifted_traces_lin.shape[0] * power_lin) / (Residuals_Power_Int)
+            )
 
             F_tp[i, j] = power_lin * F
             point = int(int(i) + int(slows.shape[0] * j))
             results_arr[point] = np.array(
-                [baz, slow, power_pws, power_lin * F, power_lin])
+                [baz, slow, power_pws, power_lin * F, power_lin]
+            )
 
     # lin_tp = np.array(lin_tp)
     # pws_tp = np.array(pws_tp)
@@ -1081,10 +1255,20 @@ def BF_Spherical_Pol_all(traces, phase_traces, sampling_rate, geometry, distance
     return lin_tp, pws_tp, F_tp, results_arr, peaks
 
 
-
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_Lin(traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space):
-    '''
+def BF_Spherical_Pol_Lin(
+    traces,
+    sampling_rate,
+    geometry,
+    distance,
+    smin,
+    smax,
+    bazmin,
+    bazmax,
+    s_space,
+    baz_space,
+):
+    """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
     coherent power. Stacks the traces using linear stacking.
 
@@ -1128,13 +1312,16 @@ def BF_Spherical_Pol_Lin(traces, sampling_rate, geometry, distance, smin, smax, 
         [slow, baz, power_pws, power_F, power_lin]
     - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
-    '''
+    """
 
     ntrace = traces.shape[0]
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
     nslow = int(np.round(((smax - smin) / s_space) + 1))
@@ -1156,8 +1343,16 @@ def BF_Spherical_Pol_Lin(traces, sampling_rate, geometry, distance, smin, smax, 
             # get the slowness and backazimuth of the vector
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
-                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+            shifted_traces_lin = shift_traces(
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
@@ -1165,9 +1360,7 @@ def BF_Spherical_Pol_Lin(traces, sampling_rate, geometry, distance, smin, smax, 
             lin_tp[i, j] = power_lin
 
             point = int(int(i) + int(slows.shape[0] * j))
-            results_arr[point] = np.array(
-                [baz, slow, power_lin])
-
+            results_arr[point] = np.array([baz, slow, power_lin])
 
     # now find the peak in this:
 
@@ -1185,10 +1378,22 @@ def BF_Spherical_Pol_Lin(traces, sampling_rate, geometry, distance, smin, smax, 
     return lin_tp, results_arr, peaks
 
 
-
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance, smin, smax, bazmin, bazmax, s_space, baz_space, degree):
-    '''
+def BF_Spherical_Pol_PWS(
+    traces,
+    phase_traces,
+    sampling_rate,
+    geometry,
+    distance,
+    smin,
+    smax,
+    bazmin,
+    bazmax,
+    s_space,
+    baz_space,
+    degree,
+):
+    """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
     coherent power. Stacks the traces using phase weighted stacking.
 
@@ -1240,13 +1445,16 @@ def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance
         [slow_x, slow_y, power_pws, power_F, power_lin]
     - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
              phase weighted, linear and F-statistic respectively.
-    '''
+    """
 
     ntrace = traces.shape[0]
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of plen(buff)oints.
     nslow = int(np.round(((smax - smin) / s_space) + 1))
@@ -1268,14 +1476,31 @@ def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance
             # get the slowness and backazimuth of the vector
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(slow), baz=float(
-                baz), distance=float(distance), centre_x=float(centre_x), centre_y=float(centre_y), sampling_rate=sampling_rate)
+            shifted_traces_lin = shift_traces(
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
             shifted_phase_traces = shift_traces(
-                traces=phase_traces, geometry=geometry, abs_slow=slow, baz=baz, distance=distance, centre_x=centre_x, centre_y=centre_y, sampling_rate=sampling_rate)
+                traces=phase_traces,
+                geometry=geometry,
+                abs_slow=slow,
+                baz=baz,
+                distance=distance,
+                centre_x=centre_x,
+                centre_y=centre_y,
+                sampling_rate=sampling_rate,
+            )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-            phase_stack = np.absolute(
-                np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            phase_stack = (
+                np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
+            )
             phase_weight_stack = lin_stack * np.power(phase_stack, degree)
 
             power_pws = np.trapz(np.power(phase_weight_stack, 2))
@@ -1283,8 +1508,7 @@ def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance
             pws_tp[i, j] = power_pws
 
             point = int(int(i) + int(slows.shape[0] * j))
-            results_arr[point] = np.array(
-                [baz, slow, power_pws])
+            results_arr[point] = np.array([baz, slow, power_pws])
 
     # now find the peak in this:
 
@@ -1302,7 +1526,9 @@ def BF_Spherical_Pol_PWS(traces, phase_traces, sampling_rate, geometry, distance
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space):
+def BF_Noise_Threshold_Relative_XY(
+    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space
+):
     """
     Function to calculate the TP plot or power grid given traces and a
     range of slowness vectors described in a Cartesian system (X/Y).
@@ -1355,12 +1581,15 @@ def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sx
     ntrace = traces.shape[0]
 
     # get mean station location from geometry
-    centre_x, centre_y, centre_z = np.mean(geometry[:, 0]), np.mean(
-        geometry[:, 1]), np.mean(geometry[:, 2])
+    centre_x, centre_y, centre_z = (
+        np.mean(geometry[:, 0]),
+        np.mean(geometry[:, 1]),
+        np.mean(geometry[:, 2]),
+    )
 
     # get number of points.
-    nsx = int(np.round(((sxmax - sxmin) / s_space),0) + 1)
-    nsy = int(np.round(((symax - symin) / s_space),0) + 1)
+    nsx = int(np.round(((sxmax - sxmin) / s_space), 0) + 1)
+    nsy = int(np.round(((symax - symin) / s_space), 0) + 1)
 
     # make empty array for output.
     lin_tp = np.zeros((nsy, nsx))
@@ -1370,7 +1599,7 @@ def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sx
     slow_xs = np.linspace(sxmin, sxmax + s_space, nsx)
     slow_ys = np.linspace(symin, symax + s_space, nsy)
 
-    # loop over slowness vectors
+    #  loop over slowness vectors
     for i in range(slow_ys.shape[0]):
         for j in range(slow_xs.shape[0]):
 
@@ -1381,10 +1610,16 @@ def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sx
             abs_slow, baz = get_slow_baz(sx, sy, "az")
 
             # Call function to shift traces
-            shifted_traces_lin = shift_traces(traces=traces, geometry=geometry, abs_slow=float(abs_slow),
-                                              baz=float(baz), distance=float(distance),
-                                              centre_x=float(centre_x), centre_y=float(centre_y),
-                                              sampling_rate=sampling_rate)
+            shifted_traces_lin = shift_traces(
+                traces=traces,
+                geometry=geometry,
+                abs_slow=float(abs_slow),
+                baz=float(baz),
+                distance=float(distance),
+                centre_x=float(centre_x),
+                centre_y=float(centre_y),
+                sampling_rate=sampling_rate,
+            )
 
             # stack, get power and store in array
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1401,32 +1636,38 @@ def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sx
     slow_y_max_lin = symin + (iy_lin[0] * s_space)
 
     # find the maximum location
-    slow_x_max_lin_abs = slow_x_max_lin #+ rel_x
-    slow_y_max_lin_abs = slow_y_max_lin #+ rel_y
+    slow_x_max_lin_abs = slow_x_max_lin  # + rel_x
+    slow_y_max_lin_abs = slow_y_max_lin  # + rel_y
 
     peaks[int(0)] = np.array([slow_x_max_lin_abs, slow_y_max_lin_abs])
     max_peak = peaks[int(0)]
     # get the slowness and baz for the max points
     slow_max_lin, baz_max_lin = get_slow_baz(
-        slow_x_max_lin_abs, slow_y_max_lin_abs, "az")
-
+        slow_x_max_lin_abs, slow_y_max_lin_abs, "az"
+    )
 
     #### Noise power estimate ####
     # get best_lin_traces plot using baz/slow of peak
-    shifted_traces_t0 = shift_traces(traces=traces, geometry=geometry,
-                                     abs_slow=float(slow_max_lin), baz=float(baz_max_lin),
-                                     distance=float(distance), centre_x=float(centre_x),
-                                     centre_y=float(centre_y), sampling_rate=sampling_rate)
+    shifted_traces_t0 = shift_traces(
+        traces=traces,
+        geometry=geometry,
+        abs_slow=float(slow_max_lin),
+        baz=float(baz_max_lin),
+        distance=float(distance),
+        centre_x=float(centre_x),
+        centre_y=float(centre_y),
+        sampling_rate=sampling_rate,
+    )
 
-    # Now need to get values for noise time shift
+    #  Now need to get values for noise time shift
     # idea is to distort this best linear stack
     # by scrambling the traces randomly
 
     # T is the max time is can be shifted by
-    # I have made it the length of the trace/2
+    #  I have made it the length of the trace/2
     T = (traces[0].shape[0] / sampling_rate) / 2.0
     # r values store the fraction of T used to scramble the trace.
-        # there is one r value per trace
+    # there is one r value per trace
     # array initialised here
     r_values = np.zeros(shifted_traces_t0.shape[0])
 
@@ -1449,8 +1690,7 @@ def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sx
         # noise_stack = np.zeros(lin_stack.shape)
         for z in range(noise_traces.shape[0]):
             pts_shift_noise = int(added_times[int(z)] * sampling_rate)
-            shift_trace_noise = np.roll(
-                shifted_traces_t0[int(z)], pts_shift_noise)
+            shift_trace_noise = np.roll(shifted_traces_t0[int(z)], pts_shift_noise)
             noise_traces[int(z)] = shift_trace_noise
 
         noise_stack = np.sum(noise_traces, axis=0) / ntrace
@@ -1466,7 +1706,7 @@ def BF_Noise_Threshold_Relative_XY(traces, sampling_rate, geometry, distance, sx
 
 
 @jit(nopython=True, fastmath=True)
-def calculate_locus(P1,P2):
+def calculate_locus(P1, P2):
     """
     Function to calculate the locus angle between points P1 and P2.
     A locus is a line that separates two point and is orthogonal to the line P1-P2.
@@ -1555,9 +1795,8 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
                  varies with time.
     """
 
-
     nslow = int(((smax - smin) / s_space) + 1)
-    slows = np.linspace(smin, smax+s_space, nslow)
+    slows = np.linspace(smin, smax + s_space, nslow)
 
     ves_lin = np.empty((nslow, traces.shape[1]))
 
@@ -1565,19 +1804,33 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
 
         slow = float(slows[int(i)])
 
-        lin_stack = linear_stack_baz_slow(traces=traces, sampling_rate=sampling_rate, geometry=geometry,
-                              distance=distance, slow=slow, baz=baz)
+        lin_stack = linear_stack_baz_slow(
+            traces=traces,
+            sampling_rate=sampling_rate,
+            geometry=geometry,
+            distance=distance,
+            slow=slow,
+            baz=baz,
+        )
 
         ves_lin[i] = lin_stack
-
 
     return ves_lin
 
 
-
-
 @jit(nopython=True, fastmath=True)
-def Vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, baz, smin, smax, s_space, degree):
+def Vespagram_PWS(
+    traces,
+    phase_traces,
+    sampling_rate,
+    geometry,
+    distance,
+    baz,
+    smin,
+    smax,
+    s_space,
+    degree,
+):
     """
     Function to calculate the slowness vespagram of given traces using phase weighted stacking.
 
@@ -1628,8 +1881,16 @@ def Vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, baz, 
 
         slow = float(slows[int(i)])
 
-        pws_stack = pws_stack_baz_slow(traces=traces, phase_traces=phase_traces, sampling_rate=sampling_rate,
-                                       geometry=geometry, distance=distance, slow=slow, baz=baz, degree=degree)
+        pws_stack = pws_stack_baz_slow(
+            traces=traces,
+            phase_traces=phase_traces,
+            sampling_rate=sampling_rate,
+            geometry=geometry,
+            distance=distance,
+            slow=slow,
+            baz=baz,
+            degree=degree,
+        )
 
         ves_pws[i] = pws_stack
 
@@ -1637,7 +1898,9 @@ def Vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, baz, 
 
 
 @jit(nopython=True, fastmath=True)
-def Baz_vespagram_Lin(traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space):
+def Baz_vespagram_Lin(
+    traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space
+):
     """
     Function to calculate the backazimuth vespagram of given traces using linear stacking.
 
@@ -1671,9 +1934,8 @@ def Baz_vespagram_Lin(traces, sampling_rate, geometry, distance, slow, bmin, bma
                  varies with time.
     """
 
-
     nbaz = int(((bmax - bmin) / b_space) + 1)
-    bazs = np.linspace(bmin, bmax+b_space, nbaz)
+    bazs = np.linspace(bmin, bmax + b_space, nbaz)
 
     ves_lin = np.empty((nbaz, traces.shape[1]))
 
@@ -1681,19 +1943,33 @@ def Baz_vespagram_Lin(traces, sampling_rate, geometry, distance, slow, bmin, bma
 
         baz = float(bazs[int(i)])
 
-        lin_stack = linear_stack_baz_slow(traces=traces, sampling_rate=sampling_rate, geometry=geometry,
-                              distance=distance, slow=slow, baz=baz)
+        lin_stack = linear_stack_baz_slow(
+            traces=traces,
+            sampling_rate=sampling_rate,
+            geometry=geometry,
+            distance=distance,
+            slow=slow,
+            baz=baz,
+        )
 
         ves_lin[i] = lin_stack
-
 
     return ves_lin
 
 
-
-
 @jit(nopython=True, fastmath=True)
-def Baz_vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space, degree):
+def Baz_vespagram_PWS(
+    traces,
+    phase_traces,
+    sampling_rate,
+    geometry,
+    distance,
+    slow,
+    bmin,
+    bmax,
+    b_space,
+    degree,
+):
     """
     Function to calculate the backazimuth vespagram of given traces using phase weighted stacking.
 
@@ -1736,7 +2012,7 @@ def Baz_vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, s
     """
 
     nbaz = int(((bmax - bmin) / b_space) + 1)
-    bazs = np.linspace(bmin, bmax+b_space, nbaz)
+    bazs = np.linspace(bmin, bmax + b_space, nbaz)
 
     ves_pws = np.empty((nbaz, traces.shape[1]))
 
@@ -1744,15 +2020,20 @@ def Baz_vespagram_PWS(traces, phase_traces, sampling_rate, geometry, distance, s
 
         baz = float(bazs[int(i)])
 
-        pws_stack = pws_stack_baz_slow(traces=traces, phase_traces=phase_traces, sampling_rate=sampling_rate,
-                                       geometry=geometry, distance=distance, slow=slow, baz=baz, degree=degree)
+        pws_stack = pws_stack_baz_slow(
+            traces=traces,
+            phase_traces=phase_traces,
+            sampling_rate=sampling_rate,
+            geometry=geometry,
+            distance=distance,
+            slow=slow,
+            baz=baz,
+            degree=degree,
+        )
 
         ves_pws[i] = pws_stack
 
     return ves_pws
-
-
-
 
 
 jit_module(nopython=True, error_model="numpy", fastmath=True)

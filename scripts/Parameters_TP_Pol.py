@@ -2,16 +2,16 @@
 # easier than having to repeatedly input flags for the codes
 
 # path and wildcard for data
-filepath='../tests/data/19970525/*SAC'
+filepath = "../tests/data/19970525/*SAC"
 
 # Which 1D model to make predictions
-model='prem'
+model = "prem"
 
 # target phase
-phase = 'SKS'
+phase = "SKS"
 
 # phases of interest
-phases = ['SKS','SKKS','sSKS','ScS','Sdiff','SS','pScS','sScS','pSKS', 'Pdiff']
+phases = ["SKS", "SKKS", "sSKS", "ScS", "Sdiff", "SS", "pScS", "sScS", "pSKS", "Pdiff"]
 
 # frequency band
 fmin = 0.13
@@ -32,7 +32,7 @@ baz_max = 30
 b_space = 1
 
 # PWS degree
-degree=2
+degree = 2
 
 # do you want to manually pick the time window?
 Man_Pick = True
@@ -45,7 +45,7 @@ t_max = 20
 Align = False
 
 # what stacking do you want? linear (LIN), phase-weighted (PWS) or all (All)
-Stack_type = 'Lin'
+Stack_type = "Lin"
 
 # Results_directory
 Res_dir = "./Results/"

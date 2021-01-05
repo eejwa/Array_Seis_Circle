@@ -2,24 +2,37 @@
 # easier than having to repeatedly input flags for the codes
 
 # path and wildcard for data
-# filepath='../tests/data/19970525/*SAC'
-filepath='../tests/data/19970525/*SAC'
+filepath = "../tests/data/19970525/*SAC"
+# filepath='*sac'
 
 # Which 1D model to make predictions
-pred_model='prem'
+pred_model = "prem"
 
 # target phase
-phase = 'SKS'
+phase = "SKS"
 
 # phases of interest
-phases = ['SKS','SKKS','sSKS','ScS','Sdiff','SS','pScS','sScS','pSKS', 'Pdiff']
+phases = [
+    "SKS",
+    "SKKS",
+    "sSKS",
+    "ScS",
+    "Sdiff",
+    "SS",
+    "pScS",
+    "sScS",
+    "pSKS",
+    "SKIKS",
+    "SKiKS",
+]
 # phases = ['SKS','SKKS']
 
 # Do you want to filter?
 Filt = True
 
 # Results directory path
-Res_dir = "./Results/numpy_arrays/"
+numpy_dir = "./Results/numpy_arrays/"
+Res_dir = "./Results/"
 
 # frequency band
 fmin = 0.15
@@ -27,8 +40,8 @@ fmax = 0.60
 
 # cut min/max - for some reason the aligning function does not
 # work if the traces are too long
-cut_min = 150
-cut_max = 150
+cut_min = 50
+cut_max = 50
 
 # define slowness box - relative
 slow_min = -3
@@ -44,7 +57,7 @@ t_max = 30
 Align = True
 
 # Number Bootstrap samples
-Boots = 100
+Boots = 250
 
 # what to multiply noise estimate by
 threshold_multiplier = 3

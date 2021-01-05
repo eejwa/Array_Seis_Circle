@@ -8,8 +8,15 @@ import cartopy.crs as ccrs
 import argparse
 from array_plotting import plotting
 
-parser = argparse.ArgumentParser(description='Plot stations in SAC files')
-parser.add_argument("-f","--file_path", help="Enter the path to the SAC files (e.g. ./*SAC)", type=str, required=True, action="store")
+parser = argparse.ArgumentParser(description="Plot stations in SAC files")
+parser.add_argument(
+    "-f",
+    "--file_path",
+    help="Enter the path to the SAC files (e.g. ./*SAC)",
+    type=str,
+    required=True,
+    action="store",
+)
 args = parser.parse_args()
 filepath = args.file_path
 
@@ -17,8 +24,7 @@ filepath = args.file_path
 st = obspy.read(filepath)
 
 
-
-fig = plt.figure(figsize=(6,6))
+fig = plt.figure(figsize=(6, 6))
 
 # need to give a projection for the cartopy package
 # to work. See a list here:
@@ -27,10 +33,16 @@ ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
 
 p = plotting(ax=ax)
 p.plot_stations(st)
-ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                  linewidth=0, color='gray', alpha=0.5, linestyle='--')
+ax.gridlines(
+    crs=ccrs.PlateCarree(),
+    draw_labels=True,
+    linewidth=0,
+    color="gray",
+    alpha=0.5,
+    linestyle="--",
+)
 
-fig = plt.figure(figsize=(6,6))
+fig = plt.figure(figsize=(6, 6))
 ax = fig.add_subplot(111, projection=ccrs.Robinson())
 
 p = plotting(ax=ax)

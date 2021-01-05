@@ -8,11 +8,41 @@ import cartopy.crs as ccrs
 import argparse
 from array_plotting import plotting
 
-parser = argparse.ArgumentParser(description='Plot record section around target phase using SAC files')
-parser.add_argument("-f","--file_path", help="Enter the path to the SAC files (e.g. ./*SAC)", type=str, required=True, action="store")
-parser.add_argument("-p","--phase", help="Enter the target phase to plot record section around (e.g. SKS)", type=str, required=True, action="store")
-parser.add_argument("-tmin","--time_min", help="Enter the time before the predicted arrival (e.g. 20)", type=float, required=True, action="store")
-parser.add_argument("-tmax","--time_max", help="Enter the time after the predicted arrival (e.g. 20)", type=float, required=True, action="store")
+parser = argparse.ArgumentParser(
+    description="Plot record section around target phase using SAC files"
+)
+parser.add_argument(
+    "-f",
+    "--file_path",
+    help="Enter the path to the SAC files (e.g. ./*SAC)",
+    type=str,
+    required=True,
+    action="store",
+)
+parser.add_argument(
+    "-p",
+    "--phase",
+    help="Enter the target phase to plot record section around (e.g. SKS)",
+    type=str,
+    required=True,
+    action="store",
+)
+parser.add_argument(
+    "-tmin",
+    "--time_min",
+    help="Enter the time before the predicted arrival (e.g. 20)",
+    type=float,
+    required=True,
+    action="store",
+)
+parser.add_argument(
+    "-tmax",
+    "--time_max",
+    help="Enter the time after the predicted arrival (e.g. 20)",
+    type=float,
+    required=True,
+    action="store",
+)
 
 
 args = parser.parse_args()
@@ -25,8 +55,8 @@ tmax = args.time_max
 st = obspy.read(filepath)
 
 
-# plot!
-fig = plt.figure(figsize=(10,8))
+#  plot!
+fig = plt.figure(figsize=(10, 8))
 ax1 = fig.add_subplot(121)
 
 p = plotting(ax=ax1)

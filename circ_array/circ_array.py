@@ -49,7 +49,7 @@ from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure, binary_erosion
 
 
-def myround(x, prec=2, base=.05):
+def myround(x, prec=2, base=0.05):
     """
     Rounds the number 'x' to the nearest 'base' with precision 'prec'
 
@@ -63,7 +63,7 @@ def myround(x, prec=2, base=.05):
     Return:
             The number rounded to the nearest 'base' value.
     """
-    return round(base * round(float(x)/base),prec)
+    return round(base * round(float(x) / base), prec)
 
 
 def get_stations(stream):
@@ -76,7 +76,7 @@ def get_stations(stream):
 
     Return: List of strings of station names.
     """
-    stations=[]
+    stations = []
     for tr in stream:
         stations.append(tr.stats.station)
 
@@ -103,11 +103,15 @@ def get_eventtime(stream):
     mS = stream[0].stats.sac.nzmsec
 
     event_time = UTCDateTime(
-        year=Y, julday=JD, hour=H, minute=M, second=S, microsecond=mS)
+        year=Y, julday=JD, hour=H, minute=M, second=S, microsecond=mS
+    )
 
     return event_time
 
-def get_geometry(stream, return_center=False, distance='degrees', verbose='False', relative='False'):
+
+def get_geometry(
+    stream, return_center=False, distance="degrees", verbose="False", relative="False"
+):
     """
     Collects array geometry information and returns an array of lon, lat and elevation.
     Method to calculate the array geometry and the center coordinates in km or degrees.
@@ -139,7 +143,7 @@ def get_geometry(stream, return_center=False, distance='degrees', verbose='False
 
     # for each trace object in stream, get station
     # coordinates and add to geometry
-    for i,tr in enumerate(stream):
+    for i, tr in enumerate(stream):
         geometry[i, 0] = tr.stats.sac.stlo
         geometry[i, 1] = tr.stats.sac.stla
         geometry[i, 2] = tr.stats.sac.stel
@@ -152,8 +156,7 @@ def get_geometry(stream, return_center=False, distance='degrees', verbose='False
     if distance == "km":
         # convert to kilometres
         for i in range(station_no):
-            x, y = util_geo_km(0, 0,
-                               geometry[i, 0], geometry[i, 1])
+            x, y = util_geo_km(0, 0, geometry[i, 0], geometry[i, 1])
             geometry[i, 0] = x
             geometry[i, 1] = y
 
@@ -162,19 +165,18 @@ def get_geometry(stream, return_center=False, distance='degrees', verbose='False
         center_y = geometry[:, 1].mean()
         center_h = geometry[:, 2].mean()
         # if relative, find distance from the centre
-        if relative == 'True':
+        if relative == "True":
             for i in range(station_no):
-                x, y = util_geo_km(center_x, center_y,
-                                   geometry[i, 0], geometry[i, 1])
+                x, y = util_geo_km(center_x, center_y, geometry[i, 0], geometry[i, 1])
                 geometry[i, 0] = x
                 geometry[i, 1] = y
                 geometry[i, 2] -= center_h
 
     # if want relative in degrees just subtrace mean lat and lon
-    elif distance == "degrees" and relative == 'True':
-            geometry[:, 0] -= center_x
-            geometry[:, 1] -= center_y
-            geometry[:, 2] -= center_h
+    elif distance == "degrees" and relative == "True":
+        geometry[:, 0] -= center_x
+        geometry[:, 1] -= center_y
+        geometry[:, 2] -= center_h
 
     else:
         pass
@@ -184,7 +186,8 @@ def get_geometry(stream, return_center=False, distance='degrees', verbose='False
     else:
         return geometry
 
-def get_distances(stream, type = 'deg'):
+
+def get_distances(stream, type="deg"):
     """
     Given a stream, this function creates an array containing the epicentral distances for each of the stations
 
@@ -202,10 +205,10 @@ def get_distances(stream, type = 'deg'):
 
     distances = np.empty(len(stream))
 
-    for i,tr in enumerate(stream):
-        if type=='deg':
+    for i, tr in enumerate(stream):
+        if type == "deg":
             distances[i] = tr.stats.sac.gcarc
-        elif type=='km':
+        elif type == "km":
             distances[i] = tr.stats.sac.dist
 
         else:
@@ -232,17 +235,16 @@ def get_station_density_KDE(geometry):
 
     """
     # recover the longitudes and latitudes
-    lons = geometry[:,0]
-    lats = geometry[:,1]
+    lons = geometry[:, 0]
+    lats = geometry[:, 1]
 
     # create 2D array of lons and lats then
     # convert to radians
-    data = np.vstack((lons,lats)).T
+    data = np.vstack((lons, lats)).T
     data_rad = np.radians(data)
 
     # create learning algorithm parameters
-    density_distribution = KernelDensity(kernel='cosine', metric='haversine')
-
+    density_distribution = KernelDensity(kernel="cosine", metric="haversine")
 
     # use grid search cross-validation to optimize the bandwidth
     # cross validation involved taking random samples of the dataset and
@@ -250,7 +252,7 @@ def get_station_density_KDE(geometry):
     # the data
 
     # search over bandwidths from 0.1 to 10
-    params = {'bandwidth': np.logspace(-2, 2, 200)}
+    params = {"bandwidth": np.logspace(-2, 2, 200)}
     grid = GridSearchCV(density_distribution, params)
     grid.fit(data_rad)
 
@@ -289,6 +291,7 @@ def clip_traces(stream):
 
     return stream
 
+
 def get_traces(stream):
     """
     Given an obspy stream, this will return a 2D array of the waveforms
@@ -308,6 +311,7 @@ def get_traces(stream):
 
     return np.array(Traces)
 
+
 def get_phase_traces(stream):
     """
     Given an obspy stream, this will return a 2D array of the waveforms
@@ -326,6 +330,7 @@ def get_phase_traces(stream):
         Phase_traces.append(np.angle(hilbert_trace))
 
     return np.array(Phase_traces)
+
 
 def deg_km_az_baz(lat1, lon1, lat2, lon2):
     """
@@ -350,14 +355,22 @@ def deg_km_az_baz(lat1, lon1, lat2, lon2):
     dist_deg = haversine_deg(lat1, lon1, lat2, lon2)
     dist_km = np.radians(dist_deg) * R
 
-    az = np.degrees(np.arctan2((np.sin(np.radians(lon2 - lon1)) * np.cos(np.radians(lat2))), np.cos(np.radians(lat1)) *
-                               np.sin(np.radians(lat2)) - np.sin(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.cos(np.radians(lon2 - lon1))))
-#    baz=np.degrees(np.arctan2((np.sin(np.radians(lon1-lon2))*np.cos(np.radians(lat1))), np.cos(np.radians(lat2))*np.sin(np.radians(lat1)) - np.sin(np.radians(lat2))*np.cos(np.radians(lat1))*np.cos(np.radians(lon1-lon2)) ))
+    az = np.degrees(
+        np.arctan2(
+            (np.sin(np.radians(lon2 - lon1)) * np.cos(np.radians(lat2))),
+            np.cos(np.radians(lat1)) * np.sin(np.radians(lat2))
+            - np.sin(np.radians(lat1))
+            * np.cos(np.radians(lat2))
+            * np.cos(np.radians(lon2 - lon1)),
+        )
+    )
+    #    baz=np.degrees(np.arctan2((np.sin(np.radians(lon1-lon2))*np.cos(np.radians(lat1))), np.cos(np.radians(lat2))*np.sin(np.radians(lat1)) - np.sin(np.radians(lat2))*np.cos(np.radians(lat1))*np.cos(np.radians(lon1-lon2)) ))
     dLon = np.radians(lon1 - lon2)
 
     y = np.sin(dLon) * np.cos(np.radians(lat1))
-    x = np.cos(np.radians(lat2)) * np.sin(np.radians(lat1)) - \
-        np.sin(np.radians(lat2)) * np.cos(np.radians(lat1)) * np.cos(dLon)
+    x = np.cos(np.radians(lat2)) * np.sin(np.radians(lat1)) - np.sin(
+        np.radians(lat2)
+    ) * np.cos(np.radians(lat1)) * np.cos(dLon)
 
     baz = np.arctan2(y, x)
 
@@ -367,6 +380,7 @@ def deg_km_az_baz(lat1, lon1, lat2, lon2):
         baz = (baz + 360) % 360
 
     return dist_deg, dist_km, az, baz
+
 
 def get_slow_baz(slow_x, slow_y, dir_type):
     """
@@ -432,7 +446,9 @@ def pred_baz_slow(stream, phases, one_eighty=True):
     radians = np.radians
 
     # need to get the center lon and lat of stations:
-    center_lon, center_lat, center_elev = get_geometry(stream, distance="degrees", return_center=True)
+    center_lon, center_lat, center_elev = get_geometry(
+        stream, distance="degrees", return_center=True
+    )
 
     # find event lon and lat
     st = stream
@@ -441,14 +457,22 @@ def pred_baz_slow(stream, phases, one_eighty=True):
     evdp = st[0].stats.sac.evdp
 
     # find baz
-    dist_deg, dist_km, az, baz = deg_km_az_baz(lat1=float(evla), lon1=float(
-        evlo), lat2=float(center_lat), lon2=float(center_lon))
+    dist_deg, dist_km, az, baz = deg_km_az_baz(
+        lat1=float(evla),
+        lon1=float(evlo),
+        lat2=float(center_lat),
+        lon2=float(center_lon),
+    )
 
     # use TauP to predict the slownesses
     model = TauPyModel(model="prem")
 
-    tap_out = model.get_travel_times(source_depth_in_km=float(
-        evdp), distance_in_degree=float(dist_deg), receiver_depth_in_km=0.0, phase_list=phases)
+    tap_out = model.get_travel_times(
+        source_depth_in_km=float(evdp),
+        distance_in_degree=float(dist_deg),
+        receiver_depth_in_km=0.0,
+        phase_list=phases,
+    )
     # baz = float(out['backazimuth'])
     distance_avg = float(dist_deg)
 
@@ -473,7 +497,13 @@ def pred_baz_slow(stream, phases, one_eighty=True):
             if tap_out[x].name == phases[i]:
 
                 temp_list.append(
-                    [tap_out[x].name, tap_out[x].ray_param_sec_degree, baz, tap_out[x].time])
+                    [
+                        tap_out[x].name,
+                        tap_out[x].ray_param_sec_degree,
+                        baz,
+                        tap_out[x].time,
+                    ]
+                )
 
         # if one arrival
         if len(temp_list) == 1:
@@ -486,8 +516,19 @@ def pred_baz_slow(stream, phases, one_eighty=True):
             slow_y_az = myround(float(temp_list[0][1]) * cos(radians(az_pred)))
 
             # add to results list
-            results.append([temp_list[0][0], temp_list[0][1], baz,
-                            slow_x_baz, slow_y_baz, slow_x_az, slow_y_az, distance_avg, temp_list[0][3]])
+            results.append(
+                [
+                    temp_list[0][0],
+                    temp_list[0][1],
+                    baz,
+                    slow_x_baz,
+                    slow_y_baz,
+                    slow_x_az,
+                    slow_y_az,
+                    distance_avg,
+                    temp_list[0][3],
+                ]
+            )
 
         # if there is more than one arrival it could be a major arc phase
         # arriving from the opposite direction.
@@ -501,24 +542,54 @@ def pred_baz_slow(stream, phases, one_eighty=True):
             slow_x_az = myround(float(temp_list[0][1]) * sin(radians(az_pred)))
             slow_y_az = myround(float(temp_list[0][1]) * cos(radians(az_pred)))
 
-            results.append([temp_list[0][0], temp_list[0][1], baz,
-                            slow_x_baz, slow_y_baz, slow_x_az, slow_y_az, distance_avg, temp_list[0][3]])
+            results.append(
+                [
+                    temp_list[0][0],
+                    temp_list[0][1],
+                    baz,
+                    slow_x_baz,
+                    slow_y_baz,
+                    slow_x_az,
+                    slow_y_az,
+                    distance_avg,
+                    temp_list[0][3],
+                ]
+            )
 
             if one_eighty:
                 # use the other backazimuth to do calculations
-                for i in np.arange(1, len(temp_list),2):
-                    slow_x_other_baz = myround(float(temp_list[i][1]) * sin(radians(other_baz)))
-                    slow_y_other_baz = myround(float(temp_list[i][1]) * cos(radians(other_baz)))
+                for i in np.arange(1, len(temp_list), 2):
+                    slow_x_other_baz = myround(
+                        float(temp_list[i][1]) * sin(radians(other_baz))
+                    )
+                    slow_y_other_baz = myround(
+                        float(temp_list[i][1]) * cos(radians(other_baz))
+                    )
 
                     # the azimuth should now be 180 from the predicted azimuth
                     # since we defined the azimith as 180 + baz, the 'other azimuth'
                     # is just the backazimuth.
 
-                    slow_x_other_az = myround(float(temp_list[i][1]) * sin(radians(baz)))
-                    slow_y_other_az = myround(float(temp_list[i][1]) * cos(radians(baz)))
+                    slow_x_other_az = myround(
+                        float(temp_list[i][1]) * sin(radians(baz))
+                    )
+                    slow_y_other_az = myround(
+                        float(temp_list[i][1]) * cos(radians(baz))
+                    )
 
-                    results.append(["%s_Major" %temp_list[i][0], temp_list[i][1], other_baz, slow_x_other_baz,
-                                    slow_y_other_baz, slow_x_other_az, slow_y_other_az, distance_avg, temp_list[i][3]])
+                    results.append(
+                        [
+                            "%s_Major" % temp_list[i][0],
+                            temp_list[i][1],
+                            other_baz,
+                            slow_x_other_baz,
+                            slow_y_other_baz,
+                            slow_x_other_az,
+                            slow_y_other_az,
+                            distance_avg,
+                            temp_list[i][3],
+                        ]
+                    )
             else:
                 # if you dont want to add 180 to backazimuth then the same baz and az are used
                 # with different slowness values
@@ -529,11 +600,23 @@ def pred_baz_slow(stream, phases, one_eighty=True):
                     slow_x_az = myround(float(temp_list[i][1]) * sin(radians(az_pred)))
                     slow_y_az = myround(float(temp_list[i][1]) * cos(radians(az_pred)))
 
-                    results.append([temp_list[i][0], temp_list[i][1], baz,
-                                    slow_x_baz, slow_y_baz, slow_x_az, slow_y_az, distance_avg, temp_list[i][3]])
+                    results.append(
+                        [
+                            temp_list[i][0],
+                            temp_list[i][1],
+                            baz,
+                            slow_x_baz,
+                            slow_y_baz,
+                            slow_x_az,
+                            slow_y_az,
+                            distance_avg,
+                            temp_list[i][3],
+                        ]
+                    )
     results = np.array(results)
 
     return results
+
 
 def get_t_header_pred_time(stream, phase):
     """
@@ -553,11 +636,10 @@ def get_t_header_pred_time(stream, phase):
     """
 
     # these are the header labels storing the phase
-    # names in SAC files.
-    labels = ["kt0", "kt1", "kt2", "kt3", "kt4",
-              "kt5", "kt6", "kt7", "kt8", "kt9"]
+    #  names in SAC files.
+    labels = ["kt0", "kt1", "kt2", "kt3", "kt4", "kt5", "kt6", "kt7", "kt8", "kt9"]
 
-    # initial header target label header
+    #  initial header target label header
     Target_time_header = None
     # for every trace
     for x, trace in enumerate(stream):
@@ -576,9 +658,10 @@ def get_t_header_pred_time(stream, phase):
 
     return Target_time_header
 
+
 # collect the predicted arrival times for each phase saved in the SAC header files.
 def get_predicted_times(stream, phase):
-    '''
+    """
     Collect the predicted arrival times for all SAC files in the stream and return arrays for
     the predicted times for the target phase and all time headers. The min, max and average predicted
     times for the target phase will be returned.
@@ -593,11 +676,10 @@ def get_predicted_times(stream, phase):
         Target_phase_times - an array of the predicted travel times for the target phase for each station in the array.
         time_header_times - array of the prediected travel times for all phases for each station in the array.
 
-    '''
+    """
     # these are the header labels storing the phase
-    # names in SAC files.
-    labels = ["kt0", "kt1", "kt2", "kt3", "kt4",
-              "kt5", "kt6", "kt7", "kt8", "kt9"]
+    #  names in SAC files.
+    labels = ["kt0", "kt1", "kt2", "kt3", "kt4", "kt5", "kt6", "kt7", "kt8", "kt9"]
 
     # list for the trave times of the
     # target phase
@@ -634,8 +716,13 @@ def get_predicted_times(stream, phase):
         for c in range(len(phases_tn)):
             timeheader = phases_tn[c][1]
             try:
-                time_header_times[c].append([float(
-                    getattr(trace.stats.sac, timeheader.strip())), float(ep_dist), phases_tn[c][0]])
+                time_header_times[c].append(
+                    [
+                        float(getattr(trace.stats.sac, timeheader.strip())),
+                        float(ep_dist),
+                        phases_tn[c][0],
+                    ]
+                )
             except:
                 pass
 
@@ -643,7 +730,7 @@ def get_predicted_times(stream, phase):
 
 
 def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
-    '''
+    """
     Peak finding algorith for a 2D array of values. The peaks will be searched for
     within a range of points from a predicted arrival. Edited from stack overflow
     answer: https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array.
@@ -671,7 +758,7 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
 
     Return:
         The top N peaks of the array of the format [[x,y]].
-    '''
+    """
 
     # define space
     steps_x = int(np.round((xmax - xmin) / xstep, decimals=0)) + 1
@@ -688,10 +775,11 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
     local_max = maximum_filter(Array, footprint=neighborhood) == Array
     # local_min = minimum_filter(Array_New, 3)
 
-    background = (Array == 0)
+    background = Array == 0
 
     eroded_background = binary_erosion(
-        background, structure=neighborhood, border_value=1)
+        background, structure=neighborhood, border_value=1
+    )
     # OK I'll try and find the gradient at each point then take the lowest values.
 
     detected_peaks = local_max ^ eroded_background
@@ -705,9 +793,8 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
 
     # sort arguments based on the first column
     # Just like Python, in that [::-1] reverses the array returned by argsort()
-    # [:N] gives the first N elements of the reversed list
-    val_points_sorted = val_points_sorted[val_points_sorted[:, 0].argsort(
-    )][::-1][:N]
+    #  [:N] gives the first N elements of the reversed list
+    val_points_sorted = val_points_sorted[val_points_sorted[:, 0].argsort()][::-1][:N]
 
     # get x and y locations of top N points
     val_x_points_sorted = val_points_sorted[:, 2]
@@ -727,7 +814,7 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
 
 
 def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
-    '''
+    """
     Peak finding algorith for a 2D array of values. The peaks will be searched for
     within a range of points from a predicted arrival. This is edited for the polar
     coordinate search output.
@@ -758,7 +845,7 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
 
     Return:
         The top N peaks of the array in the form of [baz,slow].
-    '''
+    """
 
     # define space
     steps_s = int(np.round((smax - smin) / sstep, decimals=0)) + 1
@@ -777,10 +864,11 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
     # In other words, it will find the local maxima.
     local_max = maximum_filter(Array, footprint=neighborhood) == Array
 
-    background = (Array == 0)
+    background = Array == 0
 
     eroded_background = binary_erosion(
-        background, structure=neighborhood, border_value=1)
+        background, structure=neighborhood, border_value=1
+    )
     # OK I'll try and find the gradient at each point then take the lowest values.
 
     detected_peaks = local_max ^ eroded_background
@@ -794,9 +882,8 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
 
     # sort arguments based on the first column
     # Just like Python, in that [::-1] reverses the array returned by argsort()
-    # [:N] gives the first N elements of the reversed list
-    val_points_sorted = val_points_sorted[val_points_sorted[:, 0].argsort(
-    )][::-1][:N]
+    #  [:N] gives the first N elements of the reversed list
+    val_points_sorted = val_points_sorted[val_points_sorted[:, 0].argsort()][::-1][:N]
     val_b_points_sorted = val_points_sorted[:, 2]
     val_s_points_sorted = val_points_sorted[:, 1]
 
@@ -815,9 +902,10 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
 
     return peaks_combined_vals
 
+
 # manually pick time window around phase
-def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
-    '''
+def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
+    """
     Given an Obspy stream of traces, plot a record section and allow a time window to be picked around the phases of interest.
 
     Param: stream (Obspy stream object)
@@ -828,8 +916,7 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
 
     Return:
         The selected time window as numpy array [window_start, window_end].
-    '''
-
+    """
 
     # define a function to record the location of the clicks
     def get_window(event):
@@ -856,15 +943,14 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
     # get the header with the times of the target phase in it
     Target_time_header = get_t_header_pred_time(stream=stream, phase=phase)
 
-
     # get the min and max predicted time of the phase at the array
     Target_phase_times, time_header_times = get_predicted_times(
-        stream=stream, phase=phase)
+        stream=stream, phase=phase
+    )
 
     avg_target_time = np.mean(Target_phase_times)
     min_target_time = np.amin(Target_phase_times)
     max_target_time = np.amax(Target_phase_times)
-
 
     print(avg_target_time)
     print(min_target_time)
@@ -880,8 +966,9 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
 
     event_time = get_eventtime(stream)
     stream_plot = stream.copy
-    stream_plot = stream.trim(starttime=event_time + win_st,
-                          endtime=event_time + win_end)
+    stream_plot = stream.trim(
+        starttime=event_time + win_st, endtime=event_time + win_end
+    )
     stream = stream.normalize()
 
     # plot each trace with distance
@@ -890,12 +977,17 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
         dist = tr.stats.sac.gcarc
         # if you want to align them, subtract the times of the target phase
         if align == True:
-            tr_plot = tr.copy().trim(starttime=event_time + (getattr(tr.stats.sac, Target_time_header) - tmin),
-                          endtime=event_time + (getattr(tr.stats.sac, Target_time_header) + tmax))
+            tr_plot = tr.copy().trim(
+                starttime=event_time
+                + (getattr(tr.stats.sac, Target_time_header) - tmin),
+                endtime=event_time + (getattr(tr.stats.sac, Target_time_header) + tmax),
+            )
             time = np.linspace(-tmin, tmax, int((tmin + tmax) * tr.stats.sampling_rate))
         else:
             tr_plot = tr.copy()
-            time = np.linspace(win_st, win_end, int((win_end - win_st) * tr.stats.sampling_rate))
+            time = np.linspace(
+                win_st, win_end, int((win_end - win_st) * tr.stats.sampling_rate)
+            )
 
         # reduce amplitude of traces and plot them
         dat_plot = tr_plot.data * 0.1
@@ -911,7 +1003,7 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
             if time.shape[0] < dat_plot.shape[0]:
                 dat_plot = np.array(dat_plot[:points_diff])
 
-        ax.plot(time, dat_plot, color='black', linewidth=0.5)
+        ax.plot(time, dat_plot, color="black", linewidth=0.5)
 
     # set x axis
     if align == True:
@@ -920,13 +1012,15 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
     else:
         plt.xlim(win_st, win_end)
 
-    # plot the predictions
-    for i,time_header in enumerate(time_header_times):
+    #  plot the predictions
+    for i, time_header in enumerate(time_header_times):
         t = np.array(time_header)
 
         if align == True:
             try:
-                t[:,0] = np.subtract(t[:,0].astype(float), np.array(Target_phase_times))
+                t[:, 0] = np.subtract(
+                    t[:, 0].astype(float), np.array(Target_phase_times)
+                )
             except:
                 pass
         else:
@@ -934,21 +1028,24 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
 
         try:
             # sort array on distance
-            t = t[t[:,1].argsort()]
-            ax.plot(t[:, 0].astype(float),
-                t[:, 1].astype(float), color='C'+str(i), label=t[0, 2])
+            t = t[t[:, 1].argsort()]
+            ax.plot(
+                t[:, 0].astype(float),
+                t[:, 1].astype(float),
+                color="C" + str(i),
+                label=t[0, 2],
+            )
         except:
-            print("t%s: No arrival" %i)
-
+            print("t%s: No arrival" % i)
 
     # plt.title('Record Section Picking Window | Depth: %s Mag: %s' %(stream[0].stats.sac.evdp, stream[0].stats.sac.mag))
-    plt.ylabel('Epicentral Distance ($^\circ$)')
-    plt.xlabel('Time (s)')
-    plt.legend(loc='best')
+    plt.ylabel("Epicentral Distance ($^\circ$)")
+    plt.xlabel("Time (s)")
+    plt.legend(loc="best")
 
     window = []
     # turn on event picking package thing.
-    cid = fig.canvas.mpl_connect('button_press_event', get_window)
+    cid = fig.canvas.mpl_connect("button_press_event", get_window)
 
     print("BEFORE YOU PICK!!")
     print("The first click of your mouse will the the start of the window")
@@ -956,6 +1053,7 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align = False):
     plt.show()
 
     return window
+
 
 def write_to_file(filepath, st, peaks, prediction, phase, time_window):
     """
@@ -998,17 +1096,25 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
 
     event_time = get_eventtime(st)
     geometry = get_geometry(st)
-    distances = get_distances(st,type='deg')
+    distances = get_distances(st, type="deg")
     mean_dist = np.mean(distances)
     stations = get_stations(st)
-    centre_x, centre_y =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
-    sampling_rate=st[0].stats.sampling_rate
+    centre_x, centre_y = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
+    sampling_rate = st[0].stats.sampling_rate
     evdp = st[0].stats.sac.evdp
     evla = st[0].stats.sac.evla
     evlo = st[0].stats.sac.evlo
 
-    name = str(event_time.year) + f'{event_time.month:02d}' + f'{event_time.day:02d}'+ "_" + f'{event_time.hour:02d}' + f'{event_time.minute:02d}' + f'{event_time.second:02d}'
-    stat_string = ','.join(stations)
+    name = (
+        str(event_time.year)
+        + f"{event_time.month:02d}"
+        + f"{event_time.day:02d}"
+        + "_"
+        + f"{event_time.hour:02d}"
+        + f"{event_time.minute:02d}"
+        + f"{event_time.second:02d}"
+    )
+    stat_string = ",".join(stations)
     newlines = []
 
     # make the line string
@@ -1020,9 +1126,33 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
         slow_obs = peak[1]
         slow_pred = prediction[1]
         slow_diff = slow_obs - slow_pred
-        print(name, evlo, evla, evdp, centre_x, centre_y,  baz_pred, baz_obs, baz_diff, slow_pred, slow_obs, slow_diff, ','.join(stations), time_window[0], time_window[1], phase)
-        newline = name + f" {evlo:.2f} {evla:.2f} {evdp:.2f} {centre_x:.2f} {centre_y:.2f} {baz_pred:.2f} {baz_obs:.2f} {baz_diff:.2f} {slow_pred:.2f} {slow_obs:.2f} {slow_diff:.2f} " + stat_string + f" {time_window[0]:.2f} {time_window[1]:.2f} " + phase + " \n"
-# %(name, evlo, evla, evdp, centre_x, centre_y,  baz_pred, baz_obs, baz_diff, slow_pred, slow_obs, slow_diff, ','.join(stations), time_window[0], time_window[1], phase)
+        print(
+            name,
+            evlo,
+            evla,
+            evdp,
+            centre_x,
+            centre_y,
+            baz_pred,
+            baz_obs,
+            baz_diff,
+            slow_pred,
+            slow_obs,
+            slow_diff,
+            ",".join(stations),
+            time_window[0],
+            time_window[1],
+            phase,
+        )
+        newline = (
+            name
+            + f" {evlo:.2f} {evla:.2f} {evdp:.2f} {centre_x:.2f} {centre_y:.2f} {baz_pred:.2f} {baz_obs:.2f} {baz_diff:.2f} {slow_pred:.2f} {slow_obs:.2f} {slow_diff:.2f} "
+            + stat_string
+            + f" {time_window[0]:.2f} {time_window[1]:.2f} "
+            + phase
+            + " \n"
+        )
+        # %(name, evlo, evla, evdp, centre_x, centre_y,  baz_pred, baz_obs, baz_diff, slow_pred, slow_obs, slow_diff, ','.join(stations), time_window[0], time_window[1], phase)
         # there will be multiple lines so add these to this list.
         newlines.append(newline)
 
@@ -1030,25 +1160,27 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
 
     # now loop over file to see if I have this observation already
     found = False
-    added = False # just so i dont write it twice if i find the criteria in multiple lines
+    added = (
+        False  # just so i dont write it twice if i find the criteria in multiple lines
+    )
     ## write headers to the file if it doesnt exist
     line_list = []
 
     if os.path.exists(filepath):
-        with open(filepath, 'r') as Multi_file:
+        with open(filepath, "r") as Multi_file:
             for line in Multi_file:
                 if name in line and phase in line and f"{centre_y:.2f}" in line:
                     print("name and phase and stla in line, replacing")
                     if added == False:
                         line_list.extend(newlines)
-                        added= True
+                        added = True
                     else:
-                        print('already added to file')
+                        print("already added to file")
                     found = True
                 else:
                     line_list.append(line)
     else:
-        with open(filepath, 'w') as Multi_file:
+        with open(filepath, "w") as Multi_file:
             Multi_file.write(header)
             line_list.append(header)
     if not found:
@@ -1057,9 +1189,8 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
     else:
         pass
 
-    with open(filepath, 'w') as Multi_file2:
+    with open(filepath, "w") as Multi_file2:
         Multi_file2.write("".join(line_list))
-
 
 
 def break_sub_arrays(st, min_stat, min_dist):
@@ -1094,8 +1225,8 @@ def break_sub_arrays(st, min_stat, min_dist):
 
     stations = get_stations(st)
     geometry = get_geometry(st)
-    lons = geometry[:,0]
-    lats = geometry[:,1]
+    lons = geometry[:, 0]
+    lats = geometry[:, 1]
 
     ## dbscan to remove non-dense stations
     lats_lons_deg = np.array(list(zip(lats, lons)))
@@ -1103,7 +1234,7 @@ def break_sub_arrays(st, min_stat, min_dist):
 
     # use DBSCAN
 
-    db = DBSCAN(eps=min_dist, min_samples=min_stat, metric='haversine').fit(lats_lons)
+    db = DBSCAN(eps=min_dist, min_samples=min_stat, metric="haversine").fit(lats_lons)
     labels = db.labels_
 
     # Number of clusters in labels, ignoring noise if present.
@@ -1124,7 +1255,9 @@ def break_sub_arrays(st, min_stat, min_dist):
     lats_lons_core = np.array(list(zip(np.deg2rad(lats_core), np.deg2rad(lons_core))))
 
     # make a tree of these lats and lons
-    tree = BallTree(lats_lons_core, leaf_size=lats_lons_core.shape[0]/2, metric='haversine')
+    tree = BallTree(
+        lats_lons_core, leaf_size=lats_lons_core.shape[0] / 2, metric="haversine"
+    )
     # just a test of how the radius query works
     sub_array_test = tree.query_radius(X=lats_lons_core, r=min_dist)
 
@@ -1136,10 +1269,9 @@ def break_sub_arrays(st, min_stat, min_dist):
     while core_points_as_centroids.size != 0:
 
         # first get all the core points within 2 degrees of the first core point in the
-        sub_array, distances = tree.query_radius(X=np.array([core_points_as_centroids[0]]),
-                                                 r=min_dist,
-                                                 return_distance=True)
-
+        sub_array, distances = tree.query_radius(
+            X=np.array([core_points_as_centroids[0]]), r=min_dist, return_distance=True
+        )
 
         # add the first point to the centroid list
         final_centroids.append(core_points_as_centroids[0])
@@ -1147,6 +1279,6 @@ def break_sub_arrays(st, min_stat, min_dist):
         for s in sub_array[0]:
             value = lats_lons_core[s]
             row_mask = (core_points_as_centroids != value).all(axis=1)
-            core_points_as_centroids = core_points_as_centroids[row_mask,:]
+            core_points_as_centroids = core_points_as_centroids[row_mask, :]
 
     return final_centroids, lats_lons_use, lats_lons_core, stations_use

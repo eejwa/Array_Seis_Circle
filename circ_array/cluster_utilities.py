@@ -1,9 +1,9 @@
-
 import numpy as np
 from scipy.stats import circmean, circstd, circvar
 import obspy
 
 import circ_array as c
+
 
 class cluster_utilities:
 
@@ -31,7 +31,6 @@ class cluster_utilities:
         self.labels = labels
         self.points = points
 
-
     def group_points_clusters(self):
         """
         From the points and labels, this function will split the points
@@ -49,8 +48,10 @@ class cluster_utilities:
 
         for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = self.points[np.where(
-                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
 
             points_cluster = np.array([points_x, points_y]).T
             points_clusters.append(points_cluster)
@@ -103,10 +104,12 @@ class cluster_utilities:
 
         for p in range(np.amax(self.labels) + 1):
 
-            p_x, p_y = np.mean(self.points[np.where(self.labels == p)][:, 0]), np.mean(
-                self.points[np.where(self.labels == p)][:, 1])
+            p_x, p_y = (
+                np.mean(self.points[np.where(self.labels == p)][:, 0]),
+                np.mean(self.points[np.where(self.labels == p)][:, 1]),
+            )
 
-            mean_abs_slow, mean_baz = c.get_slow_baz(p_x, p_y, dir_type='az')
+            mean_abs_slow, mean_baz = c.get_slow_baz(p_x, p_y, dir_type="az")
 
             mean_abs_slow = np.around(mean_abs_slow, 2)
             mean_baz = np.around(mean_baz, 1)
@@ -114,8 +117,7 @@ class cluster_utilities:
             means_xy.append(np.array([p_x, p_y]))
             means_baz_slow.append(np.array([mean_baz, mean_abs_slow]))
 
-        return np.around(means_xy,2), np.around(means_baz_slow,2)
-
+        return np.around(means_xy, 2), np.around(means_baz_slow, 2)
 
     def cluster_std_devs(self):
         """
@@ -141,21 +143,22 @@ class cluster_utilities:
                             in each cluster.
         """
 
-        bazs_std= []
+        bazs_std = []
         slows_std = []
 
         for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = self.points[np.where(
-                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
 
             # points_x += rel_x
             # points_y += rel_y
 
             points_cluster = np.array([points_x, points_y]).T
 
-            abs_slows, bazs = c.get_slow_baz(points_x, points_y, dir_type='az')
-
+            abs_slows, bazs = c.get_slow_baz(points_x, points_y, dir_type="az")
 
             abs_slow_std_dev = np.around(np.std(abs_slows), 2)
             # stdev - use scipy's circstd
@@ -164,8 +167,7 @@ class cluster_utilities:
             bazs_std.append(baz_std_dev)
             slows_std.append(abs_slow_std_dev)
 
-        return np.around(bazs_std,2), np.around(slows_std,2)
-
+        return np.around(bazs_std, 2), np.around(slows_std, 2)
 
     def covariance_matrices(self):
         """
@@ -186,8 +188,10 @@ class cluster_utilities:
 
         for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = self.points[np.where(
-                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
             #
             # points_x += rel_x
             # points_y += rel_y
@@ -214,13 +218,14 @@ class cluster_utilities:
 
         """
 
-
         ellipse_properties = []
 
         for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = self.points[np.where(
-                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
 
             # points_x += rel_x
             # points_y += rel_y
@@ -240,7 +245,6 @@ class cluster_utilities:
             ellipse_properties.append([p, width, height, theta])
 
         return np.around(ellipse_properties, 2)
-
 
     def cluster_ellipse_areas(self, std_dev):
         """
@@ -265,8 +269,10 @@ class cluster_utilities:
 
         for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = self.points[np.where(
-                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
 
             # points_x += rel_x
             # points_y += rel_y
@@ -281,12 +287,11 @@ class cluster_utilities:
             # calculate the width and height of the ellipse
             width, height = 2 * std_dev * np.sqrt(vals)
 
-            Area_error_ellipse = (np.pi * (width/2) * (height/2))
+            Area_error_ellipse = np.pi * (width / 2) * (height / 2)
 
             ellipse_areas.append(Area_error_ellipse)
 
         return np.around(ellipse_areas, 2)
-
 
     def cluster_baz_slow_95_conf(self, std_dev):
         """
@@ -324,15 +329,17 @@ class cluster_utilities:
 
         for p in range(np.amax(self.labels) + 1):
 
-            points_x, points_y = self.points[np.where(
-                self.labels == p)][:, 0], self.points[np.where(self.labels == p)][:, 1]
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
 
             # points_x += rel_x
             # points_y += rel_y
 
             points_cluster = np.array([points_x, points_y]).T
 
-            abs_slows, bazs = get_slow_baz_array(points_x, points_y, dir_type='az')
+            abs_slows, bazs = get_slow_baz_array(points_x, points_y, dir_type="az")
 
             mean_abs_slow = np.around(mean_abs_slow, 2)
             mean_baz = np.around(mean_baz, 1)
@@ -347,8 +354,11 @@ class cluster_utilities:
             rotated_bazs = (bazs + baz_diff) % 360
 
             # Now, using arctan2(), can find the angle difference frmo -pi to +pi
-            diffs = np.degrees(np.arctan2(
-                np.sin(np.radians(rotated_bazs)), np.cos(np.radians(rotated_bazs))))
+            diffs = np.degrees(
+                np.arctan2(
+                    np.sin(np.radians(rotated_bazs)), np.cos(np.radians(rotated_bazs))
+                )
+            )
 
             # order the diffs and get the percentiles
             diffs_sorted = np.sort(diffs)
@@ -362,11 +372,19 @@ class cluster_utilities:
             bazs_95_confidence.append([baz_lower, baz_upper])
             slows_95_confidence.append([lower_abs_slow, upper_abs_slow])
 
-
         return np.array(bazs_95_confidence), np.array(slows_95_confidence)
 
-
-    def create_newlines(self, st, file_path, phase, window, Boots, epsilon, slow_vec_error=3, Filter=False):
+    def create_newlines(
+        self,
+        st,
+        file_path,
+        phase,
+        window,
+        Boots,
+        epsilon,
+        slow_vec_error=3,
+        Filter=False,
+    ):
         """
         This function will create a list of lines with all relevant information to be stored in
         the results file. The function write_to_cluster_file() will write these lines to a new
@@ -413,11 +431,11 @@ class cluster_utilities:
 
         event_time = c.get_eventtime(st)
         geometry = c.get_geometry(st)
-        distances = c.get_distances(st,type='deg')
+        distances = c.get_distances(st, type="deg")
         mean_dist = np.mean(distances)
         stations = c.get_stations(st)
         no_stations = len(stations)
-        stlo_mean, stla_mean =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
+        stlo_mean, stla_mean = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
         evdp = st[0].stats.sac.evdp
         evlo = st[0].stats.sac.evlo
         evla = st[0].stats.sac.evla
@@ -428,13 +446,31 @@ class cluster_utilities:
         # find the line with the predictions for the phase of interest
         row = np.where((predictions == phase))[0]
 
-        P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = predictions[row, :][0]
+        (
+            P,
+            S,
+            BAZ,
+            PRED_BAZ_X,
+            PRED_BAZ_Y,
+            PRED_AZ_X,
+            PRED_AZ_Y,
+            DIST,
+            TIME,
+        ) = predictions[row, :][0]
         PRED_BAZ_X = float(PRED_BAZ_X)
         PRED_BAZ_Y = float(PRED_BAZ_Y)
         S = float(S)
         BAZ = float(BAZ)
 
-        name = str(event_time.year) + f'{event_time.month:02d}' + f'{event_time.day:02d}'+ "_" + f'{event_time.hour:02d}' + f'{event_time.minute:02d}' + f'{event_time.second:02d}'
+        name = (
+            str(event_time.year)
+            + f"{event_time.month:02d}"
+            + f"{event_time.day:02d}"
+            + "_"
+            + f"{event_time.hour:02d}"
+            + f"{event_time.minute:02d}"
+            + f"{event_time.second:02d}"
+        )
 
         no_clusters = np.amax(self.labels) + 1
         means_xy, means_baz_slow = self.cluster_means()
@@ -446,19 +482,23 @@ class cluster_utilities:
         if Filter == True:
             try:
 
-                distances = distance.cdist(np.array([[PRED_BAZ_X,PRED_BAZ_Y]]), means, metric="euclidean")
-                number_arrivals_slow_space = np.where(distances < slow_vec_error)[0].shape[0]
+                distances = distance.cdist(
+                    np.array([[PRED_BAZ_X, PRED_BAZ_Y]]), means, metric="euclidean"
+                )
+                number_arrivals_slow_space = np.where(distances < slow_vec_error)[
+                    0
+                ].shape[0]
 
                 number_arrivals = number_arrivals_slow_space
             except:
-                multi='t'
+                multi = "t"
                 number_arrivals = 0
 
         elif Filter == False:
             number_arrivals = no_clusters
 
         else:
-            print('Filter needs to be True or False')
+            print("Filter needs to be True or False")
             exit()
 
         if number_arrivals > 1:
@@ -466,20 +506,20 @@ class cluster_utilities:
 
         elif number_arrivals == 0:
             print("no usable arrivals, exiting code")
-            #exit()
-            multi='t'
+            # exit()
+            multi = "t"
         elif number_arrivals == 1:
             multi = "n"
 
-            with open(events_n_multi_path, 'a') as No_file:
-                No_file.write("%s, %s \n" %(foldername, phase))
+            with open(events_n_multi_path, "a") as No_file:
+                No_file.write("%s, %s \n" % (foldername, phase))
         else:
             print("something went wrong in error estimates, exiting")
-            #exit()
-            multi='t'
+            # exit()
+            multi = "t"
 
         # make new line
-        usable_means = np.empty((number_arrivals,2))
+        usable_means = np.empty((number_arrivals, 2))
 
         # set counter to be zero, this will be used to label the arrivals as first second etc.
         usable_arrivals = 0
@@ -489,30 +529,29 @@ class cluster_utilities:
 
                 # create label for the arrival
                 # get information for that arrival
-                baz_obs = means_baz_slow[i,0]
+                baz_obs = means_baz_slow[i, 0]
 
                 baz_diff = baz_obs - float(BAZ)
 
-                slow_obs = means_baz_slow[i,1]
+                slow_obs = means_baz_slow[i, 1]
                 slow_diff = slow_obs - float(S)
 
-                slow_x_obs = c.myround(means_xy[i,0])
-                slow_y_obs = c.myround(means_xy[i,1])
+                slow_x_obs = c.myround(means_xy[i, 0])
+                slow_y_obs = c.myround(means_xy[i, 1])
 
                 del_x_slow = slow_x_obs - PRED_BAZ_X
                 del_y_slow = slow_y_obs - PRED_BAZ_Y
 
-                distance = np.sqrt(del_x_slow**2 + del_y_slow**2)
+                distance = np.sqrt(del_x_slow ** 2 + del_y_slow ** 2)
 
                 baz_std_dev = bazs_std[i]
                 slow_std_dev = slows_std[i]
 
                 error_ellipse_area = ellipse_areas[i]
 
-                width = ellipse_properties[i,1]
-                height = ellipse_properties[i,2]
-                theta = ellipse_properties[i,3]
-
+                width = ellipse_properties[i, 1]
+                height = ellipse_properties[i, 2]
+                theta = ellipse_properties[i, 3]
 
                 # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
                 #     multi = 'm'
@@ -520,13 +559,19 @@ class cluster_utilities:
                 if Filter == True:
                     if distance < slow_vec_error:
 
-                        usable_means[usable_arrivals] = np.array([slow_x_obs,slow_y_obs])
+                        usable_means[usable_arrivals] = np.array(
+                            [slow_x_obs, slow_y_obs]
+                        )
 
                         points_cluster = points_clusters[i]
 
-                        tree = KDTree(points_cluster, leaf_size=self.points.shape[0]*1.5)
-                        points_rad = tree.query_radius(points_cluster, r=epsilon, count_only=True)
-                        densities = points_rad / (np.pi * (epsilon**2))
+                        tree = KDTree(
+                            points_cluster, leaf_size=self.points.shape[0] * 1.5
+                        )
+                        points_rad = tree.query_radius(
+                            points_cluster, r=epsilon, count_only=True
+                        )
+                        densities = points_rad / (np.pi * (epsilon ** 2))
                         mean_density = np.mean(densities)
 
                         # update the usable arrivals count
@@ -534,40 +579,42 @@ class cluster_utilities:
                         name_label = name + "_" + str(usable_arrivals)
 
                         # define the newline to be added to the file
-                        newline = f"{name_label} {evla} {evlo} {evdp} {stla_mean} "\
-                                  f"{stlo_mean} {str(S)} {str(slow_obs)} {str(slow_diff)} "\
-                                  f"{str(slow_std_dev)} {str(BAZ)} {str(baz_obs)} {str(baz_diff)} "\
-                                  f"{str(baz_std_dev)} {str(PRED_BAZ_X)} {str(slow_x_obs)} "\
-                                  f"{str(del_x_slow)} {str(PRED_BAZ_Y)} {str(slow_y_obs)} "\
-                                  f"{str(del_y_slow)} {str(error_ellipse_area)} {str(width)} "\
-                                  f"{str(height)} {str(theta)} {str(mean_density)} {multi} "\
-                                  f"{phase} {str(no_stations)} {','.join(stations)} {window[0]} "\
-                                  f"{window[1]} {Boots} \n"
+                        newline = (
+                            f"{name_label} {evla} {evlo} {evdp} {stla_mean} "
+                            f"{stlo_mean} {str(S)} {str(slow_obs)} {str(slow_diff)} "
+                            f"{str(slow_std_dev)} {str(BAZ)} {str(baz_obs)} {str(baz_diff)} "
+                            f"{str(baz_std_dev)} {str(PRED_BAZ_X)} {str(slow_x_obs)} "
+                            f"{str(del_x_slow)} {str(PRED_BAZ_Y)} {str(slow_y_obs)} "
+                            f"{str(del_y_slow)} {str(error_ellipse_area)} {str(width)} "
+                            f"{str(height)} {str(theta)} {str(mean_density)} {multi} "
+                            f"{phase} {str(no_stations)} {','.join(stations)} {window[0]} "
+                            f"{window[1]} {Boots} \n"
+                        )
 
                         # there will be multiple lines so add these to this list.
                         newlines.append(newline)
 
-
                     else:
-                        print('The error for this arrival is too large, not analysing this any further')
+                        print(
+                            "The error for this arrival is too large, not analysing this any further"
+                        )
                         ## change the labels
-                        labels = np.where(labels==i,-1,labels)
-
+                        labels = np.where(labels == i, -1, labels)
 
                         newline = ""
                         newlines.append(newline)
 
                 elif Filter == False:
 
-
                     usable_means[usable_arrivals] = np.array([slow_x_obs, slow_y_obs])
 
                     points_cluster = points_clusters[i]
 
-
-                    tree = KDTree(points_cluster, leaf_size=self.points.shape[0]*1.5)
-                    points_rad = tree.query_radius(points_cluster, r=epsilon, count_only=True)
-                    densities = points_rad / (np.pi * (epsilon**2))
+                    tree = KDTree(points_cluster, leaf_size=self.points.shape[0] * 1.5)
+                    points_rad = tree.query_radius(
+                        points_cluster, r=epsilon, count_only=True
+                    )
+                    densities = points_rad / (np.pi * (epsilon ** 2))
                     mean_density = np.mean(densities)
 
                     # update the usable arrivals count
@@ -575,50 +622,51 @@ class cluster_utilities:
                     name_label = name + "_" + str(usable_arrivals)
 
                     # define the newline to be added to the file
-                    newline = f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {stla_mean:.2f} "\
-                              f"{stlo_mean:.2f} {S:.2f} {slow_obs:.2f} {slow_diff:.2f} "\
-                              f"{slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "\
-                              f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "\
-                              f"{del_x_slow:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "\
-                              f"{del_y_slow:.2f} {error_ellipse_area:.2f} {width:.2f} "\
-                              f"{height:.2f} {theta:.2f} {mean_density:.2f} {multi} "\
-                              f"{phase} {no_stations} {','.join(stations)} {window[0]:.2f} "\
-                              f"{window[1]:.2f} {Boots} \n"
+                    newline = (
+                        f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {stla_mean:.2f} "
+                        f"{stlo_mean:.2f} {S:.2f} {slow_obs:.2f} {slow_diff:.2f} "
+                        f"{slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
+                        f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
+                        f"{del_x_slow:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                        f"{del_y_slow:.2f} {error_ellipse_area:.2f} {width:.2f} "
+                        f"{height:.2f} {theta:.2f} {mean_density:.2f} {multi} "
+                        f"{phase} {no_stations} {','.join(stations)} {window[0]:.2f} "
+                        f"{window[1]:.2f} {Boots} \n"
+                    )
 
                     # there will be multiple lines so add these to this list.
                     newlines.append(newline)
 
                 else:
-                    print('Filter needs to be True or False')
+                    print("Filter needs to be True or False")
                     exit()
 
         else:
             newline = ""
             newlines.append(newline)
 
-
         ## Write to file!
 
         # now loop over file to see if I have this observation already
         found = False
-        added = False # just so i dont write it twice if i find the criteria in multiple lines
+        added = False  # just so i dont write it twice if i find the criteria in multiple lines
         ## write headers to the file if it doesnt exist
         line_list = []
         if os.path.exists(file_path):
-            with open(file_path, 'r') as Multi_file:
+            with open(file_path, "r") as Multi_file:
                 for line in Multi_file:
                     if name in line and phase in line and str(stla_mean) in line:
                         print("name and phase and stla in line, replacing")
                         if added == False:
                             line_list.extend(newlines)
-                            added= True
+                            added = True
                         else:
-                            print('already added to file')
+                            print("already added to file")
                         found = True
                     else:
                         line_list.append(line)
         else:
-            with open(file_path, 'w') as Multi_file:
+            with open(file_path, "w") as Multi_file:
                 Multi_file.write(header)
                 line_list.append(header)
 
@@ -628,7 +676,7 @@ class cluster_utilities:
         else:
             pass
 
-        with open(file_path, 'w') as Multi_file2:
+        with open(file_path, "w") as Multi_file2:
             Multi_file2.write("".join(line_list))
 
         return newlines
