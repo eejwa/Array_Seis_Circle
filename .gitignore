@@ -1,0 +1,5 @@
+*log
+*pdf
+./circ_array/__pycache__/
+./scripts/__pycache__/
+./scripts/Results/
