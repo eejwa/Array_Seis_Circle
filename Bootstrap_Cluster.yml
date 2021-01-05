@@ -15,4 +15,7 @@ dependencies:
   - ipython
   - bleach
   - matplotlib
+  - basemap
+  - cartopy
+  - black
 prefix: /opt/anaconda3/envs/Boots_Cluster
