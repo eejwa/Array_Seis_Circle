@@ -23,25 +23,17 @@ size_cores = comm.size
 processes_per_core = int(Boots / size_cores)
 
 # if directory does not exist, create it
+
 if comm.Get_rank() == 0:
-    if os.path.exists(Res_dir):
+    if os.path.exists(numpy_dir):
         pass
     else:
-        os.makedirs(Res_dir)
+        os.makedirs(numpy_dir)
 
 st = obspy.read(filepath)
-sample_size = len(st)
 
-# get array metadata
+
 event_time = c.get_eventtime(st)
-geometry = c.get_geometry(st)
-distances = c.get_distances(st,type='deg')
-mean_dist = np.mean(distances)
-stations = c.get_stations(st)
-centre_x, centre_y =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
-sampling_rate=st[0].stats.sampling_rate
-evdp = st[0].stats.sac.evdp
-
 # get travel time information and define a window
 Target_phase_times, time_header_times = c.get_predicted_times(st,phase)
 
@@ -55,6 +47,20 @@ etime = event_time + max_target
 # Normalise and cut seismogram around defined window
 st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
+
+
+sample_size = len(st)
+# get array metadata
+# this is done after the trimming because the
+# trmming can remove dodgy traces
+geometry = c.get_geometry(st)
+distances = c.get_distances(st,type='deg')
+mean_dist = np.mean(distances)
+stations = c.get_stations(st)
+centre_x, centre_y =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
+sampling_rate=st[0].stats.sampling_rate
+evdp = st[0].stats.sac.evdp
+
 
 # get predicted slownesses and backazimuths
 predictions = c.pred_baz_slow(
@@ -81,6 +87,7 @@ Shifted_Traces = shift_traces(traces=Traces, geometry=geometry, abs_slow=float(S
                               distance=float(mean_dist), centre_x=float(centre_x), centre_y=float(centre_y),
                               sampling_rate=sampling_rate)
 
+
 ## cut the shifted traces within the defined time window
 ## from the t_min and rel_tmax
 
@@ -99,18 +106,13 @@ for index in range(len(st_shifted)):
     # keep information about geometry etc.
     st_shifted[index].data = cut_shifted_traces[index]
 
-
-
 # make lists to store the peaks, noise and theta-p plots
-
 Lin_list = []
 Noise_list = []
 threshold_peaks_list = []
 
-
 for i in range(0, processes_per_core):
     print(i)
-
 
     label = (i * int(comm.size)) + int(comm.rank)
     # get a random sample of traces - needs to be in list format
@@ -173,10 +175,7 @@ for i in range(0, processes_per_core):
                            xstep=s_space, ystep=s_space, N=peak_number)
 
 
-    no_smooth_peaks = c.findpeaks_XY(Threshold_lin_array, xmin=sx_min,
-                           xmax=sx_max, ymin=sy_min, ymax=sy_max,
-                           xstep=s_space, ystep=s_space, N=peak_number)
-
+    print(peaks)
     sys.stdout.flush()
 
     # add the arrays to a list
@@ -200,13 +199,12 @@ all_thresh_peaks_list_combined = np.array(
 
 if comm.Get_rank() == 0:
     Lin_Mean = np.mean(all_lin_list_combined, axis=0)
-    # print(Lin_Mean.shape)
+
     # Lin_list = []
     Noise_list = []
     Peaks_list = []
 
     All_Thresh_Peaks_arr = np.vstack(all_thresh_peaks_list_combined)
-    All_Lin_arr = np.array(Lin_list)
     All_Noise_arr = np.array(Noise_list)
 
     # Ok need to get all the probability arrays into one list/array.
@@ -217,16 +215,16 @@ if comm.Get_rank() == 0:
 
 
     # save to the results directory!
-    all_max_peaks_filename = "%sAll_Thresh_Peaks_%s_%s_%s_array" %(Res_dir, Boots, fmin, fmax)
-    all_lin_arr_filename = "%sAll_Lin_%s_%s_%s_array" %(Res_dir, Boots, fmin, fmax)
-    all_noise_arr_filename = "%sAll_Noise_%s_%s_%s_array" %(Res_dir, Boots, fmin, fmax)
+    all_max_peaks_filename = "%sAll_Thresh_Peaks_%s_%s_%s_array" %(numpy_dir, Boots, fmin, fmax)
+    lin_mean_arr_filename = "%sMean_Lin_%s_%s_%s_array" %(numpy_dir, Boots, fmin, fmax)
+    all_noise_arr_filename = "%sAll_Noise_%s_%s_%s_array" %(numpy_dir, Boots, fmin, fmax)
 
-    n_array_names = [all_max_peaks_filename, all_lin_arr_filename, all_noise_arr_filename]
+    n_array_names = [all_max_peaks_filename, lin_mean_arr_filename, all_noise_arr_filename]
 
     for a_name in n_array_names:
         if os.path.exists(a_name):
                 os.remove(a_name)
 
     np.save(all_max_peaks_filename, All_Thresh_Peaks_arr)
-    np.save(all_lin_arr_filename, All_Lin_arr)
+    np.save(lin_mean_arr_filename, Lin_Mean)
     np.save(all_noise_arr_filename, All_Noise_arr)
