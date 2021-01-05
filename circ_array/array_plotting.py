@@ -531,6 +531,47 @@ class plotting:
         return
 
 
+    def plot_cov_ellipse(self, cov, pos, nstd=2, linewidth=1):
+        """
+        Plots an `nstd` sigma error ellipse based on the specified covariance
+        matrix (`cov`). Additional keyword arguments are passed on to the
+        ellipse patch artist.
+        Parameters
+        ----------
+                cov : The 2x2 covariance matrix to base the ellipse on
+                pos : The location of the center of the ellipse. Expects a 2-element
+                        sequence of [x0, y0].
+                nstd : The radius of the ellipse in numbers of standard deviations.
+                        Defaults to 2 standard deviations.
+                ax : The axis that the ellipse will be plotted on. Defaults to the
+                        current axis.
+                Additional keyword arguments are pass on to the ellipse patch.
+        Returns
+        -------
+                A matplotlib ellipse artist
+        """
+
+        from matplotlib.patches import Ellipse
+
+        vals, vecs = np.linalg.eigh(cov)
+        order = vals.argsort()[::-1]
+        vals = vals[order]
+        vecs = vecs[:, order]
+
+        #  calculate angle of ellipse
+        theta = np.degrees(np.arctan2(*vecs[:, 0][::-1]))
+
+        # Width and height are "full" widths, not radius
+        width, height = 2 * nstd * np.sqrt(vals)  # calculate height and width
+
+        # create ellipse  from matplotlib function
+        ellip = Ellipse(xy=pos, width=width, height=height,
+                        angle=theta, color='white',zorder=3,
+                        linewidth=linewidth)
+        ellip.set_facecolor('none')
+        return ellip
+
+
     def plot_clusters_XY(self, labels, tp, peaks, sxmin, sxmax, symin, symax, sstep, title, log = False, contour_levels=30, predictions=None, ellipse=False, std_devs=[1,2,3]):
         """
         Given a 2D array of power values for the $\theta-p$ analysis, it plots the
@@ -602,8 +643,7 @@ class plotting:
         for l in set(list(labels)):
             x_plot = x_thresh[np.where(labels == l)[0]]
             y_plot = y_thresh[np.where(labels == l)[0]]
-            print(x_plot)
-            print(y_plot)
+
             if l == -1:
                 label = 'Noise'
             else:
@@ -619,8 +659,8 @@ class plotting:
             if ellipse == True:
             # calculate ellipse using function
                 for std_dev in std_devs:
-                    ellipse_1 = plot_cov_ellipse(
-                        cov=covariance_matrices_clusters[i], pos=mean, nstd=std_dev, linewidth=1.5)
+                    ellipse_1 = self.plot_cov_ellipse(
+                        cov=covariance_matrices_clusters[i], pos=mean, nstd=std_dev, linewidth=1.0)
                     self.ax.add_artist(ellipse_1)
             else:
                 pass
