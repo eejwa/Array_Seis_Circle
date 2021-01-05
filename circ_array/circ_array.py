@@ -1059,3 +1059,94 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
 
     with open(filepath, 'w') as Multi_file2:
         Multi_file2.write("".join(line_list))
+
+
+
+def break_sub_arrays(st, min_stat, min_dist):
+    """
+    Given a stream of sac files with station location headers populated,
+    break up the stations into sub arrays which meet the criteria of
+    a minimum number of stations within a radius.
+
+    Param: st (Obspy stream object)
+    Description: It is assumed the traces in the stream object are SAC
+                 files with headers stla, stlo, stel populated.
+
+    Param: min_stat (int)
+    Description: minimum number of stations for each sub array to have.
+
+    Param: min_dist (float)
+    Description: A radius in degrees used to define the maximum neighborhood
+                 for the sub array.
+
+    Return:
+        - final_centroids: 2D array of [lat, lon] points of the stations
+                           used to break up sub arrays.
+        - lats_lons_use: 2D array of [lat, lon] of the stations which meet
+                         are identified as not being noise by DBSCAN.
+        - lats_lons_core: 2D array of the core points recovered from the
+                          cluter analysis.
+        - stations_use: station names corresponding to the coordinates in
+                        lats_lons_use
+    """
+    from sklearn.neighbors import BallTree
+    from sklearn.cluster import DBSCAN
+
+    stations = get_stations(st)
+    geometry = get_geometry(st)
+    lons = geometry[:,0]
+    lats = geometry[:,1]
+
+    ## dbscan to remove non-dense stations
+    lats_lons_deg = np.array(list(zip(lats, lons)))
+    lats_lons = np.array(list(zip(np.deg2rad(lats), np.deg2rad(lons))))
+
+    # use DBSCAN
+
+    db = DBSCAN(eps=min_dist, min_samples=min_stat, metric='haversine').fit(lats_lons)
+    labels = db.labels_
+
+    # Number of clusters in labels, ignoring noise if present.
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise_ = list(labels).count(-1)
+    core_samples = db.core_sample_indices_
+
+    lons_core = lons[core_samples]
+    lats_core = lats[core_samples]
+
+    ## Store the usable stations in a 2D array!
+    stations_use = np.array(stations)[np.where(labels >= 0)[0]]
+    lons_use = lons[np.where(labels >= 0)[0]]
+    lats_use = lats[np.where(labels >= 0)[0]]
+    lats_lons_use = np.array(list(zip(np.deg2rad(lats_use), np.deg2rad(lons_use))))
+
+    # store lats and lons of core points
+    lats_lons_core = np.array(list(zip(np.deg2rad(lats_core), np.deg2rad(lons_core))))
+
+    # make a tree of these lats and lons
+    tree = BallTree(lats_lons_core, leaf_size=lats_lons_core.shape[0]/2, metric='haversine')
+    # just a test of how the radius query works
+    sub_array_test = tree.query_radius(X=lats_lons_core, r=min_dist)
+
+    # make a copy of the lats and lons of the core points as reference
+    core_points_as_centroids = np.copy(lats_lons_core)
+
+    # create list for the final centroids
+    final_centroids = []
+    while core_points_as_centroids.size != 0:
+
+        # first get all the core points within 2 degrees of the first core point in the
+        sub_array, distances = tree.query_radius(X=np.array([core_points_as_centroids[0]]),
+                                                 r=min_dist,
+                                                 return_distance=True)
+
+
+        # add the first point to the centroid list
+        final_centroids.append(core_points_as_centroids[0])
+
+        for s in sub_array[0]:
+            value = lats_lons_core[s]
+            row_mask = (core_points_as_centroids != value).all(axis=1)
+            core_points_as_centroids = core_points_as_centroids[row_mask,:]
+
+    return final_centroids, lats_lons_use, lats_lons_core, stations_use
