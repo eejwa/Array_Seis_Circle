@@ -772,7 +772,7 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
     # For each point it will take the adjacent grid points and find the highest ones
     # In other words, it will find the local maxima.
     # local_max = maximum_filter(Array, 3)
-    local_max = maximum_filter(Array, footprint=neighborhood) == Array
+    local_max = maximum_filter(Array, footprint=neighborhood, mode='nearest') == Array
     # local_min = minimum_filter(Array_New, 3)
 
     background = Array == 0
@@ -862,7 +862,7 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
     # maximum filter will take the array 'Array'
     # For each point it will take the adjacent grid points and find the highest ones
     # In other words, it will find the local maxima.
-    local_max = maximum_filter(Array, footprint=neighborhood) == Array
+    local_max = maximum_filter(Array, footprint=neighborhood, mode='nearest') == Array
 
     background = Array == 0
 
