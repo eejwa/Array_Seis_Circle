@@ -10,6 +10,16 @@ class cluster_utilities:
     """
     This class holds functions to give information about the clusters such as their mean,
     standard deviations, area, ellipse properties.
+
+    Attributes
+    ----------
+    labels : 1D array of ints
+        Contains the cluster labels for each datapoint
+        e.g. labels = np.array([0, 0, 1, 1, 1, 0])
+
+    points : 2D numpy array
+        Contains datapoints used for the cluster analysis
+        e.g. points = np.array([[0,0], [1,0], [1,2], [2,2], [3,2], [0,1]])
     """
 
     def __init__(self, labels, points):
@@ -17,14 +27,6 @@ class cluster_utilities:
         All functions require the data points and their associated labels.
         Labels are given as output of clustering algorithms and are a list
         of integers. Each integer represents a cluster.
-
-        Param: labels - 1D numpy array
-        Description: contains the cluster labels for each datapoint
-        e.g. labels = np.array([0, 0, 1, 1, 1, 0])
-
-        Param: points - 2D numpy array
-        Description: Contains datapoints used for the cluster analysis
-        e.g. points = np.array([[0,0], [1,0], [1,2], [2,2], [3,2], [0,1]])
 
         """
         # assert(labels.shape == points.shape[0])
@@ -37,11 +39,16 @@ class cluster_utilities:
         into n arrays (n being the number of clusters) and store them
         in an array.
 
-        No inputs needed.
+        Parameters
+        ----------
 
-        Return:
-            - points_cluters - 3D array where each row has a 2D array of points
-                               for a particular cluster.
+        None
+
+        Returns
+        -------
+            points_cluters : 3D array of floats
+                Each row has a 2D array of points for a
+                particular cluster.
         """
 
         points_clusters = []
@@ -62,12 +69,19 @@ class cluster_utilities:
         """
         Given a covariance matrix, calculate the eigenvalues and eigenvectors.
 
-        Param: cov - 2D numpy array of floats
-        Description: covariance matrix of an ndarray of points. Can be found from the np.cov function.
 
-        Return:
-            vals - eigenvalues in decending order.
-            vecs - eigenvectors in decending order.
+        Parameters
+        ----------
+        cov : 2D numpy array of floats
+            Covariance matrix of an ndarray of points.
+            Can be found from the np.cov function.
+
+        Returns
+        -------
+            vals : 2D array of floats
+                Eigenvalues in decending order.
+            vecs : 2D array of floats
+                Eigenvectors in decending order.
         """
 
         vals, vecs = np.linalg.eigh(cov)
@@ -80,23 +94,28 @@ class cluster_utilities:
         Given data points and cluster labels, return the mean slowness vector
         properties of each cluster.
 
-        Param: points - 2D numpy array of floats.
-        Description: Array of points used to find clusters.
+        Parameters
+        ----------
+        points : 2D numpy array of floats.
+            Array of points used to find clusters.
 
-        Param: labels - 1D numpy array of integers.
-        Description: - Labels of each point for which cluster it is in.
+        labels : 1D numpy array of integers.
+            Labels of each point for which cluster it is in.
 
-        Param: rel_x - float
-        Description: x component of slowness vector used to align traces for relative beamforming.
+        rel_x : float
+            x component of slowness vector used to align traces for relative beamforming.
 
-        Param: rel_y - float
-        Description: y component of slowness vector used to align traces for relative beamforming.
+        rel_y : float
+            y component of slowness vector used to align traces for relative beamforming.
 
-        Return:
-                means_xy - 2D array of the mean slow_x and slow_y for each cluster.
+        Returns
+        -------
+                means_xy : 2D array of floats
+                    Mean slow_x and slow_y for each cluster.
 
-                means_baz_slow - 2D array of the meanbackazimuth and horizontal slowness
-                                 for each cluster.
+                means_baz_slow : 2D array of floats
+                    Mean backazimuth and horizontal slowness
+                    for each cluster.
         """
 
         means_xy = []
@@ -124,23 +143,28 @@ class cluster_utilities:
         Given data points and cluster labels, return the standard deviations of
         backazimuth and horizontal slownesses of each cluster.
 
-        Param: points - 2D numpy array of floats.
-        Description: Array of points used to find clusters.
+        Parameters
+        ----------
+        points : 2D numpy array of floats.
+                Array of points used to find clusters.
 
-        Param: labels - 1D numpy array of integers.
-        Description: - Labels of each point for which cluster it is in.
+        labels : 1D numpy array of integers.
+                Labels of each point for which cluster it is in.
 
-        Param: rel_x - float
-        Description: x component of slowness vector used to align traces for relative beamforming.
+        rel_x : float
+               x component of slowness vector used to align traces for relative beamforming.
 
-        Param: rel_y - float
-        Description: y component of slowness vector used to align traces for relative beamforming.
+        rel_y : float
+               y component of slowness vector used to align traces for relative beamforming.
 
-        Return:
-                bazs_std - 1D array of the standard deviation for backazimuth values in each cluster.
+        Returns
+        -------
+                bazs_std : 1D array of floats
+                    The standard deviation for backazimuth values in each cluster.
 
-                slows_std - 1D array of the standard deviation for horizontal slowness values
-                            in each cluster.
+                slows_std : 1D array of floats
+                    The standard deviation for horizontal slowness values
+                    in each cluster.
         """
 
         bazs_std = []
@@ -174,14 +198,18 @@ class cluster_utilities:
         Given the labels and point locations, returns the covariance
         matrices for each cluster.
 
-        Param: rel_x - float
-        Description: x component of slowness vector used to align traces for relative beamforming.
+        Parameters
+        ----------
+        rel_x : float
+               x component of slowness vector used to align traces for relative beamforming.
 
-        Param: rel_y - float
-        Description: y component of slowness vector used to align traces for relative beamforming.
+        rel_y : float
+               y component of slowness vector used to align traces for relative beamforming.
 
-        Return:
-            1D array of covariance matrices.
+        Returns
+        -------
+            covariance_matrices : 1D array of floats
+                Covariance matrices.
         """
 
         covariance_matrices = []
@@ -209,11 +237,14 @@ class cluster_utilities:
         Given data points and cluster labels, return the area of the error ellipse with
         the given standard deviation.
 
-        Param: std_dev - integer.
-        Description: - standard deviation of error ellipse (typically 1,2, or 3).
+        Parameters
+        ----------
+        std_dev : int
+                 Standard deviation of error ellipse (typically 1,2, or 3).
 
-        Return:
-                ellipse_properties - 2D array of the error ellipse widths heights and thetas.
+        Returns
+        -------
+                ellipse_properties 2D array of the error ellipse widths heights and thetas.
                                      [[i, width, height, theta], ..] for i in number_of_clusters.
 
         """
@@ -251,17 +282,20 @@ class cluster_utilities:
         Given data points and cluster labels, return the area of the error ellipse with
         the given standard deviation.
 
-        Param: std_dev - integer.
-        Description: - standard deviation of error ellipse (typically 1,2, or 3).
+        Parameters
+        ----------
+        std_dev : int.
+                 Standard deviation of error ellipse (typically 1,2, or 3).
 
-        Param: rel_x - float
-        Description: x component of slowness vector used to align traces for relative beamforming.
+        rel_x : float
+               x component of slowness vector used to align traces for relative beamforming.
 
-        Param: rel_y - float
-        Description: y component of slowness vector used to align traces for relative beamforming.
+        rel_y : float
+               y component of slowness vector used to align traces for relative beamforming.
 
-        Return:
-                ellipse_areas - 1D array of the area for the error ellipse of the points in each cluster.
+        Returns
+        -------
+                ellipse_areas 1D array of the area for the error ellipse of the points in each cluster.
 
         """
 
@@ -298,27 +332,30 @@ class cluster_utilities:
         Given data points and cluster labels, return the 95% confidence range for baz and
         horizontal slowness in the cluster.
 
-        Param: points - 2D numpy array of floats.
-        Description: Array of points used to find clusters.
+        Parameters
+        ----------
+        points : 2D numpy array of floats.
+                Array of points used to find clusters.
 
-        Param: labels - 1D numpy array of integers.
-        Description: - Labels of each point for which cluster it is in.
+        labels : 1D numpy array of integers.
+                Labels of each point for which cluster it is in.
 
-        Param: std_dev - integer.
-        Description: - standard deviation of error ellipse (typically 1,2, or 3).
+        std_dev : int
+                 Standard deviation of error ellipse (typically 1,2, or 3).
 
-        Param: rel_x - float
-        Description: x component of slowness vector used to align traces for relative beamforming.
+        rel_x : float
+               x component of slowness vector used to align traces for relative beamforming.
 
-        Param: rel_y - float
-        Description: y component of slowness vector used to align traces for relative beamforming.
+        rel_y : float
+               y component of slowness vector used to align traces for relative beamforming.
 
-        Return:
-                bazs_95_confidence - 2D array of floats. Each row contains the upper and lower
+        Returns
+        -------
+                bazs_95_confidence 2D array of floats. Each row contains the upper and lower
                                      bounds for the 95% backazimuth confidence intervals.
                                      Each row represents a clusters.
 
-                slows_95_confidence - 2D array of floats. Each row contains the upper and lower
+                slows_95_confidence 2D array of floats. Each row contains the upper and lower
                                      bounds for the 95% horizontal slowness confidence intervals.
                                      Each row represents a clusters.
 
@@ -390,35 +427,37 @@ class cluster_utilities:
         the results file. The function write_to_cluster_file() will write these lines to a new
         file and replace any of the lines with the same array location and target phase.
 
-        Param: st (obspy stream object)
-        Description: Obspy stream object of sac files with event, arrival time and
-                     station headers populated.
+        Parameters
+        ----------
+        st : Obspy stream object
+             Obspy stream object of sac files with event, arrival time and
+             station headers populated.
 
-        Param: file_path (string)
-        Description: path to the results file to check the contents of.
+        file_path : string
+                    Path to the results file to check the contents of.
 
-        Param: phase (string)
-        Description: target phase (e.g. SKS)
+        phase : string
+                Target phase (e.g. SKS)
 
-        Param: window (list of floats)
-        Description: tmin and tmax describing the relative time window.
+        window : list of floats
+                 tmin and tmax describing the relative time window.
 
-        Param: Boots (int)
-        Description: number of bootstrap samples.
+        Boots : int
+                Number of bootstrap samples.
+        epsilon : float
+                  Epsilon value used to find the clusters.
 
-        Param: epsilon (float)
-        Description: epsilon value used to find the clusters.
+        slow_vec_error : float
+                         Maximum slowness vector deviation between the predicted
+                         and observed arrival. Arrival with larger deviations will
+                         be removed if Filter = True (below). Default is 3.
 
-        Param: slow_vec_error (float)
-        Description: maximum slowness vector deviation between the predicted
-                     and observed arrival. Arrival with larger deviations will
-                     be removed if Filter = True (below). Default is 3.
+        Filter : bool
+                 Do you want to filter out the arrivals (default = False)
 
-        Param: Filter (bool)
-        Description: do you want to filter out the arrivals (default = False)
-
-        Return:
-            - newlines: list of strings of the contents to write to the results file.
+        Returns
+        -------
+            newlines: list of strings of the contents to write to the results file.
 
         """
 
@@ -511,8 +550,6 @@ class cluster_utilities:
         elif number_arrivals == 1:
             multi = "n"
 
-            with open(events_n_multi_path, "a") as No_file:
-                No_file.write("%s, %s \n" % (foldername, phase))
         else:
             print("something went wrong in error estimates, exiting")
             # exit()
@@ -655,7 +692,7 @@ class cluster_utilities:
         if os.path.exists(file_path):
             with open(file_path, "r") as Multi_file:
                 for line in Multi_file:
-                    if name in line and phase in line and str(stla_mean) in line:
+                    if name in line and phase in line and f"{stla_mean:.2f}" in line:
                         print("name and phase and stla in line, replacing")
                         if added == False:
                             line_list.extend(newlines)

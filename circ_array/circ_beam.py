@@ -10,20 +10,26 @@ def coords_lonlat_rad_bearing(lat1, lon1, dist_deg, brng):
     Returns the latitude and longitude of a new cordinate that is the defined distance away and
     at the correct bearing from the starting point.
 
-    Param: lat1 (float)
-    Description: starting point latitiude.
+    Parameters
+    ----------
+    lat1 : float
+        Starting point latitiude.
 
-    Param: lon1 (float)
-    Description: starting point longitude.
+    lon1 : float
+        Starting point longitude.
 
-    Param: dist_deg (float)
-    Description:  distance from starting point in degrees.
+    dist_deg : float
+        Distance from starting point in degrees.
 
-    Param: brng (float)
-    Description: angle from north describing the direction where the new coordinate is located.
+    brng : float
+        Angle from north describing the direction where the new coordinate is located.
 
-    Return:
-        latitude and longitude of the new cordinate.
+    Returns
+    -------
+    lat2 : float
+        Longitude of the new cordinate.
+    lon2 : float
+        Longitude of the new cordinate.
     """
 
     brng = np.radians(brng)  # convert bearing to radians
@@ -56,20 +62,24 @@ def haversine_deg(lat1, lon1, lat2, lon2):
     """
     Function to calculate the distance in degrees between two points on a sphere.
 
-    Param: lat1 (float)
-    Description: latitiude of point 1.
+    Parameters
+    ----------
+    lat1 : float
+        Latitiude of point 1.
 
-    Param: lat1 (float)
-    Description: longitiude of point 1.
+    lat1 : float
+        Longitiude of point 1.
 
-    Param: lat2 (float)
-    Description: latitiude of point 2.
+    lat2 : float
+        Latitiude of point 2.
 
-    Param: lon2 (float)
-    Description: longitude of point 2.
+    lon2 : float
+        Longitude of point 2.
 
-    Return:
-        Distance between two points in degrees.
+    Returns
+    -------
+        d : float
+            Distance between the two points in degrees.
     """
 
     dlat = np.radians(lat2 - lat1)
@@ -87,73 +97,45 @@ def get_slow_baz(slow_x, slow_y, dir_type):
     """
     Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
 
-    Param: slow_x (float)
-    Description: X component of slowness vector.
+    Parameters
+    ----------
+    slow_x : float
+        X component of slowness vector.
 
-    Param: slow_y (float)
-    Description: Y component of slowness vector.
+    slow_y : float
+        Y component of slowness vector.
 
-    Param: dir_type (string)
-    Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+    dir_type : string
+        How do you want the direction to be measured, backazimuth (baz) or azimuth (az).
 
-    Return:
-        slowness magnitude and baz/az value.
+    Returns
+    -------
+    slow_mag: float
+        Magnitude of slowness vector.
+    baz : float
+        Backazimuth of slowness vector
+    azimuth : float
+        Azimuth of slowness vector
     """
 
     slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
-    azimut = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
+    azimuth = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
 
     # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
-    baz = azimut % -360 + 180
+    baz = azimuth % -360 + 180
 
     # make baz positive if it's negative:
     if baz < 0:
         baz += 360
-    if azimut < 0:
-        azimut += 360
+    if azimuth < 0:
+        azimuth += 360
 
     if dir_type == "baz":
         return slow_mag, baz
     elif dir_type == "az":
-        return slow_mag, azimut
+        return slow_mag, azimuth
     else:
         pass
-
-
-@jit(nopython=True, fastmath=True)
-def get_slow_baz_array(slow_x, slow_y, dir_type):
-    """
-    Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
-
-    Param: slow_x (float)
-    Description: X component of slowness vector.
-
-    Param: slow_y (float)
-    Description: Y component of slowness vector.
-
-    Param: dir_type (string)
-    Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
-
-    return: slowness magnitude and baz/az value.
-    """
-
-    slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
-    azimut = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
-
-    # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
-    baz = azimut % -360 + 180
-
-    # make baz positive if it's negative:
-    baz[baz < 0] += 360
-    azimut[azimut < 0] += 360
-
-    if dir_type == "baz":
-        return slow_mag, baz
-    elif dir_type == "az":
-        return slow_mag, azimut
-    else:
-        pass
-
 
 # replace some of this with other functions
 @jit(nopython=True)
@@ -164,34 +146,39 @@ def ARF_process_f_s_spherical(
     Returns array transfer function as a function of slowness difference.
     This will only work for SAC files.
 
-    Param: geometry (2D numpy array)
-    Description: numpy array of [lon, lat,elevation] values for each station.
+    Parameters
+    ----------
+    geometry : 2D numpy array
+        Numpy array of [lon, lat,elevation] values for each station.
 
-    Param: s[x/y](min/max) (float).
-    Description: the min/max value of the slowness of the wavefront in x/y direction.
+    s[x/y](min/max) : float.
+        The min/max value of the slowness of the wavefront in x/y direction.
 
-    Param: sstep (float)
-    Description: slowness interval in x andy direction.
+    sstep : float
+        Slowness interval in x andy direction.
 
-    Param: distance (float)
-    Description: the distance of the event from the centre of the stations,
-    this will be used to estimate the curvature of the wavefront.
+    distance : float
+        The distance of the event from the centre of the stations,
+        this will be used to estimate the curvature of the wavefront.
 
-    Param: fmin (float)
-    Description: minimum frequency in signal.
+    fmin : float
+        Minimum frequency in signal.
 
-    Param: fmax (float)
-    Description maximum frequency in signal.
+    fmax : float
+        Maximum frequency in signal.
 
-    Param: fstep (float)
-    Description: frequency sample distance.
+    fstep : float
+        Frequency sample distance.
 
-    Param: scale: (Bool)
-    Description: if True, the values will be normalised between 0 and 1.
+    scale: : bool
+        If True, the values will be normalised between 0 and 1.
 
-    Return:
-        transff: 2D numpy array of power values in a slowness grid for the array response function.
-        ARF_arr: 2D numpy array of [slow_x,slow_y,power] can be written to an xyz file for GMT.
+    Returns
+    -------
+    transff : 2D numpy array of floats
+        Power values in a slowness grid for the array response function.
+    ARF_arr: 2D numpy array of floats
+        [slow_x,slow_y,power] can be written to an xyz file for GMT.
     """
 
     # get geometry in km from a central point. Needs to be in SAC format. :D :D :D
@@ -312,36 +299,41 @@ def calculate_time_shifts(
     should arrive at the centre of the array. Will use either a plane or curved
     wavefront approximation.
 
-    Param: traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the traces that the user wants to stack.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        A 2D numpy array containing the traces that the user wants to stack.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: abs_slow (float)
-    Description: horizontal slowness you want to align traces over.
+    abs_slow : float
+        Horizontal slowness you want to align traces over.
 
-    Param: baz (float)
-    Description: backazimuth you want to align traces over.
+    baz : float
+        Backazimuth you want to align traces over.
 
-    Param: centre_x (float)
-    Description: mean longitude.
+    centre_x : float
+        Mean longitude.
 
-    Param: centre_y (float)
-    Description: mean latitude.
+    centre_y : float
+        Mean latitude.
 
-    Param: type (string)
-    Description: will calculate either using a curved (circ) or plane (plane) wavefront.
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
 
-    Return:
-        times - 1D numpy array of the arrival time for the phase at
-                each station relative to the centre.
+    Returns
+    -------
+    times : 1D numpy array of floats
+        The arrival time for the phase at
+        each station relative to the centre.
 
-        shifts - 1D numpy array of the time shift to align on a phase at
-                each station relative to the centre.
+    shifts : 1D numpy array of floats
+        The time shift to align on a phase at
+        each station relative to the centre.
     """
 
     slow_x = abs_slow * np.sin(np.radians(baz))
@@ -410,35 +402,41 @@ def shift_traces(
     """
     Shifts the traces using the predicted arrival times for a given backazimuth and slowness.
 
-    Param: traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the traces that the user wants to stack.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        A 2D numpy array containing the traces that the user wants to stack.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: abs_slow (float)
-    Description: horizontal slowness you want to align traces over.
+    abs_slow : float
+        Horizontal slowness you want to align traces over.
 
-    Param: baz (float)
-    Description: backazimuth you want to align traces over.
+    baz : float
+        Backazimuth you want to align traces over.
 
-    Param: centre_x (float)
-    Description: mean longitude.
+    centre_x : float
+        Mean longitude.
 
-    Param: centre_y (float)
-    Description:mean latitude.
+    centre_y : float
+        Mean latitude.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: type (string)
-    Description: will calculate either using a curved (circ) or plane (plane) wavefront.
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
 
-    Return:
-        shifted_traces - 2D numpy array of floats of the shifted traces.
+    Returns
+    -------
+        shifted_traces : 2D numpy array of floats
+            The input traces shifted by the predicted arrival time
+            of a curved wavefront arriving from a backazimuth and
+            slowness.
     """
 
     brng = np.radians(baz)  # convert bearing to radians
@@ -483,26 +481,31 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
 
-    Param: Traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the traces that the user wants to stack.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        A 2D numpy array containing the traces that the user wants to stack.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: Distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    Distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: slow (float)
-    Description: horizontal slowness you want to align traces over.
+    slow : float
+        Horizontal slowness you want to align traces over.
 
-    Param: baz (float)
-    Description: backazimuth you want to align traces over.
+    baz : float
+        Backazimuth you want to align traces over.
 
-    Return:
-    lin_stack - numpy array of the stacked waveform.
+    Returns
+    -------
+    lin_stack : 1D numpy array of floats
+        The stacked waveform. The traces are shifted by the backazimuth
+        and horizontal slowness before stacking
     """
 
     ntrace = traces.shape[0]
@@ -534,30 +537,35 @@ def pws_stack_baz_slow(
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
 
-    Param: traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the traces that the user wants to stack.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        A 2D numpy array containing the traces that the user wants to stack.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack.
+    phase_traces : 2D numpy array of floats
+        A 2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: slow (float)
-    Description: horizontal slowness you want to align traces over.
+    slow : float
+        Horizontal slowness you want to align traces over.
 
-    Param: baz (float)
-    Description: backazimuth you want to align traces over.
+    baz : float
+        Backazimuth you want to align traces over.
 
-    Return:
-    stack - numpy array of the stacked waveform.
+    Returns
+    -------
+    stack : 1D numpy array of floats
+        The phase-weighted stacked waveform. The traces are shifted
+        using the backazimuth and horizontal slowness before stacking.
     """
     ntrace = traces.shape[0]
 
@@ -603,24 +611,27 @@ def pws_stack_baz_slow(
 @jit(nopython=True, fastmath=True)
 def get_max_power_loc(tp, sxmin, symin, s_space):
     """
-    finds the location of the maximum power value within a given
+    Finds the location of the maximum power value within a given
     slowness space.
 
-    Param: tp (2D array of floats)
-    Description: 2D array of values to find the maxima in.
+    Parameters
+    ----------
+    tp : 2D array of floats
+        2D array of values to find the maxima in.
 
-    Param: sxmin (float)
-    Description: minimum value on the x axis.
+    sxmin : float
+        Minimum value on the x axis.
 
-    Param: symin (float)
-    Description: minimum value on the y axis.
+    symin : float
+        Minimum value on the y axis.
 
-    Param: s_space (float)
-    Description: step interval. Assumes x and y axis spacing is the same.
+    s_space : float
+        Step interval. Assumes x and y axis spacing is the same.
 
-    return:
+    Returns
+    -------
+    peaks : 2D numpy array of floats
         2D array of: [[loc_x,loc_y]]
-
     """
 
     peaks = np.empty((1, 2))
@@ -653,53 +664,60 @@ def BF_Spherical_XY_all(
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using linear, phase weighted stacking and F statistic.
 
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    phase_traces : 2D numpy array of floats
+        2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack. Shape of [n,p]
+        where n is the number of traces and p is the points in each trace.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack. Shape of [n,p]
-                 where n is the number of traces and p is the points in each trace.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    sxmax : float
+        Maximum magnitude of slowness on x axis, used for creating the slowness grid.
 
-    Param: sxmax (float)
-    Description: Maximum magnitude of slowness on x axis, used for creating the slowness grid.
+    sxmin : float
+        Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
 
-    Param: sxmin (float)
-    Description: Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
+    symax : float
+        Maximum magnitude of slowness on y axis, used for creating the slowness grid.
 
-    Param: symax (float)
-    Description: Maximum magnitude of slowness on y axis, used for creating the slowness grid.
+    symin : float
+        Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
 
-    Param: symin (float)
-    Description: Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
+    s_space : float
+        The slowness interval for each step e.g. 0.1.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.1.
+    degree : float
+        The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
-    Param: degree (float)
-    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
-
-    ################# Return #################
-
-    - pws_tp: phase weighted stacked power grid.
-    - lin_tp: linear stack power grid.
-    - f_tp: F-statistic power grid.
-    - results_arr: 2D array containing power values for:
-        [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
-    - peaks: 2D array with 3 rows containing the X,Y points of the maximum power value for
-             phase weighted, linear and F-statistic respectively.
+    Returns
+    -------
+    pws_tp : 2D numpy array of floats.
+        Phase weighted stacked power grid.
+    lin_tp : 2D numpy array of floats.
+        Linear stack power grid.
+    f_tp : 2D numpy array of floats.
+        F-statistic power grid.
+    results_arr : 2D numpy array of floats.
+        Contains power values for:
+        [slow_x, slow_y, power_pws, power_F,
+        power_lin, baz, abs_slow]
+    peaks : 2D array of floats.
+        Array contains 3 rows describing the X,Y points
+        of the maximum power value for phase weighted,
+        linear and F-statistic respectively.
     """
 
     ntrace = traces.shape[0]
@@ -820,44 +838,48 @@ def BF_Spherical_XY_Lin(
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using linear stack.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: sxmax (float)
-    Description: Maximum magnitude of slowness on x axis, used for creating the slowness grid.
+    sxmax : float
+        Maximum magnitude of slowness on x axis, used for creating the slowness grid.
 
-    Param: sxmin (float)
-    Description: Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
+    sxmin : float
+        Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
 
-    Param: symax (float)
-    Description: Maximum magnitude of slowness on y axis, used for creating the slowness grid.
+    symax : float
+        Maximum magnitude of slowness on y axis, used for creating the slowness grid.
 
-    Param: symin (float)
-    Description: Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
+    symin : float
+        Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.1.
+    s_space : float
+        The slowness interval for each step e.g. 0.1.
 
-
-    ################# Return #################
-
-    - lin_tp: linear stack power grid.
-    - results_arr: 2D array containing power values for:
-        [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
-    - peaks: 2D array with 1 row containing the X,Y points of the maximum power value for
-             phase weighted, linear and F-statistic respectively.
+    Returns
+    -------
+    lin_tp : 2D numpy array of floats.
+        Linear stack power grid.
+    results_arr : 2D numpy array of floats.
+        Contains power values for:
+        [slow_x, slow_y, power_lin, baz, abs_slow]
+    peaks : 2D array of floats.
+        Array contains 3 rows describing the X,Y points
+        of the maximum power value for phase weighted,
+        linear and F-statistic respectively.
     """
 
     ntrace = traces.shape[0]
@@ -942,50 +964,55 @@ def BF_Spherical_XY_PWS(
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using phase weighted stacking.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack. Shape of [n,p]
-                 where n is the number of traces and p is the points in each trace.
+    phase_traces : 2D numpy array of floats
+        2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack. Shape of [n,p]
+        where n is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth].
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: sxmax (float)
-    Description: Maximum magnitude of slowness on x axis, used for creating the slowness grid.
+    sxmax : float
+        Maximum magnitude of slowness on x axis, used for creating the slowness grid.
 
-    Param: sxmin (float)
-    Description: Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
+    sxmin : float
+        Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
 
-    Param: symax (float)
-    Description: Maximum magnitude of slowness on y axis, used for creating the slowness grid.
+    symax : float
+        Maximum magnitude of slowness on y axis, used for creating the slowness grid.
 
-    Param: symin (float)
-    Description: Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
+    symin : float
+        Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.1.
+    s_space : float
+        The slowness interval for each step e.g. 0.1.
 
-    Param: degree (float)
-    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+    degree : float
+        The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
-    ################# Return #################
-
-    - pws_tp: phase weighted stacked power grid.
-    - results_arr: 2D array containing power values for:
-        [slow_x, slow_y, power_pws, power_F, power_lin, baz, abs_slow]
-    - peaks: 2D array with 1 rows containing the X,Y points of the maximum power value for
-             phase weighted, linear and F-statistic respectively.
+    Returns
+    -------
+    pws_tp : 2D numpy array of floats.
+        Phase weighted stacked power grid.
+    results_arr : 2D numpy array of floats.
+        Contains power values for:
+        [slow_x, slow_y, power_pws, baz, abs_slow]
+    peaks : 2D array of floats.
+        Array contains 3 rows describing the X,Y points
+        of the maximum power value for phase weighted,
+        linear and F-statistic respectively.
     """
 
     ntrace = traces.shape[0]
@@ -1084,56 +1111,62 @@ def BF_Spherical_Pol_all(
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
     coherent power. Stacks the traces using linear and phase weighted stacking and applies the F statistic.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack. Shape of [n,p]
-                 where n is the number of traces and p is the points in each trace.
+    phase_traces : 2D numpy array of floats
+        2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack. Shape of [n,p]
+        where n is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: smax (float)
-    Description: Maximum magnitude of slowness.
+    smax : float
+        Maximum magnitude of slowness.
 
-    Param: smin (float)
-    Description: Minimun magnitude of the slowness.
+    smin : float
+        Minimun magnitude of the slowness.
 
-    Param: bazmin (float)
-    Description: Minimum backazimuth value to search over.
+    bazmin : float
+        Minimum backazimuth value to search over.
 
-    Param: bazmax (float)
-    Description: Maximum backazimuth value to search over.
+    bazmax : float
+        Maximum backazimuth value to search over.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.05.
+    s_space : float
+        The slowness interval for each step e.g. 0.05.
 
-    Param: baz_space (float)
-    Description: The backazimuth interval for each step e.g. 0.1.
+    baz_space : float
+        The backazimuth interval for each step e.g. 0.1.
 
-    Param: degree (float)
-    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+    degree : float
+        The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
-    ################# Return #################
-    5 arrays with: [slow, baz, rel_power] for each slowness and backazimuth combination in the grid for:
-
-    - pws_tp: phase weighted stacked power grid.
-    - lin_tp: linear stack power grid.
-    - f_tp: F-statistic power grid.
-    - results_arr: 2D array containing power values for:
+    Returns
+    -------
+    pws_tp : 2D numpy array of floats.
+        Phase weighted stacked power grid.
+    lin_tp : 2D numpy array of floats.
+        Linear stack power grid.
+    f_tp : 2D numpy array of floats.
+        F-statistic power grid.
+    results_arr : 2D numpy array of floats.
+        Array contains values for:
         [slow, baz, power_pws, power_F, power_lin]
-    - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
-             phase weighted, linear and F-statistic respectively.
+    peaks : 2D numpy array of floats.
+        2D array with 3 rows containing the horizontal_slowness,
+        backzimuth points of the maximum power value for
+        phase weighted, linear and F-statistic respectively.
     """
 
     ntrace = traces.shape[0]
@@ -1272,46 +1305,49 @@ def BF_Spherical_Pol_Lin(
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
     coherent power. Stacks the traces using linear stacking.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: smax (float)
-    Description: Maximum magnitude of slowness.
+    smax : float
+        Maximum magnitude of slowness.
 
-    Param: smin (float)
-    Description: Minimun magnitude of the slowness.
+    smin : float
+        Minimun magnitude of the slowness.
 
-    Param: bazmin (float)
-    Description: Minimum backazimuth value to search over.
+    bazmin : float
+        Minimum backazimuth value to search over.
 
-    Param: bazmax (float)
-    Description: Maximum backazimuth value to search over.
+    bazmax : float
+        Maximum backazimuth value to search over.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.05.
+    s_space : float
+        The slowness interval for each step e.g. 0.05.
 
-    Param: baz_space (float)
-    Description: The backazimuth interval for each step e.g. 0.1.
+    baz_space : float
+        The backazimuth interval for each step e.g. 0.1.
 
-    ################# Return #################
-    3 arrays with: [slow_x, slow_y, rel_power] for each slowness and backazimuth combination in the grid for:
-
-    - lin_tp: linear stack power grid.
-    - results_arr: 2D array containing power values for:
-        [slow, baz, power_pws, power_F, power_lin]
-    - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
-             phase weighted, linear and F-statistic respectively.
+    Returns
+    -------
+    lin_tp : 2D numpy array of floats.
+        Linear stack power grid.
+    results_arr : 2D numpy array of floats.
+        Array contains values for:
+        [slow, baz, power_lin]
+    peaks : 2D numpy array of floats.
+        2D array with 3 rows containing the horizontal_slowness,
+        backzimuth points of the maximum power value.
     """
 
     ntrace = traces.shape[0]
@@ -1397,54 +1433,57 @@ def BF_Spherical_Pol_PWS(
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
     coherent power. Stacks the traces using phase weighted stacking.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack. Shape of [n,p]
-                 where n is the number of traces and p is the points in each trace.
+    phase_traces : 2D numpy array of floats
+        2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack. Shape of [n,p]
+        where n is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: smax (float)
-    Description: Maximum magnitude of slowness.
+    smax : float
+        Maximum magnitude of slowness.
 
-    Param: smin (float)
-    Description: Minimun magnitude of the slowness.
+    smin : float
+        Minimun magnitude of the slowness.
 
-    Param: bazmin (float)
-    Description: Minimum backazimuth value to search over.
+    bazmin : float
+        Minimum backazimuth value to search over.
 
-    Param: bazmax (float)
-    Description: Maximum backazimuth value to search over.
+    bazmax : float
+        Maximum backazimuth value to search over.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.05.
+    s_space : float
+        The slowness interval for each step e.g. 0.05.
 
-    Param: baz_space (float)
-    Description: The backazimuth interval for each step e.g. 0.1.
+    baz_space : float
+        The backazimuth interval for each step e.g. 0.1.
 
-    Param: degree (float)
-    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+    degree : float
+        The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
-    ################# Return #################
-    3 arrays with: [slow, baz, rel_power] for each slowness and backazimuth combination in the grid for:
-
-    - pws_tp: phase weighted stacked power grid.
-    - results_arr: 2D array containing power values for:
-        [slow_x, slow_y, power_pws, power_F, power_lin]
-    - peaks: 2D array with 3 rows containing the SLOW,BAZ points of the maximum power value for
-             phase weighted, linear and F-statistic respectively.
+    Returns
+    -------
+    pws_tp : 2D numpy array of floats.
+        Phase weighted stacked power grid.
+    results_arr : 2D numpy array of floats.
+        Array contains values for:
+        [slow, baz, power_pws]
+    peaks : 2D numpy array of floats.
+        2D array with 3 rows containing the horizontal_slowness,
+        backzimuth points of the maximum power value.
     """
 
     ntrace = traces.shape[0]
@@ -1536,45 +1575,50 @@ def BF_Noise_Threshold_Relative_XY(
     the traces 1000 times and, in each scamble, stack them then calculate a power
     value.
 
-    ################# Parameters #################
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+         Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: rel_x: float
-    Description: The x component of the predicted slowness vector used to align the traces.
+    rel_x: float
+        The x component of the predicted slowness vector used to align the traces.
 
-    Param: rel_y: float
-    Description: The y component of the predicted slowness vector used to align the traces.
+    rel_y: float
+        The y component of the predicted slowness vector used to align the traces.
 
-    Param: sxmax (float)
-    Description: Maximum magnitude of slowness on x axis, used for creating the slowness grid.
+    sxmax : float
+        Maximum magnitude of slowness on x axis, used for creating the slowness grid.
 
-    Param: sxmin (float)
-    Description: Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
+    sxmin : float
+        Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
 
-    Param: symax (float)
-    Description: Maximum magnitude of slowness on y axis, used for creating the slowness grid.
+    symax : float
+        Maximum magnitude of slowness on y axis, used for creating the slowness grid.
 
-    Param: symin (float)
-    Description: Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
+    symin : float
+        Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.1.
+    s_space : float
+        The slowness interval for each step e.g. 0.1.
 
-    ################# Return #################
-    lin_tp: 2D array of power values for each slowness vector.
-    noise_mean: mean of noise power estimates.
-    peaks: peak power location in the grid.
+    Returns
+    -------
+    lin_tp : 2D array of floats
+        Power values for each slowness vector.
+    noise_mean : float
+        Mean of noise power estimates.
+    peaks : 2D numpy array of floats
+        XY point of the peak power location in the grid.
     """
 
     # number of traces
@@ -1711,17 +1755,24 @@ def calculate_locus(P1, P2):
     Function to calculate the locus angle between points P1 and P2.
     A locus is a line that separates two point and is orthogonal to the line P1-P2.
 
-    Param: P1 (1-D numpy array of floats)
-    Description: x and y coordinates of point 1.
+    Parameters
+    ----------
+    P1 : 1-D numpy array of floats
+        X and y coordinates of point 1.
 
-    Param: P2 (1-D numpy array of floats)
-    Description: x and y coordinates of point 2.
+    P2 : 1-D numpy array of floats
+        X and y coordinates of point 2.
 
-    Returns:
-        Theta: Angle pointing from P1 to P2 relative to vertical.
-        Midpoint: Coordinates of the midpoint between P1 and P2.
-        Phi_1: Locus angle (90 degrees from Theta).
-        Phi_2: Locus angle (180 degrees from Phi_1).
+    Returns
+    -------
+    Theta : float
+        Angle pointing from P1 to P2 relative to vertical.
+    Midpoint : 1D numpy array of floats
+        Coordinates of the midpoint between P1 and P2.
+    Phi_1 : float
+        Locus angle (90 degrees from Theta).
+    Phi_2 : float
+        Locus angle (180 degrees from Phi_1).
     """
     P1_x = P1[0]
     P1_y = P1[1]
@@ -1736,8 +1787,8 @@ def calculate_locus(P1, P2):
     if Theta < 0:
         Theta += 360
 
-    Midpoint_X = np.mean([P1_x, P2_x])
-    Midpoint_Y = np.mean([P1_y, P2_y])
+    Midpoint_X = (P1_x + P2_x)/2
+    Midpoint_Y = (P1_y + P2_y)/2
     # Phi will represent the angles from north extending in either direction from
     # the point.
 
@@ -1765,34 +1816,38 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
     """
     Function to calculate the slowness vespagram of given traces using linear stacking.
 
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: baz (float)
-    Description: Constant backazimuth value to use.
+    baz : float
+        Constant backazimuth value to use.
 
-    Param: smax (float)
-    Description: Maximum magnitude of slowness.
+    smax : float
+        Maximum magnitude of slowness.
 
-    Param: smin (float)
-    Description: Minimun magnitude of the slowness.
+    smin : float
+        Minimun magnitude of the slowness.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.05.
+    s_space : float
+        The slowness interval for each step e.g. 0.05.
 
-    Return:
-        ves_lin: 2D numpy array of floats representing how the amplitude of the trace at a slowness
-                 varies with time.
+    Returns
+    -------
+    ves_lin : 2D numpy array of floats
+        Vespagram showing how the amplitude of the trace
+        stacked along a horizontal slowness varies with time.
     """
 
     nslow = int(((smax - smin) / s_space) + 1)
@@ -1834,42 +1889,47 @@ def Vespagram_PWS(
     """
     Function to calculate the slowness vespagram of given traces using phase weighted stacking.
 
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack. Shape of [n,p]
-                 where n is the number of traces and p is the points in each trace.
+    phase_traces : 2D numpy array of floats
+        2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack. Shape of [n,p]
+        where n is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: baz (float)
-    Description: Constant backazimuth value to use.
+    baz : float
+        Constant backazimuth value to use.
 
-    Param: smax (float)
-    Description: Maximum magnitude of slowness.
+    smax : float
+        Maximum magnitude of slowness.
 
-    Param: smin (float)
-    Description: Minimun magnitude of the slowness.
+    smin : float
+        Minimun magnitude of the slowness.
 
-    Param: s_space (float)
-    Description: The slowness interval for each step e.g. 0.05.
+    s_space : float
+        The slowness interval for each step e.g. 0.05.
 
-    Param: degree (float)
-    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+    degree : float
+        The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
-    Return:
-        ves_pws: 2D numpy array of floats representing how the amplitude of the trace at a slowness
-                 varies with time.
+    Returns
+    -------
+    ves_pws : 2D numpy array of floats
+        Vespagram showing how the amplitude of the trace
+        stacked along a horizontal slowness varies with time.
+        Traces are stacked using phase weighted stacking.
     """
 
     nslow = int(((smax - smin) / s_space) + 1)
@@ -1904,34 +1964,38 @@ def Baz_vespagram_Lin(
     """
     Function to calculate the backazimuth vespagram of given traces using linear stacking.
 
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: slow (float)
-    Description: Constant slowness value to use.
+    slow : float
+        Constant slowness value to use.
 
-    Param: bmax (float)
-    Description: Maximum magnitude of backazimuth.
+    bmax : float
+        Maximum backazimuth.
 
-    Param: bmin (float)
-    Description: Minimun magnitude of the backazimuth.
+    bmin : float
+        Minimum backazimuth.
 
-    Param: b_space (float)
-    Description: The backazimuth interval for each step e.g. 0.05.
+    b_space : float
+        The backazimuth interval for each step e.g. 0.05.
 
-    Return:
-        ves_lin: 2D numpy array of floats representing how the amplitude of the trace at a slowness
-                 varies with time.
+    Returns
+    -------
+    ves_lin : 2D numpy array of floats
+        Vespagram showing how the amplitude of the trace
+        stacked using a particular backazimuth varies with time.
     """
 
     nbaz = int(((bmax - bmin) / b_space) + 1)
@@ -1973,42 +2037,47 @@ def Baz_vespagram_PWS(
     """
     Function to calculate the backazimuth vespagram of given traces using phase weighted stacking.
 
-    Param: traces (2D numpy array of floats)
-    Description: 2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
-                 is the number of traces and p is the points in each trace.
+    Parameters
+    ----------
+    traces : 2D numpy array of floats
+        2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
+        is the number of traces and p is the points in each trace.
 
-    Param: phase_traces (2D numpy array of floats)
-    Description: a 2D numpy array containing the instantaneous phase at each time point
-                 that the user wants to use in the phase weighted stack. Shape of [n,p]
-                 where n is the number of traces and p is the points in each trace.
+    phase_traces : 2D numpy array of floats
+        2D numpy array containing the instantaneous phase at each time point
+        that the user wants to use in the phase weighted stack. Shape of [n,p]
+        where n is the number of traces and p is the points in each trace.
 
-    Param: sampling_rate (float)
-    Description: sampling rate of the data points in s^-1.
+    sampling_rate : float
+        Sampling rate of the data points in s^-1.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: distance (float)
-    Description: Epicentral distance from the event to the centre of the array.
+    distance : float
+        Epicentral distance from the event to the centre of the array.
 
-    Param: slow (float)
-    Description: Constant slowness value to use.
+    slow : float
+        Constant slowness value to use.
 
-    Param: bmax (float)
-    Description: Maximum magnitude of backazimuth.
+    bmax : float
+        Maximum backazimuth.
 
-    Param: bmin (float)
-    Description: Minimun magnitude of the backazimuth.
+    bmin : float
+        Minimum backazimuth.
 
-    Param: b_space (float)
-    Description: The backazimuth interval for each step e.g. 0.05.
+    b_space : float
+        The backazimuth interval for each step e.g. 0.05.
 
-    Param: degree (float)
-    Description: The degree for the phase weighted stacking to reduce incoherent arrivals by.
+    degree : float
+        The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
-    Return:
-        ves_pws: 2D numpy array of floats representing how the amplitude of the trace at a slowness
-                 varies with time.
+    Returns
+    -------
+    ves_pws : 2D numpy array of floats
+        Vespagram showing how the amplitude of the trace
+        stacked using different backazimuths varies with time.
+        Traces are stacked using phase weighted stacking.
     """
 
     nbaz = int(((bmax - bmin) / b_space) + 1)
