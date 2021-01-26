@@ -53,15 +53,18 @@ def myround(x, prec=2, base=0.05):
     """
     Rounds the number 'x' to the nearest 'base' with precision 'prec'
 
-    Param: x (float)
-    Description: number to be rounded
-    Param: prec (int)
-    Description: number of decimal places for the rounded number.
-    Param: base (float)
-    Description: the interval to be rounded nearest to.
+    Parameters
+    ----------
+    x : float
+        Number to be rounded.
+    prec : int
+        Number of decimal places for the rounded number.
+    base : float
+        The interval to be rounded nearest to.
 
-    Return:
-            The number rounded to the nearest 'base' value.
+    Returns
+    -------
+    The input number rounded to the nearest 'base' value.
     """
     return round(base * round(float(x) / base), prec)
 
@@ -70,11 +73,16 @@ def get_stations(stream):
     """
     Function to return all the stations in the Obspy stream provided
 
-    Param: stream (Obspy stream object)
-    Description: Stream object of SAC files with the headers
-                 stla,stlo and stel populated
+    Parameters
+    ----------
+    stream : Obspy stream object)
+        Stream object of SAC files with the headers
+        stla,stlo and stel populated
 
-    Return: List of strings of station names.
+    Returns
+    -------
+    stations : 1D list of strings
+        List of strings of station names.
     """
     stations = []
     for tr in stream:
@@ -88,11 +96,15 @@ def get_eventtime(stream):
     Function to recover dates and times from sac file and return an obspy
     date-time object.
 
-    Param: stream (Obspy stream object)
-    Description: stream of SAC files with nzyear, nzjday, nzhour, nzmin, nzsec, nzmsec populated
+    Parameters
+    ----------
+    stream : Obspy stream object
+        stream of SAC files with nzyear, nzjday, nzhour, nzmin, nzsec, nzmsec populated
 
-    Return:
-        Obspy datetime object of the date stored.
+    Returns
+    -------
+    event_time : Obspy datetime
+        Object of the date stored.
     """
 
     Y = stream[0].stats.sac.nzyear
@@ -116,26 +128,30 @@ def get_geometry(
     Collects array geometry information and returns an array of lon, lat and elevation.
     Method to calculate the array geometry and the center coordinates in km or degrees.
 
-    Param: stream (Obspy Stream object)
-    Description: must be in SAC format and have stla, stlo and stel headers populated.
+    Parameters
+    ----------
+    stream : Obspy Stream object
+        Obspy stream of SAC files which have stla, stlo and stel headers populated.
 
-    Param: distance (string)
-    Description:  defines how the distances are given, either 'km' or 'degrees'. Defaults to degrees.
+    distance : string
+        Defines how the distances are given, either 'km' or 'degrees'. Defaults to degrees.
 
-    Param: return_center (Bool)
-    Description: if true, it will only return the centre lon, lat and height.
+    return_center : Bool
+        If true, it will only return the centre lon, lat and height.
 
-    Param: relative (Bool)
-    Description: If true, the station locations will be relative to the mean lon, lat and elevation.
+    relative : Bool
+        If true, the station locations will be relative to the mean lon, lat and elevation.
 
-    Returns:
+    Returns
+    -------
 
-    The geometry of the stations as 2d :class:`np.ndarray`
-    The first dimension are the station indexes with the same order
-    as the traces in the stream object. The second index are the
-    values of [lat, lon, elev] in km or degrees.
+    geometry : 3D array of floats
+        The geometry of the stations as 2d :class:`np.ndarray`
+        The first dimension are the station indexes with the same order
+        as the traces in the stream object. The second index are the
+        values of [lat, lon, elev] in km or degrees.
 
-    if return_center is true, only the centre lon lat elev will be returned.
+        If return_center is true, only the centre lon lat elev will be returned.
     """
 
     station_no = len(stream)
@@ -191,15 +207,19 @@ def get_distances(stream, type="deg"):
     """
     Given a stream, this function creates an array containing the epicentral distances for each of the stations
 
-    Param: stream (Obspy stream object)
-    Description: stream containing SAC file with the gcarc and dist headers populated.
+    Parameters
+    ----------
+    stream : Obspy stream object
+        Stream containing SAC file with the gcarc and dist headers populated.
 
-    Param: type (string)
-    Description: do you want distances in degrees (deg) or kilometres (km).
+    type : string
+        Do you want distances in degrees (deg) or kilometres (km).
 
-    Return:
-        distances = numpy array of floats describing the epicentral distances of each station
-                    from the event.
+    Returns
+    -------
+    distances : 1D numpy array of floats
+        The epicentral distances of each station
+        from the event.
 
     """
 
@@ -224,14 +244,18 @@ def get_station_density_KDE(geometry):
     for each station. This can be used to weight the stacking or other uses the user can
     think of.
 
-    Param: geometry (2D array of floats)
-    Description: 2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+    Parameters
+    ----------
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
 
-    Param: type (string)
-    Description: do you want distances in degrees (deg) or kilometres (km).
+    type : string
+        Do you want distances in degrees (deg) or kilometres (km).
 
-    Return:
-        station_densities = numpy array of natural log of densities.
+    Returns
+    -------
+    station_densities : numpy array of floats
+        Natural log of densities.
 
     """
     # recover the longitudes and latitudes
@@ -272,11 +296,15 @@ def clip_traces(stream):
     The traces in the stream may be of different length which isnt great for stacking etc.
     This function will trim the traces to the same length on the smallest trace size.
 
-    Param: stream (Obspy stream object)
-    Description: any stream object which have traces with data in them.
+    Parameters
+    ----------
+    stream : Obspy stream object
+        Any stream object which have traces with data in them.
 
-    Return:
-        stream - Obspy stream with data of equal lengths.
+    Returns
+    -------
+    stream : Obspy stream
+        Data of equal length in time.
     """
     import numpy as np
 
@@ -296,11 +324,16 @@ def get_traces(stream):
     """
     Given an obspy stream, this will return a 2D array of the waveforms
 
-    Param: stream (Obspy stream object)
-    Description: stream containing SAC files.
+    Parameters
+    ----------
+    stream : Obspy stream object
+        Stream containing SAC files.
 
-    Return:
-        2D numpy array of floats describing the traces.
+    Returns
+    -------
+    Traces : 2D numpy array of floats
+        Traces that were stored in the stream in the same order.
+
     """
     Traces = []
 
@@ -316,11 +349,16 @@ def get_phase_traces(stream):
     """
     Given an obspy stream, this will return a 2D array of the waveforms
 
-    Param: stream (Obspy stream object)
-    Description: stream containing SAC files.
+    Parameters
+    ----------
+    stream : Obspy stream object
+        Stream containing SAC files.
 
-    Return:
-        2D numpy array of floats describing the traces.
+    Returns
+    -------
+    Phase_traces : 2D numpy array of complex floats.
+        Stores the phase traces processed from the traces
+        recorded at each station.
     """
     Phase_traces = []
 
@@ -334,21 +372,28 @@ def get_phase_traces(stream):
 
 def deg_km_az_baz(lat1, lon1, lat2, lon2):
     """
-    Description: Function to return the ditances in degrees and km over a spherical Earth
+    Function to return the ditances in degrees and km over a spherical Earth
                  with the backazimuth and azimuth.
                  Distances calculated using the haversine formula.
 
-    Param: lat(1/2) (float)
-    Description: latitude of point (1/2)
+    Parameters
+    ----------
+    lat(1/2) : float
+        Latitude of point (1/2)
 
-    Param: lon(1/2) (float)
-    Description: longitude of point (1/2)
+    lon(1/2) : float
+        Longitude of point (1/2)
 
-    Return:
-           dist_deg: distance between points in degrees.
-           dist_km: distance between points in km.
-           az: azimuth at location 1 pointing to point 2.
-           baz" backzimuth at location 2 pointing to point 1.
+    Returns
+    -------
+    dist_deg : float
+        Distance between points in degrees.
+    dist_km :
+        Distance between points in km.
+    az : float
+        Azimuth at location 1 pointing to point 2.
+    baz : float
+        Backzimuth at location 2 pointing to point 1.
     """
     # use haversine formula to get distance in degrees and km
     R = 6371
@@ -384,19 +429,28 @@ def deg_km_az_baz(lat1, lon1, lat2, lon2):
 
 def get_slow_baz(slow_x, slow_y, dir_type):
     """
-    Description:
-        Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
+    Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
 
-    Param: slow_x (array of floats)
-    Description: X component of slowness vector.
 
-    Param: slow_y (array of floats)
-    Description: Y component of slowness vector.
+    Parameters
+    ----------
+    slow_x : array of floats
+        X component of slowness vector.
 
-    Param: dir_type (string)
-    Description: how do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+    slow_y : array of floats
+        Y component of slowness vector.
 
-    Return: slowness magnitude and baz/az value.
+    dir_type : string
+        How do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+
+    Returns
+    -------
+    slow_mag : floatt
+        Magnitude of slowness vector.
+    baz : float
+        Backazimuth of slowness vector.
+    azimuth : float
+        Azimuth of slowness vector.
     """
 
     # find slowness mag via pythaogoras
@@ -427,18 +481,23 @@ def pred_baz_slow(stream, phases, one_eighty=True):
     """
     Predicts the baz and horizontal slownesses of the given phases using the infomation in the Obspy stream.
 
-    Param: stream (Obspy Stream object)
-    Description: must be in SAC format.
+    Parameters
+    ----------
+    stream : Obspy Stream object
+        Must be in SAC format.
 
-    Param: phases (list of strings)
-    Description: phases for which the baz and horizontal slowness will be calculated
+    phases : list of strings
+        Phases for which the baz and horizontal slowness will be calculated
 
-    Param one_eighty (Bool)
-    Description: if there is more than one arrival with the same name, will it arrive from a backazimuth 180 degrees away (e.g. major arc for S2KS).
+    Param one_eighty : Bool
+        If there is more than one arrival with the same name, will it arrive from a backazimuth 180 degrees away (e.g. major arc for S2KS).
 
-    Return: list of: ["Phase", "Ray_parameter", "Backazimuth", "Backazimuth_X",
-                      "Backazimuth_Y", "Azimuth_X", "Azimuth_Y", "Mean_Ep_Dist",
-                      "Predicted_Travel_Time"]
+    Returns
+    -------
+    preds : list of strings
+        list of: ["Phase", "Ray_parameter", "Backazimuth", "Backazimuth_X",
+                  "Backazimuth_Y", "Azimuth_X", "Azimuth_Y", "Mean_Ep_Dist",
+                  "Predicted_Travel_Time"]
     """
 
     sin = np.sin
@@ -486,7 +545,7 @@ def pred_baz_slow(stream, phases, one_eighty=True):
     else:
         other_baz = baz - 180
 
-    results = []
+    preds = []
 
     # for each phase
     for i in range(len(phases)):
@@ -516,7 +575,7 @@ def pred_baz_slow(stream, phases, one_eighty=True):
             slow_y_az = myround(float(temp_list[0][1]) * cos(radians(az_pred)))
 
             # add to results list
-            results.append(
+            preds.append(
                 [
                     temp_list[0][0],
                     temp_list[0][1],
@@ -542,7 +601,7 @@ def pred_baz_slow(stream, phases, one_eighty=True):
             slow_x_az = myround(float(temp_list[0][1]) * sin(radians(az_pred)))
             slow_y_az = myround(float(temp_list[0][1]) * cos(radians(az_pred)))
 
-            results.append(
+            preds.append(
                 [
                     temp_list[0][0],
                     temp_list[0][1],
@@ -577,7 +636,7 @@ def pred_baz_slow(stream, phases, one_eighty=True):
                         float(temp_list[i][1]) * cos(radians(baz))
                     )
 
-                    results.append(
+                    preds.append(
                         [
                             "%s_Major" % temp_list[i][0],
                             temp_list[i][1],
@@ -600,7 +659,7 @@ def pred_baz_slow(stream, phases, one_eighty=True):
                     slow_x_az = myround(float(temp_list[i][1]) * sin(radians(az_pred)))
                     slow_y_az = myround(float(temp_list[i][1]) * cos(radians(az_pred)))
 
-                    results.append(
+                    preds.append(
                         [
                             temp_list[i][0],
                             temp_list[i][1],
@@ -613,9 +672,9 @@ def pred_baz_slow(stream, phases, one_eighty=True):
                             temp_list[i][3],
                         ]
                     )
-    results = np.array(results)
+    preds = np.array(preds)
 
-    return results
+    return preds
 
 
 def get_t_header_pred_time(stream, phase):
@@ -623,15 +682,19 @@ def get_t_header_pred_time(stream, phase):
     Gives a stream of SAC files and phase, it will return the header
     where the travel time predictions for that phase is stored.
 
-    Param: stream (Obspy stream)
-    Description: stream of SAC files with the tn and ktn headers populated.
+    Parameters
+    ----------
+    stream : Obspy stream
+        Stream of SAC files with the tn and ktn headers populated.
 
-    Param: phase (string)
-    Description: phase of interest
+    phase : string
+        Phase of interest (.e.g S).
 
-    Return:
-        Target_time_header: string of the time header where the travel time predictions
-                            for the phase is stored.
+    Returns
+    -------
+    Target_time_header : string
+        The time header where the travel time predictions
+        for the phase is stored.
 
     """
 
@@ -666,15 +729,20 @@ def get_predicted_times(stream, phase):
     the predicted times for the target phase and all time headers. The min, max and average predicted
     times for the target phase will be returned.
 
-    Param: stream (Obspy Stream Object)
-    Description: Stream of SAC files with the time (tn) and labels (ktn) populated.
+    Parameters
+    ----------
+    stream : Obspy Stream Object
+        Stream of SAC files with the time (tn) and labels (ktn) populated.
 
-    Param: phase (string)
-    Description: The phase you are interested in analysing (e.g. SKS). Must be stored in the SAC headers tn and tkn.
+    phase : string
+        The phase you are interested in analysing (e.g. SKS). Must be stored in the SAC headers tn and tkn.
 
-    Returns:
-        Target_phase_times - an array of the predicted travel times for the target phase for each station in the array.
-        time_header_times - array of the prediected travel times for all phases for each station in the array.
+    Returns
+    -------
+    Target_phase_times : 2D array of floats
+        Predicted travel times for the target phase for each station in the array.
+    time_header_times : 2D array of floats
+        Array of the prediected travel times for all phases for each station in the array.
 
     """
     # these are the header labels storing the phase
@@ -735,28 +803,32 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
     within a range of points from a predicted arrival. Edited from stack overflow
     answer: https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array.
 
-    Param: Array (2-D numpy array of floats).
-    Description: 2-D array of floats representing power or some other parameter.
+    Parameters
+    ----------
+    Array : 2-D numpy array of floats.
+        2-D array of floats representing power or some other parameter.
 
-    Param: xmin (float)
-    Description: Minumum x point of the area to search for peaks.
+    xmin : float
+        Minumum x point of the area to search for peaks.
 
-    Param: sl_xmax (float)
-    Description: Maximum x point of the area to search for peaks.
+    sl_xmax : float
+        Maximum x point of the area to search for peaks.
 
-    Param: sl_ymin (float)
-    Description: Minumum y point of the area to search for peaks.
+    sl_ymin : float
+        Minumum y point of the area to search for peaks.
 
-    Param: sl_ymax (float)
-    Description: Maximum y point of the area to search for peaks.
+    sl_ymax : float
+        Maximum y point of the area to search for peaks.
 
-    Param: step (float)
-    Description: increments of points in x/y axis used in the array.
+    step : float
+        Increments of points in x/y axis used in the array.
 
-    Param: N (int)
-    Description: The top N peaks will be returned.
+    N : int
+        The top N peaks will be returned.
 
-    Return:
+    Returns
+    -------
+    peaks : 2D array of floats
         The top N peaks of the array of the format [[x,y]].
     """
 
@@ -819,31 +891,35 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
     within a range of points from a predicted arrival. This is edited for the polar
     coordinate search output.
 
-    Param: Array (2-D numpy array of floats).
-    Description: 2-D array of floats representing power or some other parameter.
+    Parameters
+    ----------
+    Array : 2-D numpy array of floats
+        2-D array of floats representing power or some other parameter.
 
-    Param: smin (float)
-    Description: Minumum horizontal slowness.
+    smin : float
+        Minumum horizontal slowness.
 
-    Param: smax (float)
-    Description: Maximum horizontal slowness.
+    smax : float
+        Maximum horizontal slowness.
 
-    Param: bmin (float)
-    Description: Minumum backazimuth.
+    bmin : float
+        Minumum backazimuth.
 
-    Param: bmax (float)
-    Description: Maximum backazimuth.
+    bmax : float
+        Maximum backazimuth.
 
-    Param: step (float)
-    Description: increments of slowness values.
+    step : float
+        Increments of slowness values.
 
-    Param: btep (float)
-    Description: increments of backazimuth values.
+    btep : float
+        Increments of backazimuth values.
 
-    Param: N (int)
-    Description: The top N peaks will be returned.
+    N : int
+        The top N peaks will be returned.
 
-    Return:
+    Returns
+    -------
+    peaks : 2D array of floats
         The top N peaks of the array in the form of [baz,slow].
     """
 
@@ -908,27 +984,33 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
     """
     Given an Obspy stream of traces, plot a record section and allow a time window to be picked around the phases of interest.
 
-    Param: stream (Obspy stream object)
-    Description: Sac files only.
+    Parameters
+    ----------
+    stream : Obspy stream object
+        Stream of SAC files with travel time headers (tn)
+        and labels (ktn) populated with gcarc and dist.
 
-    Param: phase (string)
-    Description: Phase of interest (e.g. SKS)
+    phase : string
+        Phase of interest (e.g. SKS)
 
-    Return:
+    Returns
+    -------
+    window : 1D list
         The selected time window as numpy array [window_start, window_end].
     """
 
     # define a function to record the location of the clicks
     def get_window(event):
         """
-        Description:
-                For an event such as a mouse click, return the x location of two events.
+        For an event such as a mouse click, return the x location of two events.
 
-        Param: event
-        Description: when creating interactive figure, an event will be a mouse click or key board press or something.
+        event
+            When creating interactive figure, an event will be a mouse click or key board press or something.
 
-        Returns:
-                X locations of first two events event.
+        Returns
+        -------
+        window : 1D list
+            The selected time window as numpy array [window_start, window_end].
         """
         ix = event.xdata
         print("ix = %f" % ix)
@@ -1055,35 +1137,100 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
     return window
 
 
+def write_to_file_check_lines(filepath, header, newlines, strings):
+    """
+    Reads lines in a file and replaces those which match all the
+    strings in "strings" with the newlines.
+
+    Parameters
+    ----------
+    filepath : string
+        Name and path of results file.
+
+    header : string
+        Header to write to file if it does not exist.
+
+    newlines : list of strings
+        newlines to be added to file.
+
+    strings : list of strings
+        Strings to identify lines which need to be replaced in the
+        file at filepath.
+
+    Returns
+    -------
+    Nothing
+
+    """
+
+    found = False
+    added = (
+        False  # just so i dont write it twice if i find the criteria in multiple lines
+    )
+    ## write headers to the file if it doesnt exist
+    line_list = []
+
+    if os.path.exists(filepath):
+        with open(filepath, "r") as Multi_file:
+            for line in Multi_file:
+                if all(x in line for x in strings):
+                    print("strings in line, replacing")
+                    # to avoid adding the new lines multiple times
+                    if added == False:
+                        line_list.extend(newlines)
+                        added = True
+                    else:
+                        print("already added to file")
+                    found = True
+                else:
+                    line_list.append(line)
+    else:
+        with open(filepath, "w") as Multi_file:
+            Multi_file.write(header)
+            line_list.append(header)
+    if not found:
+        print("strings not in file. Adding to the end.")
+        line_list.extend(newlines)
+    else:
+        pass
+
+    with open(filepath, "w") as Multi_file2:
+        Multi_file2.write("".join(line_list))
+
+
+    return
+
 def write_to_file(filepath, st, peaks, prediction, phase, time_window):
     """
-    Description:
-        Function to write event and station information with slowness vector
-        properties to a results file.
+    Function to write event and station information with slowness vector
+    properties to a results file.
 
-    Param: outfile (string)
-    Description: Name and path of results file
+    Parameters
+    ----------
+    filepath : string
+        Name and path of results file.
 
-    Param: st (Obspy stream object)
-    Description: Stream object of SAC files assumed to have headers populated
-                 as described in the README.
+    st : Obspy stream object
+        Stream object of SAC files assumed to have headers populated
+        as described in the README.
 
-    Param: peaks (2D numpy array of floats)
-    Description: 2D array of floats [[baz, slow]]
-                 for the arrival locations.
+    peaks : 2D numpy array of floats
+        2D array of floats [[baz, slow]]
+        for the arrival locations.
 
-    Param: prediction (2D numpy array of floats)
-    Description: 2D numpy array of floats of the predicted arrival
-                 in [[baz, slow]].
+    prediction : 2D numpy array of floats
+        2D numpy array of floats of the predicted arrival
+        in [[baz, slow]].
 
-    Param: phase (string)
-    Description: target phase (e.g. SKS)
+    phase : string
+        Target phase (e.g. SKS)
 
-    Param: time_window (1D numpy array of floats)
-    Description: numpy array of floats describing the start and end
-                  of time window in seconds.
+    time_window : 1D numpy array of floats
+        numpy array of floats describing the start and end
+        of time window in seconds.
 
-    Return:
+    Returns
+    -------
         Nothing.
     """
 
@@ -1158,39 +1305,368 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
 
     header = "name evlo evla evdp stlo_mean stla_mean pred_baz baz_obs baz_diff pred_slow slow_obs slow_diff stations start_window end_window phase \n"
 
-    # now loop over file to see if I have this observation already
-    found = False
-    added = (
-        False  # just so i dont write it twice if i find the criteria in multiple lines
-    )
-    ## write headers to the file if it doesnt exist
-    line_list = []
+    write_to_file_check_lines(filepath, header, newlines, strings = [name, phase, f"{centre_y:.2f}"])
 
-    if os.path.exists(filepath):
-        with open(filepath, "r") as Multi_file:
-            for line in Multi_file:
-                if name in line and phase in line and f"{centre_y:.2f}" in line:
-                    print("name and phase and stla in line, replacing")
-                    if added == False:
-                        line_list.extend(newlines)
-                        added = True
-                    else:
-                        print("already added to file")
-                    found = True
-                else:
-                    line_list.append(line)
-    else:
-        with open(filepath, "w") as Multi_file:
-            Multi_file.write(header)
-            line_list.append(header)
-    if not found:
-        print("name or phase or stla not in line. Adding to the end.")
-        line_list.extend(newlines)
-    else:
+    return
+
+def relocate_event_baz_slow(evla, evlo, evdp, stla, stlo, baz, slow, phase, mod='prem'):
+    """
+    Given event location, mean station location and slowness vector
+    (baz and slow), relocate the event so the ray arrives with the
+    slowness and backazimuth.
+
+    Paramters
+    ---------
+    evla : float
+        Event latitude.
+    evlo : float
+        Event longitude.
+    evdp : float
+        Event depth.
+    stla : float
+        Station latitude.
+    stlo : float
+        Station longitude.
+    baz : float
+        Backazimuth of slowness vector.
+    slow : float
+        Horizontal slowness of slowness vector.
+    phase : string
+        Target phase (e.g. SKS).
+    mod : string
+        1D velocity model to use (default is PREM).
+
+    Returns
+    -------
+    new_evla : float
+        Relocated event latitude.
+    new_evlo : float
+        Relocated event longitude.
+    """
+
+    from obspy.taup import TauPyModel
+    import numpy as np
+
+    from circ_beam import coords_lonlat_rad_bearing, haversine_deg
+    model = TauPyModel(model=mod)
+
+    dist_deg = haversine_deg(lat1=evla, lon1=evlo, lat2=stla, lon2=stlo)
+
+    # define distances to search over
+    dist_min=dist_deg-30
+    dist_max=dist_deg+30
+    dist_search = np.linspace(dist_min, dist_max, 1000)
+
+    # set count so it know if it has found a suitable distance
+    count=0
+    diff_slows = np.ones(dist_search.shape)
+    # if the difference just keeps increasing
+    # stop after 20 increases
+    early_stop_count = 0
+    for i,test_distance in enumerate(dist_search):
+
+        try:
+             ## work out slowness and compare to the observed slowness
+            tap_out_test = model.get_travel_times(source_depth_in_km=float(evdp),
+                                                  distance_in_degree=float(test_distance),
+                                                  receiver_depth_in_km=0.0,
+                                                  phase_list=[phase])
+
+            abs_slow_test = tap_out_test[0].ray_param_sec_degree
+            diff_slow = abs(abs_slow_test - slow)
+
+            ## work out slowness and compare to the observed slowness
+            diff_slows[i] = diff_slow
+
+            if diff_slow < 0.01:
+                count=0
+                count +=1
+                if count == 1:
+                    print("count",count)
+                    print("diff_slow",diff_slow)
+
+            if diff_slow > diff_slows[i-1]:
+                early_stop_count +=1
+            else:
+                early_stop_count = 0
+
+            if early_stop_count > 20:
+                print('increasing risidual for more than 20 iterations, breaking loop')
+                break
+
+
+        except:
+            pass
+
+    min = np.amin(np.array(diff_slows))
+    loc = np.where(np.array(diff_slows) == min)[0][0]
+    distance_at_slowness = dist_search[loc]
+
+    new_evla, new_evlo = coords_lonlat_rad_bearing(lat1 = stla,
+                                                   lon1 = stlo,
+                                                   dist_deg = distance_at_slowness,
+                                                   brng = baz)
+
+    return new_evla, new_evlo
+
+def predict_pierce_points(evla, evlo, evdp, stla, stlo, phase, target_depth, mod='prem'):
+    """
+    Given station and event locations, return the pierce points at a particular
+    depth for source or receiver side locations.
+
+    Parameters
+    ----------
+    evla : float
+        Event latitude.
+    evlo : float
+        Event longitude.
+    evdp : float
+        Event depth.
+    stla : float
+        Station latitude.
+    stlo : float
+        Station longitude.
+    phase : string
+        Target phase
+    target_depth : float
+        Depth to calculate pierce points.
+    mod : string
+        1D velocity model to use (default is PREM).
+
+    Returns
+    -------
+    r_pierce_la : float
+        Receiver pierce point latitude.
+    r_pierce_lo : float
+        Receiver pierce point longitude.
+
+    s_pierce_la : float
+        Source pierce point latitude.
+    s_pierce_lo : float
+        Source pierce point longitude.
+    """
+    import os
+
+    # I dont like the obspy taup pierce thing so will use
+    # the java script through python.
+    # This will assume you have taup installed:
+    # https://github.com/crotwell/TauP/
+
+    # print(f"taup_pierce -mod {mod} -h {evdp} -sta {stla} {stlo} -evt {evla} {evlo} -ph {phase} --pierce {target_depth} --nodiscon > ./temp.txt")
+    os.system(f"taup_pierce -mod {mod} -h {evdp} -sta {stla} {stlo} -evt {evla} {evlo} -ph {phase} --pierce {target_depth} --nodiscon > ./temp.txt")
+
+    with open("./temp.txt", 'r') as temp_file:
+        lines = temp_file.readlines()
+        number_of_lines = len(lines)
+        print(number_of_lines)
+        print(lines)
+        if number_of_lines == 2:
+            print(f"Only pierces depth {depth} once.")
+            print(f"Writing this one line to the file.")
+            source_line = lines[-1]
+            receiver_line = lines[-1]
+
+        elif number_of_lines == 3:
+            source_line = lines[1]
+            receiver_line = lines[-1]
+
+        elif number_of_lines > 3:
+            print(f"Phase {phase} pierces depth {depth} more than twice.")
+            print(f"Writing pierce point closest to source/receiver")
+            source_line = lines[1]
+            receiver_line = lines[-1]
+
+        s_dist, s_pierce_depth, s_time, s_pierce_la, s_pierce_lo = source_line.split()
+        r_dist, r_pierce_depth, r_time, r_pierce_la, r_pierce_lo = receiver_line.split()
+
+
+    # os.remove("./temp.txt")
+    return s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo
+
+
+
+def create_plotting_file(filepath,
+                         outfile,
+                         depth,
+                         locus_file="./Locus_results.txt",
+                         locus=False,
+                         mod='prem'):
+    """
+    Extract the plotting information from the results file and calculate
+    pierce points at depth.
+
+    Parameters
+    ----------
+    filepath : string
+        Path to results file.
+
+    outfile : string
+        Path to results file.
+
+    depth : float
+        Depth to calculate pierce points for.
+
+    locus_file : string
+        Path to file for locus calculation result default is
+        "./Locus_results.txt".
+
+    locus : bool
+        Do you want to calculate the locus, default is False.
+
+    mod : string
+        1D velocity model to use for predicting pierce point locations.
+        Default is prem.
+
+    Returns
+    -------
+    Nothing
+    """
+
+    import pandas as pd
+    import numpy as np
+    import os
+    from circ_beam import calculate_locus
+
+    results_df = pd.read_csv(filepath, sep=' ', index_col=False)
+
+    newlines = []
+    locus_newlines = []
+    header = "Name evla evlo evdp stla_mean stlo_mean slow_diff slow_std_dev baz_diff baz_std_dev del_x_slow del_y_slow error_ellipse_area multi phase s_pierce_la s_pierce_lo r_pierce_la r_pierce_lo s_reloc_pierce_la s_reloc_pierce_lo r_reloc_pierce_la r_reloc_pierce_lo\n"
+    locus_header = 'Name evla evlo evdp stla stlo s_pierce_la s_pierce_lo r_pierce_la r_pierce_lo s_reloc_pierce_la s_reloc_pierce_lo r_reloc_pierce_la r_reloc_pierce_lo Phi_1 Phi_2'
+
+
+    newlines.append(header)
+    locus_newlines.append(locus_header)
+    for index, row in results_df.iterrows():
+        dir = row['dir']
+        name = row['Name']
+        evla = row['evla']
+        evlo = row['evlo']
+        evdp = row['evdp']
+        stla_mean = row['stla_mean']
+        stlo_mean = row['stlo_mean']
+        baz = row['baz_max']
+        slow = row['slow_max']
+        phase = row['phase']
+        multi = row['multi']
+
+        print('great circle path')
+        s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo = predict_pierce_points(evla=evla,
+                                                                                   evlo=evlo,
+                                                                                   evdp=evdp,
+                                                                                   stla=stla_mean,
+                                                                                   stlo=stlo_mean,
+                                                                                   phase=phase,
+                                                                                   target_depth=depth,
+                                                                                   mod=mod)
+
+
+        # relocate event to match baz and slow
+        reloc_evla, reloc_evlo = relocate_event_baz_slow(evla=evla,
+                                                        evlo=evlo,
+                                                        evdp=evdp,
+                                                        stla=stla_mean,
+                                                        stlo=stlo_mean,
+                                                        baz=baz,
+                                                        slow=slow,
+                                                        phase=phase,
+                                                        mod=mod)
+
+        print('relocated point')
+        try:
+            s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo = predict_pierce_points(evla=reloc_evla,
+                                                                                                               evlo=reloc_evlo,
+                                                                                                               evdp=evdp,
+                                                                                                               stla=stla_mean,
+                                                                                                               stlo=stlo_mean,
+                                                                                                               phase=phase,
+                                                                                                               target_depth=depth,
+                                                                                                               mod=mod)
+
+            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_diff", "slow_std_dev",
+                           "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "error_ellipse_area", "multi",
+                           "phase"]].astype(str))
+
+
+            for new_item in [s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo]:
+                newline.append(new_item)
+
+            newlines.append(' '.join(newline) + "\n")
+
+        except:
+            print(f"{phase} doesnt have a predicted arrival, using ScS instead")
+            s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo = predict_pierce_points(evla=reloc_evla,
+                                                                                                               evlo=reloc_evlo,
+                                                                                                               evdp=evdp,
+                                                                                                               stla=stla_mean,
+                                                                                                               stlo=stlo_mean,
+                                                                                                               phase="ScS",
+                                                                                                               target_depth=depth,
+                                                                                                               mod=mod)
+
+            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_diff", "slow_std_dev",
+                           "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "error_ellipse_area", "multi"]].astype(str))
+
+
+            for new_item in ['ScS', s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo]:
+                newline.append(new_item)
+
+            newlines.append(' '.join(newline) + "\n")
+
+        if locus == True:
+            print(multi)
+            if dir and name not in locus_newlines:
+                if multi == 'y':
+                    print("multi found")
+                    # get the points of the multipathed arrivals
+                    multi_df = results_df.loc[results_df['dir'] == dir]
+                    number_arrivals = len(multi_df)
+
+                    # get smallest baz value
+                    min_baz = multi_df.min()['baz_diff']
+
+                    p1_df = multi_df.loc[multi_df['baz_diff'] == min_baz]
+                    print(p1_df)
+                    print(p1_df['slow_x_obs'].values[0], p1_df['slow_y_obs'].values[0])
+                    P1 = [p1_df['slow_x_obs'].values[0], p1_df['slow_y_obs'].values[0]]
+                    print(P1)
+                    for i,row in multi_df.iterrows():
+
+                        if row['baz_diff'] != min_baz:
+                            P2 = [float(row['slow_x_obs']), float(row['slow_y_obs'])]
+                            print(P2)
+                            Theta, Midpoint, Phi_1, Phi_2 = calculate_locus(P1, P2)
+                            linelist = list(np.array([name, evla, evlo, stla_mean, stlo_mean, s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo, Phi_1, Phi_2]).astype(str))
+                            locus_newlines.append(' '.join(linelist))
+
+    # ok! now write these newlines to a file of the users choosing
+    # note for this we are basically removing everything this sub array found
+    # and replacing it with the new lines.
+
+    # overwrite the previous plotting file
+    with open(outfile, 'w') as rewrite:
         pass
 
-    with open(filepath, "w") as Multi_file2:
-        Multi_file2.write("".join(line_list))
+    with open(outfile, 'a') as outfile:
+        for outline in newlines:
+            outfile.write(outline)
+
+    with open(locus_file, 'w') as rewrite:
+        pass
+
+    with open(locus_file, 'a') as outfile:
+        for outline in locus_newlines:
+            outfile.write(outline)
+
+
+
+
+
+
+
+
+
+    return
 
 
 def break_sub_arrays(st, min_stat, min_dist):
@@ -1199,26 +1675,33 @@ def break_sub_arrays(st, min_stat, min_dist):
     break up the stations into sub arrays which meet the criteria of
     a minimum number of stations within a radius.
 
-    Param: st (Obspy stream object)
-    Description: It is assumed the traces in the stream object are SAC
-                 files with headers stla, stlo, stel populated.
+    Parameters
+    ----------
+    st : Obspy stream object
+        It is assumed the traces in the stream object are SAC
+        files with headers stla, stlo, stel populated.
 
-    Param: min_stat (int)
-    Description: minimum number of stations for each sub array to have.
+    min_stat : int
+        Minimum number of stations for each sub array to have.
 
-    Param: min_dist (float)
-    Description: A radius in degrees used to define the maximum neighborhood
-                 for the sub array.
+    min_dist : float
+        A radius in degrees used to define the maximum neighborhood
+        for the sub array.
 
-    Return:
-        - final_centroids: 2D array of [lat, lon] points of the stations
-                           used to break up sub arrays.
-        - lats_lons_use: 2D array of [lat, lon] of the stations which meet
-                         are identified as not being noise by DBSCAN.
-        - lats_lons_core: 2D array of the core points recovered from the
-                          cluter analysis.
-        - stations_use: station names corresponding to the coordinates in
-                        lats_lons_use
+    Returns
+    -------
+    final_centroids : 2D array of floats
+        [lat, lon] points of the stations
+                       used to break up sub arrays.
+    lats_lons_use : 2D array of floats
+        [lat, lon] of the stations which meet
+        are identified as not being noise by DBSCAN.
+    lats_lons_core : 2D array of floats
+        the core points recovered from the
+        cluter analysis.
+    stations_use : list of strings
+        Station names corresponding to the coordinates in
+        lats_lons_use
     """
     from sklearn.neighbors import BallTree
     from sklearn.cluster import DBSCAN
