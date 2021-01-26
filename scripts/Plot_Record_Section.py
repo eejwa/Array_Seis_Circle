@@ -44,16 +44,50 @@ parser.add_argument(
     action="store",
 )
 
+parser.add_argument(
+    "-filter",
+    "--filter_question",
+    help="Filter traces?",
+    required=False,
+    action="store_true",
+)
+parser.add_argument(
+    "-fmin",
+    "--freq_min",
+    help="Minimum frequency (default = 0.05)",
+    type=float,
+    required=False,
+    action="store",
+    default=0.05
+)
+parser.add_argument(
+    "-fmax",
+    "--freq_max",
+    help="Maximum frequency (default = 1.0)",
+    type=float,
+    required=False,
+    action="store",
+    default=0.5
+)
+
 
 args = parser.parse_args()
 filepath = args.file_path
 phase = args.phase
 tmin = args.time_min
 tmax = args.time_max
+Filter=args.filter_question
+fmin = args.freq_min
+fmax = args.freq_max
+
 
 # read in the SAC files
 st = obspy.read(filepath)
 
+if Filter:
+    st = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax)
+else:
+    pass
 
 #  plot!
 fig = plt.figure(figsize=(10, 8))
