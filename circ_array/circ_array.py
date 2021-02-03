@@ -162,7 +162,10 @@ def get_geometry(
     for i, tr in enumerate(stream):
         geometry[i, 0] = tr.stats.sac.stlo
         geometry[i, 1] = tr.stats.sac.stla
-        geometry[i, 2] = tr.stats.sac.stel
+        try:
+            geometry[i, 2] = tr.stats.sac.stel
+        except:
+            geometry[i, 2] = tr.stats.sac.stdp
 
     # get means of lon, lat, elevation
     center_x = geometry[:, 0].mean()
@@ -1162,7 +1165,7 @@ def write_to_file_check_lines(filepath, header, newlines, strings):
     Nothing
 
     """
-
+    import os
     found = False
     added = (
         False  # just so i dont write it twice if i find the criteria in multiple lines
@@ -1669,7 +1672,7 @@ def create_plotting_file(filepath,
     return
 
 
-def break_sub_arrays(st, min_stat, min_dist):
+def break_sub_arrays(st, min_stat, min_dist, spacing):
     """
     Given a stream of sac files with station location headers populated,
     break up the stations into sub arrays which meet the criteria of
@@ -1685,8 +1688,11 @@ def break_sub_arrays(st, min_stat, min_dist):
         Minimum number of stations for each sub array to have.
 
     min_dist : float
-        A radius in degrees used to define the maximum neighborhood
+        A radius in radians used to define the maximum neighborhood
         for the sub array.
+
+    spacing : float
+        Spacing in radians used to define the spacing between sub arrays.
 
     Returns
     -------
@@ -1712,6 +1718,7 @@ def break_sub_arrays(st, min_stat, min_dist):
     lats = geometry[:, 1]
 
     ## dbscan to remove non-dense stations
+    ## haversine matric wants lat_lon
     lats_lons_deg = np.array(list(zip(lats, lons)))
     lats_lons = np.array(list(zip(np.deg2rad(lats), np.deg2rad(lons))))
 
@@ -1750,18 +1757,27 @@ def break_sub_arrays(st, min_stat, min_dist):
     # create list for the final centroids
     final_centroids = []
     while core_points_as_centroids.size != 0:
-
+        print(core_points_as_centroids.shape)
         # first get all the core points within 2 degrees of the first core point in the
         sub_array, distances = tree.query_radius(
-            X=np.array([core_points_as_centroids[0]]), r=min_dist, return_distance=True
+            X=np.array([core_points_as_centroids[0]]), r=spacing, return_distance=True
         )
 
         # add the first point to the centroid list
         final_centroids.append(core_points_as_centroids[0])
 
+        # for every value not within the spacing distance of the centroid,
+        # apply a mask and keep them
+        # i.e. remove all core points within the spacing distance of the
+        # current centroid.
+
         for s in sub_array[0]:
             value = lats_lons_core[s]
-            row_mask = (core_points_as_centroids != value).all(axis=1)
-            core_points_as_centroids = core_points_as_centroids[row_mask, :]
+            # row_mask = (core_points_as_centroids != value).all(axis=1)
+            # print(row_mask)
+            # core_points_as_centroids = core_points_as_centroids[row_mask, :]
+            core_points_as_centroids =  core_points_as_centroids[np.logical_not(np.logical_and(core_points_as_centroids[:,0]==value[0],
+                                                                 core_points_as_centroids[:,1]==value[1]))]
+
 
     return final_centroids, lats_lons_use, lats_lons_core, stations_use
