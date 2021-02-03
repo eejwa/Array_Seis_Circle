@@ -11,24 +11,19 @@ class plotting:
     """
     This class holds functions for several plotting situations:
 
-        - plot_record_section_SAC: plots record section of traces in an obspy stream object.
-
-        - add_lines: add lines to $\theta-p$ plot.
-
-        - add_circles: add circles to $\theta-p$ plot.
-
-        - plot_TP_XY: plot theta-p plot in a cartesian coordinate system.
-
-        - plot_TP_Pol: plot theta-p plot in polar corrdinate system.
-
-        - plot_vespagram: plot vespagram of either backazimuth or slowness.
+    Attributes
+    ----------
+    ax : matplotlib axis object
+        Give the axis you want the figure to be plottted on.
+        For maps, the axis needs to have the correct 'projcetion'
+        parameter option.
     """
 
     def __init__(self, ax):
         self.ax = ax
         pass
 
-    def plot_record_section_SAC(self, st, phase, tmin=150, tmax=150, align=False):
+    def plot_record_section_SAC(self, st, phase, type='distance', tmin=150, tmax=150, align=False):
         """
         Plots a distance record section of all traces in the stream. The time window will
         be around the desired phase.
@@ -40,6 +35,10 @@ class plotting:
         Description: The phase you are interested in analysing (e.g. SKS). Travel time must
                      be stored in the SAC headers tn and phase name in tkn.
 
+        Param: type (string)
+        Description: Do you want the record section to be of epicentral distance (distance)
+                     or backazimuth (baz).
+
         Param: tmin (float)
         Description: Time before the minumum predicted time of the phase you are interested in.
 
@@ -50,22 +49,28 @@ class plotting:
             Plots record section, does not return anything.
         """
 
-        # get header with travel times for predicted phase
-        Target_time_header = c.get_t_header_pred_time(stream=st, phase=phase)
 
-        # get predicted travel times
-        Target_phase_times, time_header_times = c.get_predicted_times(
-            stream=st, phase=phase
-        )
+        if phase is not None:
 
-        # get min and max predicted times of pahse at the array
-        avg_target_time = np.mean(Target_phase_times)
-        min_target_time = np.amin(Target_phase_times)
-        max_target_time = np.amax(Target_phase_times)
+            # get header with travel times for predicted phase
+            Target_time_header = c.get_t_header_pred_time(stream=st, phase=phase)
+
+            # get predicted travel times
+            Target_phase_times, time_header_times = c.get_predicted_times(
+                stream=st, phase=phase
+            )
+
+            # get min and max predicted times of pahse at the array
+            avg_target_time = np.mean(Target_phase_times)
+            min_target_time = np.amin(Target_phase_times)
+            max_target_time = np.amax(Target_phase_times)
+
+        else:
+            min_target_time, max_target_time = 0, 0
 
         # plot a record section and pick time window
         # Window for plotting record section
-        win_st = float(min_target_time - tmin)
+        win_st = float(min_target_time + tmin)
         win_end = float(max_target_time + tmax)
 
         event_time = c.get_eventtime(st)
@@ -82,18 +87,23 @@ class plotting:
 
             # get distance of station from event location
             dist = tr.stats.sac.gcarc
+            # get baz from st to event
+            baz = tr.stats.sac.baz
+            az = tr.stats.sac.az
 
             # if align, subtrace predcted times of the target from the other predicted times
-            if align == True:
+            if align == True and phase is not None:
+                print('phase is not none!',phase)
                 tr_plot = tr.copy().trim(
                     starttime=event_time
-                    + (getattr(tr.stats.sac, Target_time_header) - tmin),
+                    + (getattr(tr.stats.sac, Target_time_header) + tmin),
                     endtime=event_time
                     + (getattr(tr.stats.sac, Target_time_header) + tmax),
                 )
                 time = np.linspace(
-                    -tmin, tmax, int((tmin + tmax) * tr.stats.sampling_rate)
+                    tmin, tmax, int((tmax - tmin) * tr.stats.sampling_rate)
                 )
+                print(tmin, tmax)
             else:
                 tr_plot = tr.copy()
                 time = np.linspace(
@@ -104,7 +114,15 @@ class plotting:
             dat_plot = tr_plot.data * 0.5
             # dat_plot = np.pad(
             #     dat_plot, (int(start * (1 / tr.stats.sampling_rate))), mode='constant')
-            dat_plot += dist
+
+            if type == 'distance':
+                dat_plot += dist
+            elif type == 'baz':
+                dat_plot += baz
+            elif type == 'az':
+                dat_plot += az
+            else:
+                pass
 
             # ensure time array is the same length as the data
             if time.shape[0] != dat_plot.shape[0]:
@@ -119,41 +137,52 @@ class plotting:
 
         # set the x axis
         if align == True:
-            self.ax.set_xlim(-tmin, tmax)
+            self.ax.set_xlim(tmin, tmax)
 
         else:
             self.ax.set_xlim(win_st, win_end)
 
         # plot predictions
-        for i, time_header in enumerate(time_header_times):
-            t = np.array(time_header)
+        if type == 'distance':
+            self.ax.set_ylabel("Epicentral Distance ($^\circ$)", fontsize=14)
+            if phase is not None:
+                for i, time_header in enumerate(time_header_times):
+                    t = np.array(time_header)
 
-            if align == True:
-                try:
-                    t[:, 0] = np.subtract(
-                        t[:, 0].astype(float), np.array(Target_phase_times)
-                    )
-                except:
-                    pass
-            else:
-                pass
+                    if align == True:
+                        try:
+                            t[:, 0] = np.subtract(
+                                t[:, 0].astype(float), np.array(Target_phase_times)
+                            )
+                        except:
+                            pass
+                    else:
+                        pass
 
-            try:
-                # sort array on distance
-                t = t[t[:, 1].argsort()]
-                self.ax.plot(
-                    t[:, 0].astype(float),
-                    t[:, 1].astype(float),
-                    color="C" + str(i),
-                    label=t[0, 2],
-                )
-            except:
-                print("t%s: No arrival" % i)
+                    try:
+                        # sort array on distance
+                        t = t[t[:, 1].argsort()]
+                        self.ax.plot(
+                            t[:, 0].astype(float),
+                            t[:, 1].astype(float),
+                            color="C" + str(i),
+                            label=t[0, 2],
+                        )
+                    except:
+                        print("t%s: No arrival" % i)
 
         # plt.title('Record Section Picking Window | Depth: %s Mag: %s' %(stream[0].stats.sac.evdp, stream[0].stats.sac.mag))
-        self.ax.set_ylabel("Epicentral Distance ($^\circ$)", fontsize=14)
+
+
+        elif type == 'baz':
+            self.ax.set_ylabel("Backazimuth ($^\circ$)", fontsize=14)
+
+        elif type == 'az':
+            self.ax.set_ylabel("Azimuth ($^\circ$)", fontsize=14)
+
         self.ax.set_xlabel("Time (s)", fontsize=14)
         plt.legend(loc="best")
+
 
         return
 
