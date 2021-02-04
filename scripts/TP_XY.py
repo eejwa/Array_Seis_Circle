@@ -22,8 +22,12 @@ from circ_beam import (
 from array_plotting import plotting
 import matplotlib.pyplot as plt
 
-# import parameters
+from matplotlib.backends.backend_pdf import PdfPages
+import cartopy.crs as ccrs
 
+
+
+# import parameters
 
 st = obspy.read(filepath)
 
@@ -48,8 +52,8 @@ etime = event_time + max_target
 
 # trim the stream
 # Normalise and cut seismogram around defined window
-st = st.copy().trim(starttime=stime, endtime=etime)
-st = st.normalize()
+st_trim = st.copy().trim(starttime=stime, endtime=etime)
+st_norm = st_trim.normalize()
 
 # get predicted slownesses and backazimuths
 predictions = c.pred_baz_slow(stream=st, phases=phases, one_eighty=True)
@@ -78,14 +82,14 @@ else:
     exit()
 
 # filter
-st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=4, zerophase=True)
+st_filt = st_norm.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=4, zerophase=True)
 
 
 if Align == True:
 
     # get the traces and phase traces
-    Traces = c.get_traces(st)
-    Phase_traces = c.get_phase_traces(st)
+    Traces = c.get_traces(st_filt)
+    Phase_traces = c.get_phase_traces(st_filt)
 
     # align the traces and phase traces
     Shifted_Traces = shift_traces(
@@ -135,12 +139,12 @@ elif Align == False:
 
     # trim the stream
     # Normalise and cut seismogram around defined window
-    st = st.copy().trim(starttime=stime, endtime=etime)
-    st = st.normalize()
+    st_trim = st.copy().trim(starttime=stime, endtime=etime)
+    st_norm = st_trim.normalize()
 
     # get the traces and phase traces
-    cut_traces = c.get_traces(st)
-    cut_phase_traces = c.get_phase_traces(st)
+    cut_traces = c.get_traces(st_norm)
+    cut_phase_traces = c.get_phase_traces(st_norm)
 
     sx_min = float(PRED_BAZ_X) + slow_min
     sx_max = float(PRED_BAZ_X) + slow_max
@@ -150,15 +154,27 @@ elif Align == False:
 
 # define kwarg dictionary
 
+# kwarg_dict = {
+#     "traces": cut_traces,
+#     "sampling_rate": np.float64(sampling_rate),
+#     "geometry": geometry,
+#     "distance": mean_dist,
+#     "sxmin": sx_min,
+#     "sxmax": sx_max,
+#     "symin": sy_min,
+#     "symax": sy_max,
+#     "s_space": s_space,
+# }
+
 kwarg_dict = {
     "traces": cut_traces,
     "sampling_rate": np.float64(sampling_rate),
     "geometry": geometry,
     "distance": mean_dist,
-    "sxmin": sx_min,
-    "sxmax": sx_max,
-    "symin": sy_min,
-    "symax": sy_max,
+    "sxmin": -3,
+    "sxmax": 3,
+    "symin": -3,
+    "symax": 3,
     "s_space": s_space,
 }
 
@@ -242,23 +258,109 @@ c.write_to_file(
 )
 
 
-fig = plt.figure(figsize=(8, 8))
-ax = fig.add_subplot(111)
-p = plotting(ax=ax)
+print(st)
 
 
-p.plot_TP_XY(
-    tp=Plot_arr,
-    peaks=peaks,
-    sxmin=sx_min_plot,
-    sxmax=sx_max_plot,
-    symin=sy_min_plot,
-    symax=sy_max_plot,
-    sstep=s_space,
-    contour_levels=20,
-    title="%s Plot" % Stack_type,
-    predictions=predictions,
-    log=False,
-)
+# plot!
 
-plt.show()
+with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111)
+    p = plotting(ax=ax)
+
+    p.plot_TP_XY(
+        tp=Plot_arr,
+        peaks=peaks,
+        sxmin=sx_min_plot,
+        sxmax=sx_max_plot,
+        symin=sy_min_plot,
+        symax=sy_max_plot,
+        sstep=s_space,
+        contour_levels=20,
+        title="%s Plot" % Stack_type,
+        predictions=predictions,
+        log=False,
+    )
+    pdf.savefig()
+    plt.close()
+
+
+
+    print(st)
+
+    fig = plt.figure(figsize=(10, 8))
+    ax2 = fig.add_subplot(111)
+
+    # filter stream
+    st_record = st.copy()
+
+    p = plotting(ax=ax2)
+    p.plot_record_section_SAC(
+        st=st_record, phase=None, tmin=cut_min, tmax=cut_max, align=Align,
+        type='distance'
+    )
+
+    ax2.vlines(
+        x=t_min, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window min"
+        , color='red'
+    )
+
+    ax2.vlines(
+        x=t_max, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window max"
+        , color='red'
+    )
+
+    ax2.legend(loc='best')
+
+    pdf.savefig()
+    plt.close()
+
+    st_record = st.copy()
+
+    fig = plt.figure(figsize=(10, 8))
+    ax3 = fig.add_subplot(111)
+
+
+    p = plotting(ax=ax3)
+    p.plot_record_section_SAC(
+        st=st_record, phase=None, tmin=cut_min, tmax=cut_max, align=Align,
+        type='az'
+    )
+
+    ax3.vlines(
+        x=t_min, ymin=ax3.get_ylim()[0], ymax=ax3.get_ylim()[1], label="window min"
+        , color='red'
+    )
+
+    ax3.vlines(
+        x=t_max, ymin=ax3.get_ylim()[0], ymax=ax3.get_ylim()[1], label="window max"
+        , color='red'
+    )
+
+    ax3.legend(loc='best')
+
+    pdf.savefig()
+    plt.close()
+
+
+    ### plot great circle path
+
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+
+    p = plotting(ax=ax)
+    p.plot_paths(st)
+
+    pdf.savefig()
+    plt.close()
+
+
+
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+
+    p = plotting(ax=ax)
+    p.plot_stations(st)
+
+    pdf.savefig()
+    plt.close()
