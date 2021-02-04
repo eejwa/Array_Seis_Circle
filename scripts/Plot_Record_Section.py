@@ -22,10 +22,11 @@ parser.add_argument(
 parser.add_argument(
     "-p",
     "--phase",
-    help="Enter the target phase to plot record section around (e.g. SKS)",
+    help="Enter the target phase to plot record section around (e.g. SKS), default is None",
     type=str,
-    required=True,
+    required=False,
     action="store",
+    default=None
 )
 parser.add_argument(
     "-tmin",
@@ -50,6 +51,7 @@ parser.add_argument(
     help="Filter traces?",
     required=False,
     action="store_true",
+    default=False
 )
 parser.add_argument(
     "-fmin",
@@ -89,6 +91,8 @@ if Filter:
 else:
     pass
 
+print(st)
+
 #  plot!
 fig = plt.figure(figsize=(10, 8))
 ax1 = fig.add_subplot(121)
@@ -99,7 +103,7 @@ p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True)
 ax2 = fig.add_subplot(122)
 
 p = plotting(ax=ax2)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False)
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True, type='baz')
 
 plt.tight_layout()
 plt.show()
