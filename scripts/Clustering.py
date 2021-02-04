@@ -4,7 +4,11 @@
 from sklearn.cluster import dbscan
 
 import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
+
 from matplotlib.backends.backend_pdf import PdfPages
 import cartopy.crs as ccrs
 
@@ -33,7 +37,15 @@ from cluster_utilities import cluster_utilities
 
 st = obspy.read(filepath)
 
+evla = st[0].stats.sac.evla
+evlo = st[0].stats.sac.evlo
+
 distances = ca.get_distances(st, type="deg")
+geometry = ca.get_geometry(st)
+centre_lo, centre_la = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
+
+mean_lo = (evlo + centre_lo)/2
+mean_la = (evla + centre_la)/2
 
 # get predicted slownesses and backazimuths
 predictions = ca.pred_baz_slow(stream=st, phases=phases, one_eighty=True)
@@ -84,12 +96,12 @@ newlines = cu.create_newlines(
     window=[t_min, t_max],
     Boots=Boots,
     epsilon=epsilon,
-    slow_vec_error=3,
-    Filter=False,
+    slow_vec_error=0.1,
+    Filter=True,
 )
 
-# plot!
 
+# plot!
 with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
     # clusters
     fig = plt.figure(figsize=(10, 8))
@@ -118,19 +130,53 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     fig = plt.figure(figsize=(10, 8))
     ax2 = fig.add_subplot(111)
 
+    # filter stream
+    st_record = st.filter(type='bandpass', freqmin=0.05, freqmax=1.0)
+
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
-        st=st, phase=phase, tmin=cut_min, tmax=cut_max, align=True
+        st=st_record, phase=phase, tmin=-1*cut_min, tmax=cut_max, align=True,
+        type='distance'
     )
 
     ax2.vlines(
-        x=t_min, ymin=np.amin(distances), ymax=np.amax(distances), label="window min"
+        x=-1*t_min, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window min"
+        , color='red'
     )
 
     ax2.vlines(
-        x=t_max, ymin=np.amin(distances), ymax=np.amax(distances), label="window min"
+        x=t_max, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window max"
+        , color='red'
     )
 
+    ax2.legend(loc='best')
+
+    pdf.savefig()
+    plt.close()
+
+
+
+    # backazimuth record section
+    fig = plt.figure(figsize=(10, 8))
+    ax2 = fig.add_subplot(111)
+
+    p = plotting(ax=ax2)
+    p.plot_record_section_SAC(
+        st=st_record, phase=phase, tmin=-1*cut_min, tmax=cut_max, align=True,
+        type='baz'
+    )
+
+    ax2.vlines(
+        x=-1*t_min, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window min"
+        , color='red'
+    )
+
+    ax2.vlines(
+        x=t_max, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window max"
+        , color='red'
+    )
+
+    ax2.legend(loc='best')
     pdf.savefig()
     plt.close()
 
@@ -141,7 +187,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     # need to give a projection for the cartopy package
     # to work. See a list here:
     # https://scitools.org.uk/cartopy/docs/latest/crs/projections.html
-    ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+    ax = fig.add_subplot(111, projection=ccrs.PlateCarree(central_longitude=mean_lo))
 
     p = plotting(ax=ax)
     p.plot_stations(st)
@@ -160,7 +206,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     ### plot great circle path
 
     fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+    ax = fig.add_subplot(111, projection=ccrs.Robinson(central_longitude=mean_lo))
 
     p = plotting(ax=ax)
     p.plot_paths(st)
