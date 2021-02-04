@@ -466,7 +466,7 @@ class cluster_utilities:
         import os
 
         newlines = []
-        header = "Name evla evlo evdp stla_mean stlo_mean slow_pred slow_max slow_diff slow_std_dev baz_pred baz_max baz_diff baz_std_dev slow_x_pred slow_x_obs del_x_slow slow_y_pred slow_y_obs del_y_slow error_ellipse_area ellispe_width ellispe_height ellispe_theta ellipse_rel_density multi phase no_stations stations t_window_start t_window_end Boots \n"
+        header = "Name evla evlo evdp reloc_evla reloc_evlo stla_mean stlo_mean slow_pred slow_max slow_diff slow_std_dev baz_pred baz_max baz_diff baz_std_dev slow_x_pred slow_x_obs del_x_slow slow_y_pred slow_y_obs del_y_slow error_ellipse_area ellispe_width ellispe_height ellispe_theta ellipse_rel_density multi phase no_stations stations t_window_start t_window_end Boots \n"
 
         event_time = c.get_eventtime(st)
         geometry = c.get_geometry(st)
@@ -522,7 +522,7 @@ class cluster_utilities:
             try:
 
                 distances = distance.cdist(
-                    np.array([[PRED_BAZ_X, PRED_BAZ_Y]]), means, metric="euclidean"
+                    np.array([[PRED_BAZ_X, PRED_BAZ_Y]]), means_xy, metric="euclidean"
                 )
                 number_arrivals_slow_space = np.where(distances < slow_vec_error)[
                     0
@@ -590,6 +590,18 @@ class cluster_utilities:
                 height = ellipse_properties[i, 2]
                 theta = ellipse_properties[i, 3]
 
+
+                # relocated event location
+                reloc_evla, reloc_evlo = c.relocate_event_baz_slow(evla=evla,
+                                                                evlo=evlo,
+                                                                evdp=evdp,
+                                                                stla=stla_mean,
+                                                                stlo=stlo_mean,
+                                                                baz=baz_obs,
+                                                                slow=slow_obs,
+                                                                phase=phase,
+                                                                mod='prem')
+
                 # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
                 #     multi = 'm'
 
@@ -617,15 +629,15 @@ class cluster_utilities:
 
                         # define the newline to be added to the file
                         newline = (
-                            f"{name_label} {evla} {evlo} {evdp} {stla_mean} "
-                            f"{stlo_mean} {str(S)} {str(slow_obs)} {str(slow_diff)} "
-                            f"{str(slow_std_dev)} {str(BAZ)} {str(baz_obs)} {str(baz_diff)} "
-                            f"{str(baz_std_dev)} {str(PRED_BAZ_X)} {str(slow_x_obs)} "
-                            f"{str(del_x_slow)} {str(PRED_BAZ_Y)} {str(slow_y_obs)} "
-                            f"{str(del_y_slow)} {str(error_ellipse_area)} {str(width)} "
-                            f"{str(height)} {str(theta)} {str(mean_density)} {multi} "
-                            f"{phase} {str(no_stations)} {','.join(stations)} {window[0]} "
-                            f"{window[1]} {Boots} \n"
+                            f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
+                            f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f}"
+                            f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
+                            f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
+                            f"{del_x_slow:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                            f"{del_y_slow:.2f} {error_ellipse_area:.2f} {width:.2f} "
+                            f"{height:.2f} {theta:.2f} {mean_density:.2f} {multi} "
+                            f"{phase} {no_stations} {','.join(stations)} {window[0]:.2f} "
+                            f"{window[1]:.2f} {Boots} \n"
                         )
 
                         # there will be multiple lines so add these to this list.
@@ -636,7 +648,7 @@ class cluster_utilities:
                             "The error for this arrival is too large, not analysing this any further"
                         )
                         ## change the labels
-                        labels = np.where(labels == i, -1, labels)
+                        # labels = np.where(labels == i, -1, labels)
 
                         newline = ""
                         newlines.append(newline)
@@ -660,9 +672,9 @@ class cluster_utilities:
 
                     # define the newline to be added to the file
                     newline = (
-                        f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {stla_mean:.2f} "
-                        f"{stlo_mean:.2f} {S:.2f} {slow_obs:.2f} {slow_diff:.2f} "
-                        f"{slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
+                        f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
+                        f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f}"
+                        f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
                         f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
                         f"{del_x_slow:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
                         f"{del_y_slow:.2f} {error_ellipse_area:.2f} {width:.2f} "
