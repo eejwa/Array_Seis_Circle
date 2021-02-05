@@ -411,6 +411,74 @@ class cluster_utilities:
 
         return np.array(bazs_95_confidence), np.array(slows_95_confidence)
 
+
+    def remove_noisy_arrivals(self, st, phase, slow_vec_error=3):
+        """
+        Removes arrivals/cluter based on their slowness vector deviations.
+
+        Parameters
+        ----------
+        st : Obspy stream object
+             Obspy stream object of sac files with event, arrival time and
+             station headers populated.
+
+        phase : string
+                Target phase (e.g. SKS)
+
+        slow_vec_error : float
+                         Maximum slowness vector deviation between the predicted
+                         and observed arrival. Arrival with larger deviations will
+                         be removed if Filter = True (below). Default is 3.
+
+        Returns
+        -------
+        labels : 1D numpy array of floats
+            1D numpy array of the labels describing which points are
+            noise and which are clusters.
+        """
+
+        # get predicted slownesses and backazimuths
+        predictions = c.pred_baz_slow(stream=st, phases=[phase], one_eighty=True)
+
+        # find the line with the predictions for the phase of interest
+        row = np.where((predictions == phase))[0]
+
+        (
+            P,
+            S,
+            BAZ,
+            PRED_BAZ_X,
+            PRED_BAZ_Y,
+            PRED_AZ_X,
+            PRED_AZ_Y,
+            DIST,
+            TIME,
+        ) = predictions[row, :][0]
+        PRED_BAZ_X = float(PRED_BAZ_X)
+        PRED_BAZ_Y = float(PRED_BAZ_Y)
+
+
+        no_clusters = np.amax(self.labels) + 1
+        means_xy, means_baz_slow = self.cluster_means()
+        updated_labels = self.labels
+        if no_clusters != 0:
+            for i in range(no_clusters):
+
+                slow_x_obs = c.myround(means_xy[i, 0])
+                slow_y_obs = c.myround(means_xy[i, 1])
+
+                del_x_slow = slow_x_obs - PRED_BAZ_X
+                del_y_slow = slow_y_obs - PRED_BAZ_Y
+
+                distance = np.sqrt(del_x_slow ** 2 + del_y_slow ** 2)
+
+                if distance > slow_vec_error:
+                    ## change the labels
+                    updated_labels = np.where(updated_labels == i, -1, updated_labels)
+                else:
+                    pass
+        return updated_labels
+
     def create_newlines(
         self,
         st,
@@ -648,7 +716,7 @@ class cluster_utilities:
                             "The error for this arrival is too large, not analysing this any further"
                         )
                         ## change the labels
-                        # labels = np.where(labels == i, -1, labels)
+                        updated_labels = np.where(self.labels == i, -1, self.labels)
 
                         newline = ""
                         newlines.append(newline)
@@ -727,5 +795,6 @@ class cluster_utilities:
 
         with open(file_path, "w") as Multi_file2:
             Multi_file2.write("".join(line_list))
+
 
         return newlines
