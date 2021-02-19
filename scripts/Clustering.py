@@ -28,8 +28,8 @@ model = TauPyModel(model=pred_model)
 
 st = obspy.read(filepath)
 
-event_time = c.get_eventtime(st)
-Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
+event_time = ca.get_eventtime(st)
+Target_phase_times, time_header_times = ca.get_predicted_times(st, phase)
 
 # the traces need to be trimmed to the same start and end time
 # for the shifting and clipping traces to work (see later).
@@ -48,7 +48,7 @@ evla = st[0].stats.sac.evla
 evlo = st[0].stats.sac.evlo
 evdp = st[0].stats.sac.evdp
 
-distances = c.get_distances(st, type="deg")
+distances = ca.get_distances(st, type="deg")
 mean_dist = np.mean(distances)
 geometry = ca.get_geometry(st)
 centre_lo, centre_la = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
@@ -95,7 +95,7 @@ new_labels = cu.remove_noisy_arrivals(st=st, phase=phase, slow_vec_error=slow_ve
 
 st_traces = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax,corners=1, zerophase=True)
 
-Traces = c.get_traces(st_traces)
+Traces = ca.get_traces(st_traces)
 
 # align the traces
 Shifted_Traces = shift_traces(
