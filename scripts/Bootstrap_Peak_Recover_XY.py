@@ -38,7 +38,7 @@ event_time = c.get_eventtime(st)
 # get travel time information and define a window
 Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
 
-min_target = int(np.nanmin(Target_phase_times, axis=0)) - cut_min
+min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
 max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
 
 stime = event_time + min_target
@@ -75,7 +75,7 @@ P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = prediction
 
 # filter
 if Filt == True:
-    st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=4, zerophase=True)
+    st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=2, zerophase=True)
 
 else:
     pass
@@ -104,7 +104,7 @@ arrivals = model.get_travel_times(
 )
 
 pred_point = int(sampling_rate * (arrivals[0].time - min_target))
-point_before = int(pred_point - (t_min * sampling_rate))
+point_before = int(pred_point + (t_min * sampling_rate))
 point_after = int(pred_point + (t_max * sampling_rate))
 
 cut_shifted_traces = Shifted_Traces[:, point_before:point_after]
