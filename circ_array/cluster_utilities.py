@@ -138,24 +138,19 @@ class cluster_utilities:
 
         return np.around(means_xy, 2), np.around(means_baz_slow, 2)
 
-    def cluster_std_devs(self):
+    def cluster_std_devs(self, pred_x, pred_y):
         """
         Given data points and cluster labels, return the standard deviations of
         backazimuth and horizontal slownesses of each cluster.
 
         Parameters
         ----------
-        points : 2D numpy array of floats.
-                Array of points used to find clusters.
+            pred_x : float
+                   x component of the predicted slowness vector.
 
-        labels : 1D numpy array of integers.
-                Labels of each point for which cluster it is in.
+            pred_y : float
+                   y component of the predicted slowness vector.
 
-        rel_x : float
-               x component of slowness vector used to align traces for relative beamforming.
-
-        rel_y : float
-               y component of slowness vector used to align traces for relative beamforming.
 
         Returns
         -------
@@ -169,6 +164,10 @@ class cluster_utilities:
 
         bazs_std = []
         slows_std = []
+        slow_x_std = []
+        slow_y_std = []
+        azs_std = []
+        mags_std = []
 
         for p in range(np.amax(self.labels) + 1):
 
@@ -177,8 +176,19 @@ class cluster_utilities:
                 self.points[np.where(self.labels == p)][:, 1],
             )
 
-            # points_x += rel_x
-            # points_y += rel_y
+            rel_xs = points_x - pred_x
+            rel_ys = points_y - pred_y
+
+            azs = np.degrees(np.arctan2(rel_ys,rel_xs))
+            mags = np.sqrt(rel_xs**2 + rel_ys**2)
+
+            azs[azs<0] += 360
+
+            az_std = np.around(np.degrees(circstd(np.radians(azs))), 1)
+            mag_std = np.std(mags)
+
+            x_std = np.std([points_x])
+            y_std = np.std([points_y])
 
             points_cluster = np.array([points_x, points_y]).T
 
@@ -190,8 +200,12 @@ class cluster_utilities:
 
             bazs_std.append(baz_std_dev)
             slows_std.append(abs_slow_std_dev)
+            slow_x_std.append(x_std)
+            slow_y_std.append(y_std)
+            azs_std.append(az_std)
+            mags_std.append(mag_std)
 
-        return np.around(bazs_std, 2), np.around(slows_std, 2)
+        return np.around(bazs_std, 2), np.around(slows_std, 2), np.around(slow_x_std, 2), np.around(slow_y_std, 2), np.around(azs_std, 2), np.around(mags_std, 2)
 
     def covariance_matrices(self):
         """
@@ -479,6 +493,71 @@ class cluster_utilities:
                     pass
         return updated_labels
 
+    def estimate_travel_times(self,
+                              traces,
+                              tmin,
+                              sampling_rate,
+                              geometry,
+                              distance,
+                              pred_x,
+                              pred_y):
+        """
+        Given cluster information, estimate the arrival times of each
+        point in the cluster. Note this assumes the traces have been shifted relative
+        to a predicted arrival and the cluster points are relative to this
+        predicted arrival.
+
+
+
+        """
+
+        from circ_beam import linear_stack_baz_slow
+        import obspy.signal.filter as o
+
+        times_arrivals = []
+
+        # for each cluster
+        for p in range(np.amax(self.labels) + 1):
+            times = []
+            points_x, points_y = (
+                self.points[np.where(self.labels == p)][:, 0],
+                self.points[np.where(self.labels == p)][:, 1],
+            )
+
+
+            points_x = points_x - pred_x
+            points_y = points_y - pred_y
+
+            abs_slows, bazs = c.get_slow_baz(points_x, points_y, dir_type="az")
+
+            for i,baz in enumerate(bazs):
+                slow = abs_slows[i]
+
+                # shift and stack the traces linearly along the
+                # backazimuth and slowness
+
+                lin_stack = linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz)
+
+                # calculate the envelope of this stack and recover the maximum
+
+                data_envelope = abs(lin_stack)
+
+                # get the index of the max value
+                imax = np.where(data_envelope == np.amax(data_envelope))[0][0]
+
+                # get this index in seconds and add to the start of the window
+                time = (imax / sampling_rate) + tmin
+
+                times.append(time)
+                # import matplotlib.pyplot as plt
+                # plt.plot(lin_stack)
+                # plt.title(imax)
+                # plt.show()
+
+            times = np.array(times)
+            times_arrivals.append(times)
+        return times_arrivals
+
     def create_newlines(
         self,
         st,
@@ -532,20 +611,49 @@ class cluster_utilities:
         from scipy.spatial import distance
         from sklearn.neighbors import KDTree
         import os
+        from circ_beam import shift_traces
+        from obspy.taup import TauPyModel
+
+        model = TauPyModel(model='prem')
 
         newlines = []
-        header = "Name evla evlo evdp reloc_evla reloc_evlo stla_mean stlo_mean slow_pred slow_max slow_diff slow_std_dev baz_pred baz_max baz_diff baz_std_dev slow_x_pred slow_x_obs del_x_slow slow_y_pred slow_y_obs del_y_slow error_ellipse_area ellispe_width ellispe_height ellispe_theta ellipse_rel_density multi phase no_stations stations t_window_start t_window_end Boots \n"
-
+        header = ("Name evla evlo evdp reloc_evla reloc_evlo "
+                  "stla_mean stlo_mean slow_pred slow_max slow_diff "
+                  "slow_std_dev baz_pred baz_max baz_diff baz_std_dev "
+                  "slow_x_pred slow_x_obs del_x_slow x_std_dev slow_y_pred slow_y_obs "
+                  "del_y_slow y_std_dev az az_std mag mag_std time_obs time_pred time_diff time_std_dev "
+                  "error_ellipse_area ellispe_width ellispe_height "
+                  "ellispe_theta ellipse_rel_density multi phase no_stations "
+                  "stations t_window_start t_window_end Boots\n"
+                  )
         event_time = c.get_eventtime(st)
         geometry = c.get_geometry(st)
         distances = c.get_distances(st, type="deg")
         mean_dist = np.mean(distances)
         stations = c.get_stations(st)
         no_stations = len(stations)
+        sampling_rate = st[0].stats.sampling_rate
         stlo_mean, stla_mean = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
         evdp = st[0].stats.sac.evdp
         evlo = st[0].stats.sac.evlo
         evla = st[0].stats.sac.evla
+        t_min = window[0]
+        t_max = window[1]
+        Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
+
+        # the traces need to be trimmed to the same start and end time
+        # for the shifting and clipping traces to work (see later).
+        min_target = int(np.nanmin(Target_phase_times, axis=0)) + (t_min)
+        max_target = int(np.nanmax(Target_phase_times, axis=0)) + (t_max)
+
+        stime = event_time + min_target
+        etime = event_time + max_target
+
+
+        # trim the stream
+        # Normalise and cut seismogram around defined window
+        st = st.copy().trim(starttime=stime, endtime=etime)
+        st = st.normalize()
 
         # get predicted slownesses and backazimuths
         predictions = c.pred_baz_slow(stream=st, phases=[phase], one_eighty=True)
@@ -579,12 +687,54 @@ class cluster_utilities:
             + f"{event_time.second:02d}"
         )
 
+
+        traces = c.get_traces(st)
+        shifted_traces = shift_traces(traces=traces,
+                                      geometry=geometry,
+                                      abs_slow=float(S),
+                                      baz=float(BAZ),
+                                      distance=float(mean_dist),
+                                      centre_x=float(stlo_mean),
+                                      centre_y=float(stla_mean),
+                                      sampling_rate=sampling_rate)
+
+        # predict arrival time
+        arrivals = model.get_travel_times(
+            source_depth_in_km=evdp,
+            distance_in_degree=mean_dist,
+            phase_list=[phase]
+        )
+
+        pred_time = arrivals[0].time
+
+        # get point of the predicted arrival time
+        pred_point = int(sampling_rate * (pred_time - min_target))
+
+        # get points to clip window
+        point_before = int(pred_point + (t_min * sampling_rate))
+        point_after = int(pred_point + (t_max * sampling_rate))
+
+        # clip the traces
+        cut_shifted_traces = shifted_traces[:, point_before:point_after]
+
+        # get the min time of the traces
+        min_time = pred_time + t_min
+
         no_clusters = np.amax(self.labels) + 1
         means_xy, means_baz_slow = self.cluster_means()
-        bazs_std, slows_std = self.cluster_std_devs()
+        bazs_std, slows_std, slow_xs_std, slow_ys_std, azs_std, mags_std = self.cluster_std_devs(pred_x=PRED_BAZ_X, pred_y=PRED_BAZ_Y)
         ellipse_areas = self.cluster_ellipse_areas(std_dev=2)
         ellipse_properties = self.cluster_ellipse_properties(std_dev=2)
         points_clusters = self.group_points_clusters()
+        arrival_times = self.estimate_travel_times(traces=cut_shifted_traces,
+                                                   tmin=min_time,
+                                                   sampling_rate=sampling_rate,
+                                                   geometry=geometry,
+                                                   distance=mean_dist,
+                                                   pred_x=PRED_BAZ_X,
+                                                   pred_y=PRED_BAZ_Y)
+
+
         # Option to filter based on ellipse size or vector deviation
         if Filter == True:
             try:
@@ -647,10 +797,23 @@ class cluster_utilities:
                 del_x_slow = slow_x_obs - PRED_BAZ_X
                 del_y_slow = slow_y_obs - PRED_BAZ_Y
 
+                az = np.degrees(np.arctan2(del_y_slow, del_x_slow))
+                mag = np.sqrt(del_x_slow**2 + del_y_slow**2)
+
+                if az < 0:
+                    az +=360
+
+
                 distance = np.sqrt(del_x_slow ** 2 + del_y_slow ** 2)
 
                 baz_std_dev = bazs_std[i]
                 slow_std_dev = slows_std[i]
+
+                x_std_dev = slow_xs_std[i]
+                y_std_dev = slow_ys_std[i]
+
+                az_std_dev = azs_std[i]
+                mag_std_dev = mags_std[i]
 
                 error_ellipse_area = ellipse_areas[i]
 
@@ -669,6 +832,12 @@ class cluster_utilities:
                                                                 slow=slow_obs,
                                                                 phase=phase,
                                                                 mod='prem')
+
+
+                times = arrival_times[i]
+                mean_time = np.mean(times)
+                time_diff = mean_time - pred_time
+                times_std_dev = np.std(times)
 
                 # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
                 #     multi = 'm'
@@ -698,14 +867,15 @@ class cluster_utilities:
                         # define the newline to be added to the file
                         newline = (
                             f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
-                            f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f}"
+                            f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f} "
                             f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
                             f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
-                            f"{del_x_slow:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
-                            f"{del_y_slow:.2f} {error_ellipse_area:.2f} {width:.2f} "
-                            f"{height:.2f} {theta:.2f} {mean_density:.2f} {multi} "
-                            f"{phase} {no_stations} {','.join(stations)} {window[0]:.2f} "
-                            f"{window[1]:.2f} {Boots} \n"
+                            f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                            f"{del_y_slow:.2f} {y_std_dev:.2f} {az:.2f} {az_std_dev:.2f} {mag:.2f} {mag_std_dev:.2f} "
+                            f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
+                            f"{error_ellipse_area:.2f} {width:.2f} {height:.2f} {theta:.2f} {mean_density:.2f} "
+                            f"{multi} {phase} {no_stations} {','.join(stations)} "
+                            f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
                         )
 
                         # there will be multiple lines so add these to this list.
@@ -741,15 +911,17 @@ class cluster_utilities:
                     # define the newline to be added to the file
                     newline = (
                         f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
-                        f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f}"
+                        f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f} "
                         f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
                         f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
-                        f"{del_x_slow:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
-                        f"{del_y_slow:.2f} {error_ellipse_area:.2f} {width:.2f} "
-                        f"{height:.2f} {theta:.2f} {mean_density:.2f} {multi} "
-                        f"{phase} {no_stations} {','.join(stations)} {window[0]:.2f} "
-                        f"{window[1]:.2f} {Boots} \n"
+                        f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                        f"{del_y_slow:.2f} {y_std_dev:.2f} {az:.2f} {az_std_dev:.2f} {mag:.2f} {mag_std_dev:.2f} "
+                        f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
+                        f"{error_ellipse_area:.2f} {width:.2f} {height:.2f} {theta:.2f} {mean_density:.2f} "
+                        f"{multi} {phase} {no_stations} {','.join(stations)} "
+                        f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
                     )
+
 
                     # there will be multiple lines so add these to this list.
                     newlines.append(newline)
