@@ -23,7 +23,7 @@ class plotting:
         self.ax = ax
         pass
 
-    def plot_record_section_SAC(self, st, phase, type='distance', tmin=150, tmax=150, align=False):
+    def plot_record_section_SAC(self, st, phase, type='distance', tmin=-150, tmax=150, align=False, legend=True):
         """
         Plots a distance record section of all traces in the stream. The time window will
         be around the desired phase.
@@ -44,6 +44,12 @@ class plotting:
 
         Param: tmax (float)
         Description: Time after the maximum predicted time of the phase you are interested in.
+
+        Param: align (bool)
+        Description: Align the traces along the slowness of the target phase. Default is False.
+
+        Param: legend (bool)
+        Description: Do you want to plot a legend (True/False). Default is True
 
         Return:
             Plots record section, does not return anything.
@@ -93,7 +99,6 @@ class plotting:
 
             # if align, subtrace predcted times of the target from the other predicted times
             if align == True and phase is not None:
-                print('phase is not none!',phase)
                 tr_plot = tr.copy().trim(
                     starttime=event_time
                     + (getattr(tr.stats.sac, Target_time_header) + tmin),
@@ -103,7 +108,6 @@ class plotting:
                 time = np.linspace(
                     tmin, tmax, int((tmax - tmin) * tr.stats.sampling_rate)
                 )
-                print(tmin, tmax)
             else:
                 tr_plot = tr.copy()
                 time = np.linspace(
@@ -181,7 +185,9 @@ class plotting:
             self.ax.set_ylabel("Azimuth ($^\circ$)", fontsize=14)
 
         self.ax.set_xlabel("Time (s)", fontsize=14)
-        plt.legend(loc="best")
+
+        if legend is True:
+            plt.legend(loc="best")
 
 
         return
@@ -308,16 +314,28 @@ class plotting:
 
         # if given predictions, plot them
         if predictions is not None:
+
+            # remove predictions not in the slowness grid
+            predictions =  predictions[np.logical_not(np.logical_and(predictions[:, 3].astype(float)< sxmin,
+                                                                     predictions[:, 3].astype(float)> sxmax))]
+
+
+
+            predictions =  predictions[np.logical_not(np.logical_and(predictions[:, 4].astype(float)< symin,
+                                                      predictions[:, 4].astype(float)> symax))]
+
+
+
             Phases_x = predictions[:, 3].astype(float)
             Phases_y = predictions[:, 4].astype(float)
             Phases = predictions[:, 0]
 
-            Phases_x = np.where(
-                (Phases_x > sxmin) & (Phases_x < sxmax), Phases_x, Phases_x
-            )
-            Phases_y = np.where(
-                (Phases_y > symin) & (Phases_y < symax), Phases_y, Phases_y
-            )
+            # Phases_x = np.where(
+            #     (Phases_x > sxmin) & (Phases_x < sxmax), Phases_x, Phases_x
+            # )
+            # Phases_y = np.where(
+            #     (Phases_y > symin) & (Phases_y < symax), Phases_y, Phases_y
+            # )
         else:
             pass
 
@@ -375,6 +393,7 @@ class plotting:
                 marker="X",
                 edgecolors="black",
                 linewidth=0.5,
+                clip_on=True
             )
             for i, p in enumerate(Phases):
                 txt = self.ax.text(
@@ -384,6 +403,7 @@ class plotting:
                     color="white",
                     fontsize=16,
                     zorder=3,
+                    clip_on=True
                 )
                 txt.set_path_effects(
                     [PathEffects.withStroke(linewidth=0.5, foreground="black")]
