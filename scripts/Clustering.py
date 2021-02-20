@@ -232,7 +232,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
 
     # filter stream
     st_record = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax,corners=1, zerophase=True)
-
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
@@ -275,7 +274,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
 
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
-        st=st_record, phase=phase, tmin=t_min, tmax=t_max, align=True,
+        st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
         type='baz'
     )
 
