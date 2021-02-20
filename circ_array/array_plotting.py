@@ -173,8 +173,7 @@ class plotting:
                             label=t[0, 2],
                         )
                     except:
-                        print("t%s: No arrival" % i)
-
+                        pass
         # plt.title('Record Section Picking Window | Depth: %s Mag: %s' %(stream[0].stats.sac.evdp, stream[0].stats.sac.mag))
 
 

@@ -285,9 +285,7 @@ def get_station_density_KDE(geometry):
 
     # get the best model
     kde = grid.best_estimator_
-    print(kde)
 
-    print(kde.score_samples(data_rad))
     # get the ln(density) values
     station_densities = kde.score_samples(data_rad)
 
@@ -371,6 +369,7 @@ def get_phase_traces(stream):
         Phase_traces.append(np.angle(hilbert_trace))
 
     return np.array(Phase_traces)
+
 
 
 def deg_km_az_baz(lat1, lon1, lat2, lon2):
@@ -474,7 +473,6 @@ def get_slow_baz(slow_x, slow_y, dir_type):
     if dir_type == "baz":
         return slow_mag, baz
     elif dir_type == "az":
-        print("azimuth")
         return slow_mag, azimuth
     else:
         pass
@@ -797,7 +795,7 @@ def get_predicted_times(stream, phase):
             except:
                 pass
 
-    return np.array(Target_phase_times), np.array(time_header_times)
+    return np.array(Target_phase_times, dtype=object), np.array(time_header_times, dtype=object)
 
 
 def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
@@ -1037,9 +1035,6 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
     min_target_time = np.amin(Target_phase_times)
     max_target_time = np.amax(Target_phase_times)
 
-    print(avg_target_time)
-    print(min_target_time)
-    print(max_target_time)
 
     # plot a record section and pick time window
     # Window for plotting record section
@@ -1121,7 +1116,8 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
                 label=t[0, 2],
             )
         except:
-            print("t%s: No arrival" % i)
+            pass
+            # print("t%s: No arrival" % i)
 
     # plt.title('Record Section Picking Window | Depth: %s Mag: %s' %(stream[0].stats.sac.evdp, stream[0].stats.sac.mag))
     plt.ylabel("Epicentral Distance ($^\circ$)")
@@ -1276,24 +1272,7 @@ def write_to_file(filepath, st, peaks, prediction, phase, time_window):
         slow_obs = peak[1]
         slow_pred = prediction[1]
         slow_diff = slow_obs - slow_pred
-        print(
-            name,
-            evlo,
-            evla,
-            evdp,
-            centre_x,
-            centre_y,
-            baz_pred,
-            baz_obs,
-            baz_diff,
-            slow_pred,
-            slow_obs,
-            slow_diff,
-            ",".join(stations),
-            time_window[0],
-            time_window[1],
-            phase,
-        )
+
         newline = (
             name
             + f" {evlo:.2f} {evla:.2f} {evdp:.2f} {centre_x:.2f} {centre_y:.2f} {baz_pred:.2f} {baz_obs:.2f} {baz_diff:.2f} {slow_pred:.2f} {slow_obs:.2f} {slow_diff:.2f} "
@@ -1381,13 +1360,6 @@ def relocate_event_baz_slow(evla, evlo, evdp, stla, stlo, baz, slow, phase, mod=
             ## work out slowness and compare to the observed slowness
             diff_slows[i] = diff_slow
 
-            if diff_slow < 0.01:
-                count=0
-                count +=1
-                if count == 1:
-                    print("count",count)
-                    print("diff_slow",diff_slow)
-
             if diff_slow > diff_slows[i-1]:
                 early_stop_count +=1
             else:
@@ -1461,8 +1433,7 @@ def predict_pierce_points(evla, evlo, evdp, stla, stlo, phase, target_depth, mod
     with open("./temp.txt", 'r') as temp_file:
         lines = temp_file.readlines()
         number_of_lines = len(lines)
-        print(number_of_lines)
-        print(lines)
+
         if number_of_lines == 2:
             print(f"Only pierces depth {depth} once.")
             print(f"Writing this one line to the file.")
@@ -1553,7 +1524,7 @@ def create_plotting_file(filepath,
         phase = row['phase']
         multi = row['multi']
 
-        print('great circle path')
+
         s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo = predict_pierce_points(evla=evla,
                                                                                    evlo=evlo,
                                                                                    evdp=evdp,
@@ -1575,7 +1546,7 @@ def create_plotting_file(filepath,
                                                         phase=phase,
                                                         mod=mod)
 
-        print('relocated point')
+
         try:
             s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo = predict_pierce_points(evla=reloc_evla,
                                                                                                                evlo=reloc_evlo,
@@ -1597,7 +1568,7 @@ def create_plotting_file(filepath,
             newlines.append(' '.join(newline) + "\n")
 
         except:
-            print(f"{phase} doesnt have a predicted arrival, using ScS instead")
+            # print(f"{phase} doesnt have a predicted arrival, using ScS instead")
             s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo = predict_pierce_points(evla=reloc_evla,
                                                                                                                evlo=reloc_evlo,
                                                                                                                evdp=evdp,
@@ -1617,10 +1588,8 @@ def create_plotting_file(filepath,
             newlines.append(' '.join(newline) + "\n")
 
         if locus == True:
-            print(multi)
             if dir and name not in locus_newlines:
                 if multi == 'y':
-                    print("multi found")
                     # get the points of the multipathed arrivals
                     multi_df = results_df.loc[results_df['dir'] == dir]
                     number_arrivals = len(multi_df)
@@ -1629,15 +1598,11 @@ def create_plotting_file(filepath,
                     min_baz = multi_df.min()['baz_diff']
 
                     p1_df = multi_df.loc[multi_df['baz_diff'] == min_baz]
-                    print(p1_df)
-                    print(p1_df['slow_x_obs'].values[0], p1_df['slow_y_obs'].values[0])
                     P1 = [p1_df['slow_x_obs'].values[0], p1_df['slow_y_obs'].values[0]]
-                    print(P1)
                     for i,row in multi_df.iterrows():
 
                         if row['baz_diff'] != min_baz:
                             P2 = [float(row['slow_x_obs']), float(row['slow_y_obs'])]
-                            print(P2)
                             Theta, Midpoint, Phi_1, Phi_2 = calculate_locus(P1, P2)
                             linelist = list(np.array([name, evla, evlo, stla_mean, stlo_mean, s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo, Phi_1, Phi_2]).astype(str))
                             locus_newlines.append(' '.join(linelist))
@@ -1660,13 +1625,6 @@ def create_plotting_file(filepath,
     with open(locus_file, 'a') as outfile:
         for outline in locus_newlines:
             outfile.write(outline)
-
-
-
-
-
-
-
 
 
     return
@@ -1757,7 +1715,6 @@ def break_sub_arrays(st, min_stat, min_dist, spacing):
     # create list for the final centroids
     final_centroids = []
     while core_points_as_centroids.size != 0:
-        print(core_points_as_centroids.shape)
         # first get all the core points within 2 degrees of the first core point in the
         sub_array, distances = tree.query_radius(
             X=np.array([core_points_as_centroids[0]]), r=spacing, return_distance=True

@@ -339,8 +339,6 @@ def calculate_time_shifts(
     slow_x = abs_slow * np.sin(np.radians(baz))
     slow_y = abs_slow * np.cos(np.radians(baz))
 
-    print(slow_x, slow_y)
-
     lat_new, lon_new = coords_lonlat_rad_bearing(
         lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
     )
@@ -356,7 +354,6 @@ def calculate_time_shifts(
         x_rel = stlo - centre_x
         y_rel = stla - centre_y
         if type == "circ":
-            print("circ")
             dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
 
             # get the relative distance
@@ -372,7 +369,7 @@ def calculate_time_shifts(
             times[int(x)] = dt
 
         elif type == "plane":
-            print("plane")
+
             dt = (x_rel * slow_x) + (y_rel * slow_y)
 
             shift = float(dt)
@@ -1803,11 +1800,11 @@ def calculate_locus(P1, P2):
 
     Midpoint = np.array([Midpoint_X, Midpoint_Y])
 
-    print("Theta:", Theta)
-    print("Midpoint_Y:", Midpoint_Y)
-    print("Midpoint_X:", Midpoint_X)
-    print("Phi_1:", Phi_1)
-    print("Phi_2:", Phi_2)
+    # print("Theta:", Theta)
+    # print("Midpoint_Y:", Midpoint_Y)
+    # print("Midpoint_X:", Midpoint_X)
+    # print("Phi_1:", Phi_1)
+    # print("Phi_2:", Phi_2)
     return Theta, Midpoint, Phi_1, Phi_2
 
 
