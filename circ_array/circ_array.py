@@ -981,7 +981,7 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
 
 
 # manually pick time window around phase
-def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
+def pick_tw(stream, phase, tmin=-150, tmax=150, align=False):
     """
     Given an Obspy stream of traces, plot a record section and allow a time window to be picked around the phases of interest.
 
@@ -1038,31 +1038,31 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
 
     # plot a record section and pick time window
     # Window for plotting record section
-    win_st = float(min_target_time - tmin)
+    win_st = float(min_target_time + tmin)
     win_end = float(max_target_time + tmax)
 
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111)
 
     event_time = get_eventtime(stream)
-    stream_plot = stream.copy
-    stream_plot = stream.trim(
+    stream_plot = stream.copy()
+    stream_plot = stream_plot.trim(
         starttime=event_time + win_st, endtime=event_time + win_end
     )
-    stream = stream.normalize()
+    stream_plot = stream_plot.normalize()
 
     # plot each trace with distance
-    for i, tr in enumerate(stream):
+    for i, tr in enumerate(stream_plot):
 
         dist = tr.stats.sac.gcarc
         # if you want to align them, subtract the times of the target phase
         if align == True:
             tr_plot = tr.copy().trim(
                 starttime=event_time
-                + (getattr(tr.stats.sac, Target_time_header) - tmin),
+                + (getattr(tr.stats.sac, Target_time_header) + tmin),
                 endtime=event_time + (getattr(tr.stats.sac, Target_time_header) + tmax),
             )
-            time = np.linspace(-tmin, tmax, int((tmin + tmax) * tr.stats.sampling_rate))
+            time = np.linspace(tmin, tmax, int((tmax - tmin) * tr.stats.sampling_rate))
         else:
             tr_plot = tr.copy()
             time = np.linspace(
@@ -1087,7 +1087,7 @@ def pick_tw(stream, phase, tmin=150, tmax=150, align=False):
 
     # set x axis
     if align == True:
-        plt.xlim(-tmin, tmax)
+        plt.xlim(tmin, tmax)
 
     else:
         plt.xlim(win_st, win_end)
@@ -1430,12 +1430,17 @@ def predict_pierce_points(evla, evlo, evdp, stla, stlo, phase, target_depth, mod
     # print(f"taup_pierce -mod {mod} -h {evdp} -sta {stla} {stlo} -evt {evla} {evlo} -ph {phase} --pierce {target_depth} --nodiscon > ./temp.txt")
     os.system(f"taup_pierce -mod {mod} -h {evdp} -sta {stla} {stlo} -evt {evla} {evlo} -ph {phase} --pierce {target_depth} --nodiscon > ./temp.txt")
 
+    # check number of lines
+    with open("./temp.txt", 'r') as temp_file:
+        lines_test = temp_file.readlines()
+        number_of_lines_test = len(lines_test)
+
     with open("./temp.txt", 'r') as temp_file:
         lines = temp_file.readlines()
         number_of_lines = len(lines)
 
         if number_of_lines == 2:
-            print(f"Only pierces depth {depth} once.")
+            print(f"Only pierces depth {target_depth} once.")
             print(f"Writing this one line to the file.")
             source_line = lines[-1]
             receiver_line = lines[-1]
@@ -1445,15 +1450,21 @@ def predict_pierce_points(evla, evlo, evdp, stla, stlo, phase, target_depth, mod
             receiver_line = lines[-1]
 
         elif number_of_lines > 3:
-            print(f"Phase {phase} pierces depth {depth} more than twice.")
+            print(f"Phase {phase} pierces depth {target_depth} more than twice.")
             print(f"Writing pierce point closest to source/receiver")
             source_line = lines[1]
             receiver_line = lines[-1]
 
+
+    if number_of_lines != 0:
         s_dist, s_pierce_depth, s_time, s_pierce_la, s_pierce_lo = source_line.split()
         r_dist, r_pierce_depth, r_time, r_pierce_la, r_pierce_lo = receiver_line.split()
-
-
+    else:
+        print('Neither the phase nor ScS can predict this arrival, not continuing')
+        s_pierce_la = 'nan'
+        s_pierce_lo = 'nan'
+        r_pierce_la = 'nan'
+        r_pierce_lo = 'nan'
     # os.remove("./temp.txt")
     return s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo
 
@@ -1505,22 +1516,29 @@ def create_plotting_file(filepath,
 
     newlines = []
     locus_newlines = []
-    header = "Name evla evlo evdp stla_mean stlo_mean slow_diff slow_std_dev baz_diff baz_std_dev del_x_slow del_y_slow error_ellipse_area multi phase s_pierce_la s_pierce_lo r_pierce_la r_pierce_lo s_reloc_pierce_la s_reloc_pierce_lo r_reloc_pierce_la r_reloc_pierce_lo\n"
+    header = "Name evla evlo evdp stla_mean stlo_mean slow_pred slow_diff slow_std_dev baz_pred baz_diff baz_std_dev del_x_slow del_y_slow mag az error_ellipse_area multi phase s_pierce_la s_pierce_lo r_pierce_la r_pierce_lo s_reloc_pierce_la s_reloc_pierce_lo r_reloc_pierce_la r_reloc_pierce_lo\n"
     locus_header = 'Name evla evlo evdp stla stlo s_pierce_la s_pierce_lo r_pierce_la r_pierce_lo s_reloc_pierce_la s_reloc_pierce_lo r_reloc_pierce_la r_reloc_pierce_lo Phi_1 Phi_2'
 
 
     newlines.append(header)
     locus_newlines.append(locus_header)
     for index, row in results_df.iterrows():
+        print(row)
         dir = row['dir']
         name = row['Name']
         evla = row['evla']
         evlo = row['evlo']
         evdp = row['evdp']
+        reloc_evla=row['reloc_evla']
+        reloc_evlo=row['reloc_evlo']
         stla_mean = row['stla_mean']
         stlo_mean = row['stlo_mean']
         baz = row['baz_max']
         slow = row['slow_max']
+        baz_pred = row['baz_pred']
+        slow_pred = row['slow_pred']
+        mag = row['mag']
+        az = row['az']
         phase = row['phase']
         multi = row['multi']
 
@@ -1536,15 +1554,15 @@ def create_plotting_file(filepath,
 
 
         # relocate event to match baz and slow
-        reloc_evla, reloc_evlo = relocate_event_baz_slow(evla=evla,
-                                                        evlo=evlo,
-                                                        evdp=evdp,
-                                                        stla=stla_mean,
-                                                        stlo=stlo_mean,
-                                                        baz=baz,
-                                                        slow=slow,
-                                                        phase=phase,
-                                                        mod=mod)
+        # reloc_evla, reloc_evlo = relocate_event_baz_slow(evla=evla,
+        #                                                 evlo=evlo,
+        #                                                 evdp=evdp,
+        #                                                 stla=stla_mean,
+        #                                                 stlo=stlo_mean,
+        #                                                 baz=baz,
+        #                                                 slow=slow,
+        #                                                 phase=phase,
+        #                                                 mod=mod)
 
 
         try:
@@ -1557,8 +1575,8 @@ def create_plotting_file(filepath,
                                                                                                                target_depth=depth,
                                                                                                                mod=mod)
 
-            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_diff", "slow_std_dev",
-                           "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "error_ellipse_area", "multi",
+            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff", "slow_std_dev",
+                           "baz_pred", "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "mag", "az", "error_ellipse_area", "multi",
                            "phase"]].astype(str))
 
 
@@ -1578,8 +1596,8 @@ def create_plotting_file(filepath,
                                                                                                                target_depth=depth,
                                                                                                                mod=mod)
 
-            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_diff", "slow_std_dev",
-                           "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "error_ellipse_area", "multi"]].astype(str))
+            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff", "slow_std_dev",
+                           "baz_pred", "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "mag", "az", "error_ellipse_area", "multi"]].astype(str))
 
 
             for new_item in ['ScS', s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo]:
@@ -1619,12 +1637,14 @@ def create_plotting_file(filepath,
         for outline in newlines:
             outfile.write(outline)
 
-    with open(locus_file, 'w') as rewrite:
-        pass
+    if locus == True:
 
-    with open(locus_file, 'a') as outfile:
-        for outline in locus_newlines:
-            outfile.write(outline)
+        with open(locus_file, 'w') as rewrite:
+            pass
+
+        with open(locus_file, 'a') as outfile:
+            for outline in locus_newlines:
+                outfile.write(outline)
 
 
     return
