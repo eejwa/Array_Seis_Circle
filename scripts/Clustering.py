@@ -127,19 +127,20 @@ cut_shifted_traces = Shifted_Traces[:, point_before:point_after]
 
 
 min_time = arrivals[0].time + t_min
-arrival_times = cu.estimate_travel_times(traces=cut_shifted_traces,
+cu_times = cluster_utilities(labels=new_labels, points=All_Thresh_Peaks_arr)
+arrival_times = cu_times.estimate_travel_times(traces=cut_shifted_traces,
                                  tmin=min_time,
                                  sampling_rate=sampling_rate,
                                  geometry=geometry,
                                  distance=mean_dist,
                                  pred_x=PRED_BAZ_X,
                                  pred_y=PRED_BAZ_Y)
-
 rel_points = np.empty(All_Thresh_Peaks_arr.shape)
 rel_points[:,0] = All_Thresh_Peaks_arr[:,0] - PRED_BAZ_X
 rel_points[:,1] = All_Thresh_Peaks_arr[:,1] - PRED_BAZ_Y
 
-cu_rel = cluster_utilities(labels=labels, points=rel_points)
+cu_rel = cluster_utilities(labels=new_labels, points=rel_points)
+
 
 means_xy, means_baz_slow = cu_rel.cluster_means()
 
