@@ -115,7 +115,7 @@ class plotting:
                 )
 
             # reduce amplitude of traces and plot
-            dat_plot = tr_plot.data * 0.5
+            dat_plot = tr_plot.data * 0.1
             # dat_plot = np.pad(
             #     dat_plot, (int(start * (1 / tr.stats.sampling_rate))), mode='constant')
 
