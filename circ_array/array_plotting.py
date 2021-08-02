@@ -584,6 +584,7 @@ class plotting:
         log=False,
         contour_levels=30,
         envelope=True,
+        normalise=False
     ):
         """
         Given a 2D numpy array of values representing a vespagram, plot it with peaks and predictions.
@@ -658,6 +659,9 @@ class plotting:
         else:
             pass
 
+        if normalise == True:
+            vespagram = vespagram / vespagram.max()
+
         # if you want the envelope, convert the stacked traces
         if envelope == True:
             for i, stack in enumerate(vespagram):
@@ -692,7 +696,7 @@ class plotting:
         else:
             pass
 
-        # plt.colorbar(v)
+        plt.colorbar(v, label = 'Amplitude (m)')
 
         # if wanted, plot predictions
         if predictions is not None:
@@ -721,7 +725,7 @@ class plotting:
         self.ax.set_xlabel("Time (s)")
         self.ax.set_ylim(ymin, ymax)
         if type == "slow":
-            self.ax.set_ylabel("p ($s/^{\circ}$)")
+            self.ax.set_ylabel("$p$ ($s/^{\circ}$)")
         elif type == "baz":
             self.ax.set_ylabel("$\\theta (^{\circ})$")
         else:
