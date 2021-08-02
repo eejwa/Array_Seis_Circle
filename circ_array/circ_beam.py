@@ -1776,8 +1776,9 @@ def calculate_locus(P1, P2):
     P2_x = P2[0]
     P2_y = P2[1]
 
-    del_x = abs(P1_x - P2_x)
-    del_y = abs(P1_y - P2_y)
+    del_x = P1_x - P2_x
+    del_y = P1_y - P2_y
+    print(del_x,del_y)
 
     Theta = np.degrees(np.arctan2(del_x, del_y))
 
