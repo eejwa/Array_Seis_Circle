@@ -41,24 +41,36 @@ centre_x, centre_y = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
 sampling_rate = st[0].stats.sampling_rate
 evdp = st[0].stats.sac.evdp
 
+
+filter
+if Filter == True:
+    st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=2, zerophase=True)
+else:
+    st = st.copy()
+
 # get travel time information and define a window
-Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
+if phase is not None:
+    Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
 
-min_target = int(np.nanmin(Target_phase_times, axis=0)) - cut_min
-max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
+    min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
+    max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
 
-stime = event_time + min_target
-etime = event_time + max_target
+    stime = event_time + min_target
+    etime = event_time + max_target
+    #
+    # # trim the stream
+    # Normalise and cut seismogram around defined window
+    st_trim = st.copy().trim(starttime=stime, endtime=etime)
+    st_norm = st_trim.normalize()
+else:
+    st_trim = st.copy()#.trim(starttime=stime, endtime=etime)
+    st_norm = st_trim.normalize()
 
-# trim the stream
-# Normalise and cut seismogram around defined window
-st_trim = st.copy().trim(starttime=stime, endtime=etime)
-st_norm = st_trim.normalize()
+
 
 # get predicted slownesses and backazimuths
 predictions = c.pred_baz_slow(stream=st, phases=phases, one_eighty=True)
 
-print(predictions)
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
 P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = predictions[
@@ -81,16 +93,11 @@ else:
     print("Man_Pick needs to be set to True or False!")
     exit()
 
-# filter
-st_filt = st_norm.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=4, zerophase=True)
-
-
+# st_filt = st_filt.resample(20)
 if Align == True:
-
     # get the traces and phase traces
-    Traces = c.get_traces(st_filt)
-    Phase_traces = c.get_phase_traces(st_filt)
-
+    Traces = c.get_traces(st_norm)
+    Phase_traces = c.get_phase_traces(st_norm)
     # align the traces and phase traces
     Shifted_Traces = shift_traces(
         traces=Traces,
