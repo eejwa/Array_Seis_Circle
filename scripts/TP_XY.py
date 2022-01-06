@@ -279,7 +279,7 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
 
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
-        st=st_record, phase=None, tmin=cut_min, tmax=cut_max, align=Align,
+        st=st_record, phase=phase, tmin=cut_min, tmax=cut_max, align=Align,
         type='distance'
     )
 
@@ -306,7 +306,7 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
 
     p = plotting(ax=ax3)
     p.plot_record_section_SAC(
-        st=st_record, phase=None, tmin=cut_min, tmax=cut_max, align=Align,
+        st=st_record, phase=phase, tmin=cut_min, tmax=cut_max, align=Align,
         type='az'
     )
 
