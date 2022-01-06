@@ -8,6 +8,8 @@ import circ_array as c
 from circ_beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
 from array_plotting import plotting
 
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 
 from Parameters_Vesp import *
 
@@ -106,10 +108,6 @@ else:
     print('Vesp_type needs to be "slow" or "baz"')
     exit()
 
-import matplotlib.pyplot as plt
-
-plt.imshow(vesp)
-plt.show()
 
 fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111)
@@ -127,6 +125,9 @@ p.plot_vespagram(
     title="%s Vespagram. %s Stacking" % (Vesp_type, Stack_type),
     predictions=predictions,
     type="slow",
-    envelope=True,
+    envelope=False,
+    normalise=True
 )
+
+plt.savefig('Vespagram.pdf')
 plt.show()
