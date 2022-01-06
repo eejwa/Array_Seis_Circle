@@ -345,22 +345,20 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
 
     ### plot great circle path
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection=ccrs.Robinson())
-
-    p = plotting(ax=ax)
-    p.plot_paths(st)
-
-    pdf.savefig()
-    plt.close()
-
-
-
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection=ccrs.Robinson())
-
-    p = plotting(ax=ax)
-    p.plot_stations(st)
-
-    pdf.savefig()
-    plt.close()
+    # fig = plt.figure(figsize=(6, 6))
+    # ax = fig.add_subplot(111, projection=ccrs.Robinson())
+    #
+    # p = plotting(ax=ax)
+    # p.plot_paths(st)
+    #
+    # pdf.savefig()
+    # plt.close()
+    #
+    # fig = plt.figure(figsize=(6, 6))
+    # ax = fig.add_subplot(111, projection=ccrs.Robinson())
+    #
+    # p = plotting(ax=ax)
+    # p.plot_stations(st)
+    #
+    # pdf.savefig()
+    # plt.close()
