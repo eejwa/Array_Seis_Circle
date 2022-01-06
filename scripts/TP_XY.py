@@ -4,6 +4,9 @@
 # conduct the beamforming in this window
 
 # imports
+# Force matplotlib to not use any Xwindows backend.
+import matplotlib
+matplotlib.use('Agg')
 import obspy
 import numpy as np
 import time
