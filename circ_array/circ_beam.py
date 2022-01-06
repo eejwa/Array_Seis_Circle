@@ -188,7 +188,7 @@ def ARF_process_f_s_spherical(
         np.mean(geometry[:, 2]),
     )
 
-    # get number of plen(buff)oints.
+    # get number of points.
     nsx = int(np.round(((sxmax - sxmin) / s_space) + 1))
     nsy = int((np.round((symax - symin) / s_space) + 1))
     # number of frequencies
@@ -301,8 +301,6 @@ def calculate_time_shifts(
 
     Parameters
     ----------
-    traces : 2D numpy array of floats
-        A 2D numpy array containing the traces that the user wants to stack.
 
     geometry : 2D array of floats
         2D array describing the lon lat and elevation of the stations [lon,lat,depth]
@@ -834,38 +832,27 @@ def BF_Spherical_XY_Lin(
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
     the coherent power. Stacks the traces using linear stack.
-
     Parameters
     ----------
     traces : 2D numpy array of floats
         2D array containing the traces the user wants to conduct analysis with. Shape of [n,p] where n
         is the number of traces and p is the points in each trace.
-
-
     sampling_rate : float
         Sampling rate of the data points in s^-1.
-
     geometry : 2D array of floats
         2D array describing the lon lat and elevation of the stations [lon,lat,depth]
-
     distance : float
         Epicentral distance from the event to the centre of the array.
-
     sxmax : float
         Maximum magnitude of slowness on x axis, used for creating the slowness grid.
-
     sxmin : float
         Minimun magnitude of the slowness on x axis, used for creating the slowness grid.
-
     symax : float
         Maximum magnitude of slowness on y axis, used for creating the slowness grid.
-
     symin : float
         Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
-
     s_space : float
         The slowness interval for each step e.g. 0.1.
-
     Returns
     -------
     lin_tp : 2D numpy array of floats.
@@ -926,7 +913,7 @@ def BF_Spherical_XY_Lin(
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
             # linear stack
-            power_lin = np.trapz(np.power(lin_stack, 2))
+            power_lin = np.trapz(lin_stack**2)
 
             lin_tp[i, j] = power_lin
 
@@ -1021,7 +1008,7 @@ def BF_Spherical_XY_PWS(
         np.mean(geometry[:, 2]),
     )
 
-    # get number of plen(buff)oints.
+    # get number of points.
     nsx = int(np.round(((sxmax - sxmin) / s_space), 0) + 1)
     nsy = int(np.round(((symax - symin) / s_space), 0) + 1)
 
@@ -1175,7 +1162,7 @@ def BF_Spherical_Pol_all(
         np.mean(geometry[:, 2]),
     )
 
-    # get number of plen(buff)oints.
+    # get number of points.
     nslow = int(np.round(((smax - smin) / s_space) + 1))
     nbaz = int(np.round(((bazmax - bazmin) / baz_space) + 1))
 
@@ -1356,7 +1343,7 @@ def BF_Spherical_Pol_Lin(
         np.mean(geometry[:, 2]),
     )
 
-    # get number of plen(buff)oints.
+    # get number of points.
     nslow = int(np.round(((smax - smin) / s_space) + 1))
     nbaz = int(np.round(((bazmax - bazmin) / baz_space) + 1))
 
@@ -1492,7 +1479,7 @@ def BF_Spherical_Pol_PWS(
         np.mean(geometry[:, 2]),
     )
 
-    # get number of plen(buff)oints.
+    # get number of points.
     nslow = int(np.round(((smax - smin) / s_space) + 1))
     nbaz = int(np.round(((bazmax - bazmin) / baz_space) + 1))
 
