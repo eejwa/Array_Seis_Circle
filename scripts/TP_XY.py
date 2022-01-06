@@ -162,38 +162,25 @@ elif Align == False:
 
 # define kwarg dictionary
 
-# kwarg_dict = {
-#     "traces": cut_traces,
-#     "sampling_rate": np.float64(sampling_rate),
-#     "geometry": geometry,
-#     "distance": mean_dist,
-#     "sxmin": sx_min,
-#     "sxmax": sx_max,
-#     "symin": sy_min,
-#     "symax": sy_max,
-#     "s_space": s_space,
-# }
-
 kwarg_dict = {
     "traces": cut_traces,
     "sampling_rate": np.float64(sampling_rate),
     "geometry": geometry,
     "distance": mean_dist,
-    "sxmin": -3,
-    "sxmax": 3,
-    "symin": -3,
-    "symax": 3,
+    "sxmin": sx_min,
+    "sxmax": sx_max,
+    "symin": sy_min,
+    "symax": sy_max,
     "s_space": s_space,
 }
 
 
+
 if Stack_type == "Both":
     # run the beamforming!
-    start = time.time()
     Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(
         phase_traces=cut_phase_traces, degree=2, **kwarg_dict
     )
-    end = time.time()
 
     peaks = np.c_[peaks, np.array(["PWS", "LIN", "F"])]
 
@@ -201,28 +188,23 @@ if Stack_type == "Both":
 
     peaks = peaks[np.where(peaks == "PWS")[0]]
 
-    print("time take: ", end - start)
 
-elif Stack_type == "Lin":
+elif Stack_type == "LIN":
 
-    start = time.time()
     Lin_arr, Results_arr, peaks = BF_Spherical_XY_Lin(**kwarg_dict)
-    end = time.time()
+
 
     peaks = np.c_[peaks, np.array(["LIN"])]
     Plot_arr = Lin_arr / Lin_arr.max()
 
     peaks = peaks[np.where(peaks == "LIN")[0]]
 
-    print("time take: ", end - start)
 
 elif Stack_type == "PWS":
 
-    start = time.time()
     PWS_arr, Results_arr, peaks = BF_Spherical_XY_PWS(
-        phase_traces=cut_phase_traces, degree=2, **kwarg_dict
+        phase_traces=cut_phase_traces, degree=degree, **kwarg_dict
     )
-    end = time.time()
 
     peaks = np.c_[peaks, np.array(["PWS"])]
 
@@ -230,14 +212,13 @@ elif Stack_type == "PWS":
 
     peaks = peaks[np.where(peaks == "PWS")[0]]
 
-    print("time take: ", end - start)
 
 sx_min_plot = float(PRED_BAZ_X) + slow_min
 sx_max_plot = float(PRED_BAZ_X) + slow_max
 sy_min_plot = float(PRED_BAZ_Y) + slow_min
 sy_max_plot = float(PRED_BAZ_Y) + slow_max
 
-print(peaks[:, 0])
+
 if Align == True:
     peaks[:, 0] = float(peaks[:, 0]) + float(PRED_BAZ_X)
     peaks[:, 1] = float(peaks[:, 1]) + float(PRED_BAZ_Y)
@@ -247,11 +228,9 @@ filepath = Res_dir + "XY_Results.txt"
 
 slow_vec_obs = []
 for peak in peaks:
-    print(peak[0], peak[1])
 
     slow_obs, baz_obs = c.get_slow_baz(float(peak[0]), float(peak[1]), dir_type="az")
     slow_vec_obs.append([baz_obs, slow_obs])
-    print(slow_obs, baz_obs)
 
 slow_vec_obs = np.array(slow_vec_obs).astype(float)
 pred_file = np.array([BAZ, S]).astype(float)
@@ -264,10 +243,6 @@ c.write_to_file(
     phase=phase,
     time_window=window,
 )
-
-
-print(st)
-
 
 # plot!
 
