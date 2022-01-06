@@ -341,43 +341,28 @@ def calculate_time_shifts(
         lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
     )
 
-    # create array for shifted traces
-    shifts = np.zeros(traces.shape[0])
-    times = np.zeros(traces.shape[0])
+    if type == "circ":
 
-    for x in range(geometry.shape[0]):
-        stla = float(geometry[int(x), 1])
-        stlo = float(geometry[int(x), 0])
+        dists = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=geometry[:,1], lon2=geometry[:,0])
 
-        x_rel = stlo - centre_x
-        y_rel = stla - centre_y
-        if type == "circ":
-            dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
+        # get the relative distance
+        dists_rel = dists - distance
 
-            # get the relative distance
-            dist_rel = float(dist) - distance
+        # get the travel time for this distance
+        times = dists_rel * abs_slow
 
-            # get the travel time for this distance
-            dt = float(dist_rel) * float(abs_slow)
+        # the correction will be dt *-1
+        shifts = times * -1
 
-            # the correction will be dt *-1
-            shift = float(dt) * -1
 
-            shifts[int(x)] = shift
-            times[int(x)] = dt
+    elif type == "plane":
 
-        elif type == "plane":
+        shifts = ((geometry[:,0] - centre_x) * slow_x) + ((geometry[:,1] - centre_y) * slow_y)
 
-            dt = (x_rel * slow_x) + (y_rel * slow_y)
+        times = shifts * -1
 
-            shift = float(dt)
-
-            shifts[int(x)] = shift
-
-            dt *= -1
-            times[int(x)] = dt
-        else:
-            print("not plane or circ")
+    else:
+        print("not plane or circ")
 
     return shifts, times
 
