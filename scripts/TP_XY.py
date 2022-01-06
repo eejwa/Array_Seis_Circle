@@ -81,10 +81,11 @@ P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = prediction
 if Man_Pick == True:
 
     # get the user to pick the time window
-    window = c.pick_tw(stream=st, phase=phase, align=Align)
+    window = c.pick_tw(stream=st, phase=phase, align=Align, tmin=cut_min, tmax=cut_max)
 
     rel_tmin = window[0]
     rel_tmax = window[1]
+
 elif Man_Pick == False:
     rel_tmin = t_min
     rel_tmax = t_max
