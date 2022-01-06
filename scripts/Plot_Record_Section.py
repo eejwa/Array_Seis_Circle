@@ -106,4 +106,7 @@ p = plotting(ax=ax2)
 p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True, type='baz')
 
 plt.tight_layout()
+
+plt.savefig("Record_Section.pdf")
+
 plt.show()
