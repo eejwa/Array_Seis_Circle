@@ -774,7 +774,6 @@ class cluster_utilities:
             multi = "t"
 
         # make new line
-        usable_means = np.empty((number_arrivals, 2))
 
         # set counter to be zero, this will be used to label the arrivals as first second etc.
         usable_arrivals = 0
@@ -845,10 +844,6 @@ class cluster_utilities:
                 if Filter == True:
                     if distance < slow_vec_error:
 
-                        usable_means[usable_arrivals] = np.array(
-                            [slow_x_obs, slow_y_obs]
-                        )
-
                         points_cluster = points_clusters[i]
 
                         tree = KDTree(
@@ -892,8 +887,6 @@ class cluster_utilities:
                         newlines.append(newline)
 
                 elif Filter == False:
-
-                    usable_means[usable_arrivals] = np.array([slow_x_obs, slow_y_obs])
 
                     points_cluster = points_clusters[i]
 
