@@ -303,7 +303,7 @@ def ARF_process_f_s_spherical(
 
 @jit(nopython=True, fastmath=True)
 def calculate_time_shifts(
-    traces, geometry, abs_slow, baz, distance, centre_x, centre_y, type="circ"
+    geometry, abs_slow, baz, distance, centre_x, centre_y, type="circ"
 ):
     """
     Calculates the time delay for each station relative to the time the phase
