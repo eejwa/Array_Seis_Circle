@@ -1821,6 +1821,6 @@ def break_sub_arrays(st, min_stat, min_dist, spacing):
         psf_mirror = psf[::-1, ::-1]
 
         for _ in range(iterations):
-            relative_blur = image / convolve_method(im_deconv, psf, 'same')
-            im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
+            relative_blur = image / convolve_method(im_deconv, psf, 'valid')
+            im_deconv *= convolve_method(relative_blur, psf_mirror, 'valid')
         return im_deconv
