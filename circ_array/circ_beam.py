@@ -2,6 +2,7 @@
 
 from numba import jit, jit_module
 import numpy as np
+from shift_stack import roll_1D, roll_2D
 
 
 @jit(nopython=True, fastmath=True)
@@ -419,39 +420,21 @@ def shift_traces(
             slowness.
     """
 
-    brng = np.radians(baz)  # convert bearing to radians
-    d = np.radians(distance)  # convert degrees to radians
-    lat1 = np.radians(centre_y)  # Current lat point converted to radians
-    lon1 = np.radians(centre_x)  # Current long point converted to radians
 
-    lat_new, lon_new = coords_lonlat_rad_bearing(
-        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
-    )
+    shifts, times = calculate_time_shifts(
+                                          geometry,
+                                          abs_slow,
+                                          baz,
+                                          distance,
+                                          centre_x,
+                                          centre_y,
+                                          type=type
+                                          )
 
-    # create array for shifted traces
-    shifted_traces = np.zeros(traces.shape)
+    pts_shifts = shifts * sampling_rate
 
-    # loop over traces, calculate times and shift them
-    for x in range(geometry.shape[0]):
-        stla = float(geometry[int(x), 1])
-        stlo = float(geometry[int(x), 0])
+    shifted_traces = roll_2D(traces, pts_shifts)
 
-        dist = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=stla, lon2=stlo)
-
-        # get the relative distance
-        dist_rel = float(dist) - float(distance)
-
-        # get the travel time for this distance
-        dt = float(dist_rel) * float(abs_slow)
-
-        # the correction will be dt *-1
-        shift = float(dt) * -1
-
-        pts_shift = int(shift * sampling_rate)
-        # shift the traces with numpy.roll()
-        shifted_trace = np.roll(traces[int(x)], pts_shift)
-
-        shifted_traces[int(x)] = shifted_trace
 
     return shifted_traces
 
