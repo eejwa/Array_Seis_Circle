@@ -10,7 +10,6 @@ from Parameters_Bootstrap import *
 import random
 import sys
 import os
-
 from obspy.taup import TauPyModel
 
 model = TauPyModel(model=pred_model)
@@ -197,7 +196,6 @@ for i in range(0, processes_per_core):
         N=peak_number,
     )
 
-    print(peaks)
     sys.stdout.flush()
 
     # add the arrays to a list
