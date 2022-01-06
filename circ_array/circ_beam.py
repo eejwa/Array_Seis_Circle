@@ -598,7 +598,7 @@ def pws_stack_baz_slow(
     )
 
     # calculate phase weighted stack
-    phase_weight_stack = lin_stack * np.power(phase_stack, degree)
+    phase_weight_stack = lin_stack * (phase_stack**degree)
 
     return phase_weight_stack
 
@@ -765,7 +765,7 @@ def BF_Spherical_XY_all(
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
             # linear stack
-            power_lin = np.trapz(np.power(lin_stack, 2))
+            power_lin = np.trapz(lin_stack**2)
 
             # phase weighted stack
             shifted_phase_traces = shift_traces(
@@ -782,13 +782,13 @@ def BF_Spherical_XY_all(
             phase_stack = (
                 np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
             )
-            phase_weight_stack = lin_stack * np.power(phase_stack, degree)
-            power_pws = np.trapz(np.power(phase_weight_stack, 2))
+            phase_weight_stack = lin_stack * (phase_stack**degree)
+            power_pws = np.trapz(phase_weight_stack**2)
 
             # F statistic
             Residuals_Trace_Beam = np.subtract(shifted_traces_lin, lin_stack)
             Residuals_Trace_Beam_Power = np.sum(
-                np.power(Residuals_Trace_Beam, 2), axis=0
+                (Residuals_Trace_Beam**2), axis=0
             )
 
             Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
@@ -1058,8 +1058,8 @@ def BF_Spherical_XY_PWS(
             phase_stack = (
                 np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
             )
-            phase_weight_stack = lin_stack * np.power(phase_stack, degree)
-            power_pws = np.trapz(np.power(phase_weight_stack, 2))
+            phase_weight_stack = lin_stack * (phase_stack**degree)
+            power_pws = np.trapz(phase_weight_stack**2)
 
             pws_tp[i, j] = power_pws
 
@@ -1209,17 +1209,17 @@ def BF_Spherical_Pol_all(
             phase_stack = (
                 np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
             )
-            phase_weight_stack = lin_stack * np.power(phase_stack, degree)
+            phase_weight_stack = lin_stack * (phase_stack**degree)
 
             Residuals_Trace_Beam = np.subtract(shifted_traces_lin, lin_stack)
             Residuals_Trace_Beam_Power = np.sum(
-                np.power(Residuals_Trace_Beam, 2), axis=0
+                (Residuals_Trace_Beam**2), axis=0
             )
 
             Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
 
-            power_lin = np.trapz(np.power(lin_stack, 2))
-            power_pws = np.trapz(np.power(phase_weight_stack, 2))
+            power_lin = np.trapz(lin_stack**2)
+            power_pws = np.trapz(phase_weight_stack**2)
 
             lin_tp[i, j] = power_lin
             pws_tp[i, j] = power_pws
@@ -1376,7 +1376,7 @@ def BF_Spherical_Pol_Lin(
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
-            power_lin = np.trapz(np.power(lin_stack, 2))
+            power_lin = np.trapz(lin_stack ** 2)
             lin_tp[i, j] = power_lin
 
             point = int(int(i) + int(slows.shape[0] * j))
@@ -1524,9 +1524,9 @@ def BF_Spherical_Pol_PWS(
             phase_stack = (
                 np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
             )
-            phase_weight_stack = lin_stack * np.power(phase_stack, degree)
+            phase_weight_stack = lin_stack * (phase_stack** degree)
 
-            power_pws = np.trapz(np.power(phase_weight_stack, 2))
+            power_pws = np.trapz(phase_weight_stack** 2)
 
             pws_tp[i, j] = power_pws
 
@@ -1641,17 +1641,17 @@ def BF_Noise_Threshold_Relative_XY(
             shifted_traces_lin = shift_traces(
                 traces=traces,
                 geometry=geometry,
-                abs_slow=float(abs_slow),
-                baz=float(baz),
-                distance=float(distance),
-                centre_x=float(centre_x),
-                centre_y=float(centre_y),
+                abs_slow=np.array(abs_slow),
+                baz=np.array(baz),
+                distance=distance,
+                centre_x=centre_x,
+                centre_y=centre_y,
                 sampling_rate=sampling_rate,
             )
 
             # stack, get power and store in array
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-            power_lin = np.trapz(np.power(lin_stack, 2))
+            power_lin = np.trapz(lin_stack**2)
             lin_tp[i, j] = power_lin
 
     # initialise peak array
@@ -1723,7 +1723,7 @@ def BF_Noise_Threshold_Relative_XY(
 
         noise_stack = np.sum(noise_traces, axis=0) / ntrace
 
-        noise_p = np.trapz(np.power(noise_stack, 2))
+        noise_p = np.trapz(noise_stack**2)
         noise_powers[int(t)] = noise_p
 
     # take mean of all 1000 values
