@@ -379,6 +379,94 @@ def calculate_time_shifts(
 
 
 @jit(nopython=True, fastmath=True)
+def calculate_time_shifts_elevation(
+    incidence, geometry, abs_slow, baz, distance, centre_x, centre_y, type="circ"
+):
+    """
+    Calculates the time delay for each station relative to the time the phase
+    should arrive at the centre of the array. Will use either a plane or curved
+    wavefront approximation. This function also adds the relative time shifts
+    due to elevation differences of the stations.
+
+    Parameters
+    ----------
+    incidence : float
+        The incidence angle of the phase at the centre of the array.
+
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    distance : float
+        Epicentral distance from the event to the centre of the array.
+
+    abs_slow : float
+        Horizontal slowness you want to align traces over.
+
+    baz : float
+        Backazimuth you want to align traces over.
+
+    centre_x : float
+        Mean longitude.
+
+    centre_y : float
+        Mean latitude.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    Returns
+    -------
+    times : 1D numpy array of floats
+        The arrival time for the phase at
+        each station relative to the centre.
+
+    shifts : 1D numpy array of floats
+        The time shift to align on a phase at
+        each station relative to the centre.
+    """
+
+    slow_x = abs_slow * np.sin(np.radians(baz))
+    slow_y = abs_slow * np.cos(np.radians(baz))
+
+    lat_new, lon_new = coords_lonlat_rad_bearing(
+        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
+    )
+
+    if type == "circ":
+
+        dists = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=geometry[:,1], lon2=geometry[:,0])
+
+        # get the relative distance
+        dists_rel = dists - distance
+
+        # get the travel time for this distance
+        times = dists_rel * abs_slow
+
+        # the correction will be dt *-1
+        shifts = times * -1
+
+
+    elif type == "plane":
+
+        shifts = ((geometry[:,0] - centre_x) * slow_x) + ((geometry[:,1] - centre_y) * slow_y)
+
+        times = shifts * -1
+
+    else:
+        print("not plane or circ")
+
+    # Now need to add the effect of station elevation on times and shifts
+    # multiply the relative elevations by the cosine of the incidence
+    # of the phase and the 1-D velocity of PREM (approx 4.5).
+    elevation_times = (geometry[:,2] - np.mean(geometry[:,2])) * np.cos(incidence) * 4.5
+
+    times = times + elevation_times
+    shifts = shifts + (elevation_times * -1)
+
+    return shifts, times
+
+
+@jit(nopython=True, fastmath=True)
 def shift_traces(
     traces,
     geometry,
