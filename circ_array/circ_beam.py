@@ -538,7 +538,7 @@ def shift_traces(
 
 
 @jit(nopython=True, fastmath=True)
-def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
+def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz, type='circ'):
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
 
@@ -562,6 +562,10 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
     baz : float
         Backazimuth you want to align traces over.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+
     Returns
     -------
     lin_stack : 1D numpy array of floats
@@ -583,6 +587,7 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type
     )
 
     # Stack the traces (i.e. take mean)
@@ -593,7 +598,7 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
 
 @jit(nopython=True, fastmath=True)
 def pws_stack_baz_slow(
-    traces, phase_traces, sampling_rate, geometry, distance, slow, baz, degree
+    traces, phase_traces, sampling_rate, geometry, distance, slow, baz, degree, type='circ'
 ):
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
@@ -622,6 +627,10 @@ def pws_stack_baz_slow(
     baz : float
         Backazimuth you want to align traces over.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+
     Returns
     -------
     stack : 1D numpy array of floats
@@ -643,6 +652,7 @@ def pws_stack_baz_slow(
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type
     )
 
     # shift the phase traces
@@ -655,6 +665,7 @@ def pws_stack_baz_slow(
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type
     )
 
     # get linear and phase stacks
