@@ -719,7 +719,7 @@ def get_max_power_loc(tp, sxmin, symin, s_space):
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_all(
+def BF_XY_all(
     traces,
     phase_traces,
     sampling_rate,
@@ -731,6 +731,7 @@ def BF_Spherical_XY_all(
     symax,
     s_space,
     degree,
+    type='circ'
 ):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
@@ -773,6 +774,10 @@ def BF_Spherical_XY_all(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
 
     Returns
     -------
@@ -837,6 +842,7 @@ def BF_Spherical_XY_all(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -854,6 +860,7 @@ def BF_Spherical_XY_all(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             phase_stack = (
@@ -903,8 +910,8 @@ def BF_Spherical_XY_all(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_Lin(
-    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space
+def BF_XY_Lin(
+    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, type='circ'
 ):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
@@ -930,6 +937,9 @@ def BF_Spherical_XY_Lin(
         Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
     s_space : float
         The slowness interval for each step e.g. 0.1.
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
     Returns
     -------
     lin_tp : 2D numpy array of floats.
@@ -985,6 +995,7 @@ def BF_Spherical_XY_Lin(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1008,7 +1019,7 @@ def BF_Spherical_XY_Lin(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_PWS(
+def BF_XY_PWS(
     traces,
     phase_traces,
     sampling_rate,
@@ -1020,6 +1031,7 @@ def BF_Spherical_XY_PWS(
     symax,
     s_space,
     degree,
+    type='circ'
 ):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
@@ -1062,6 +1074,9 @@ def BF_Spherical_XY_PWS(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
 
     Returns
     -------
@@ -1117,6 +1132,7 @@ def BF_Spherical_XY_PWS(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             shifted_phase_traces = shift_traces(
@@ -1128,6 +1144,7 @@ def BF_Spherical_XY_PWS(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1154,7 +1171,7 @@ def BF_Spherical_XY_PWS(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_all(
+def BF_Pol_all(
     traces,
     phase_traces,
     sampling_rate,
@@ -1167,6 +1184,7 @@ def BF_Spherical_Pol_all(
     s_space,
     baz_space,
     degree,
+    type='circ'
 ):
     """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
@@ -1212,6 +1230,9 @@ def BF_Spherical_Pol_all(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
 
     Returns
     -------
@@ -1270,6 +1291,7 @@ def BF_Spherical_Pol_all(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type
             )
             shifted_phase_traces = shift_traces(
                 traces=phase_traces,
@@ -1280,6 +1302,7 @@ def BF_Spherical_Pol_all(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1350,7 +1373,7 @@ def BF_Spherical_Pol_all(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_Lin(
+def BF_Pol_Lin(
     traces,
     sampling_rate,
     geometry,
@@ -1361,6 +1384,7 @@ def BF_Spherical_Pol_Lin(
     bazmax,
     s_space,
     baz_space,
+    type='circ'
 ):
     """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
@@ -1398,6 +1422,10 @@ def BF_Spherical_Pol_Lin(
 
     baz_space : float
         The backazimuth interval for each step e.g. 0.1.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
 
     Returns
     -------
@@ -1449,6 +1477,7 @@ def BF_Spherical_Pol_Lin(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1476,7 +1505,7 @@ def BF_Spherical_Pol_Lin(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_PWS(
+def BF_Pol_PWS(
     traces,
     phase_traces,
     sampling_rate,
@@ -1489,6 +1518,7 @@ def BF_Spherical_Pol_PWS(
     s_space,
     baz_space,
     degree,
+    type='circ'
 ):
     """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
@@ -1534,6 +1564,9 @@ def BF_Spherical_Pol_PWS(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
 
     Returns
     -------
@@ -1585,6 +1618,7 @@ def BF_Spherical_Pol_PWS(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type
             )
             shifted_phase_traces = shift_traces(
                 traces=phase_traces,
@@ -1595,6 +1629,7 @@ def BF_Spherical_Pol_PWS(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1627,7 +1662,7 @@ def BF_Spherical_Pol_PWS(
 
 @jit(nopython=True, fastmath=True)
 def BF_Noise_Threshold_Relative_XY(
-    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space
+    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, type='circ'
 ):
     """
     Function to calculate the TP plot or power grid given traces and a
@@ -1671,6 +1706,9 @@ def BF_Noise_Threshold_Relative_XY(
 
     s_space : float
         The slowness interval for each step e.g. 0.1.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
 
     Returns
     -------
@@ -1724,6 +1762,7 @@ def BF_Noise_Threshold_Relative_XY(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type
             )
 
             # stack, get power and store in array
@@ -1762,6 +1801,7 @@ def BF_Noise_Threshold_Relative_XY(
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type
     )
 
     #  Now need to get values for noise time shift
@@ -1795,7 +1835,7 @@ def BF_Noise_Threshold_Relative_XY(
         # noise_stack = np.zeros(lin_stack.shape)
         for z in range(noise_traces.shape[0]):
             pts_shift_noise = int(added_times[int(z)] * sampling_rate)
-            shift_trace_noise = np.roll(shifted_traces_t0[int(z)], pts_shift_noise)
+            shift_trace_noise = roll_1D(shifted_traces_t0[int(z)], pts_shift_noise)
             noise_traces[int(z)] = shift_trace_noise
 
         noise_stack = np.sum(noise_traces, axis=0) / ntrace
@@ -1842,7 +1882,6 @@ def calculate_locus(P1, P2):
 
     del_x = P1_x - P2_x
     del_y = P1_y - P2_y
-    print(del_x,del_y)
 
     Theta = np.degrees(np.arctan2(del_x, del_y))
 
@@ -1865,16 +1904,11 @@ def calculate_locus(P1, P2):
 
     Midpoint = np.array([Midpoint_X, Midpoint_Y])
 
-    # print("Theta:", Theta)
-    # print("Midpoint_Y:", Midpoint_Y)
-    # print("Midpoint_X:", Midpoint_X)
-    # print("Phi_1:", Phi_1)
-    # print("Phi_2:", Phi_2)
     return Theta, Midpoint, Phi_1, Phi_2
 
 
 @jit(nopython=True, fastmath=True)
-def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_space):
+def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_space, type='circ'):
     """
     Function to calculate the slowness vespagram of given traces using linear stacking.
 
@@ -1905,6 +1939,9 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
     s_space : float
         The slowness interval for each step e.g. 0.05.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
     Returns
     -------
     ves_lin : 2D numpy array of floats
@@ -1928,6 +1965,7 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
             distance=distance,
             slow=slow,
             baz=baz,
+            type=type
         )
 
         ves_lin[i] = lin_stack
@@ -1947,6 +1985,7 @@ def Vespagram_PWS(
     smax,
     s_space,
     degree,
+    type='circ'
 ):
     """
     Function to calculate the slowness vespagram of given traces using phase weighted stacking.
@@ -1986,6 +2025,9 @@ def Vespagram_PWS(
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
     Returns
     -------
     ves_pws : 2D numpy array of floats
@@ -2012,6 +2054,7 @@ def Vespagram_PWS(
             slow=slow,
             baz=baz,
             degree=degree,
+            type=type
         )
 
         ves_pws[i] = pws_stack
@@ -2021,7 +2064,7 @@ def Vespagram_PWS(
 
 @jit(nopython=True, fastmath=True)
 def Baz_vespagram_Lin(
-    traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space
+    traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space, type='circ'
 ):
     """
     Function to calculate the backazimuth vespagram of given traces using linear stacking.
@@ -2053,6 +2096,9 @@ def Baz_vespagram_Lin(
     b_space : float
         The backazimuth interval for each step e.g. 0.05.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
     Returns
     -------
     ves_lin : 2D numpy array of floats
@@ -2076,6 +2122,7 @@ def Baz_vespagram_Lin(
             distance=distance,
             slow=slow,
             baz=baz,
+            type=type
         )
 
         ves_lin[i] = lin_stack
@@ -2095,6 +2142,7 @@ def Baz_vespagram_PWS(
     bmax,
     b_space,
     degree,
+    type='circ'
 ):
     """
     Function to calculate the backazimuth vespagram of given traces using phase weighted stacking.
@@ -2134,6 +2182,9 @@ def Baz_vespagram_PWS(
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
     Returns
     -------
     ves_pws : 2D numpy array of floats
@@ -2160,6 +2211,7 @@ def Baz_vespagram_PWS(
             slow=slow,
             baz=baz,
             degree=degree,
+            type='type'
         )
 
         ves_pws[i] = pws_stack
