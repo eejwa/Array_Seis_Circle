@@ -1606,11 +1606,8 @@ def BF_Noise_Threshold_Relative_XY(
     slow_ys = np.linspace(symin, symax + s_space, nsy)
 
     #  loop over slowness vectors
-    for i in range(slow_ys.shape[0]):
-        for j in range(slow_xs.shape[0]):
-
-            sx = float(slow_xs[int(j)])
-            sy = float(slow_ys[int(i)])
+    for i, sy in enumerate(slow_ys):
+        for j, sx in enumerate(slow_xs):
 
             # get the slowness and backazimuth of the vector
             abs_slow, baz = get_slow_baz(sx, sy, "az")
