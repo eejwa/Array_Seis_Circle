@@ -1672,7 +1672,7 @@ def BF_Noise_Threshold_Relative_XY(
     # r values store the fraction of T used to scramble the trace.
     # there is one r value per trace
     # array initialised here
-    r_values = np.zeros(shifted_traces_t0.shape[0])
+    # r_values = np.zeros(shifted_traces_t0.shape[0])
 
     # initialise array to store noise values.
     noise_powers = np.zeros(1000)
@@ -1680,9 +1680,10 @@ def BF_Noise_Threshold_Relative_XY(
     # scamble 1000 times
     for t in range(1000):
         # get random r values
-        for r in range(r_values.shape[0]):
-            r_val = np.random.uniform(float(-1), float(1))
-            r_values[r] = r_val
+        r_values = np.random.uniform(float(-1), float(1), shifted_traces_t0.shape[0])
+
+        # for r in range(r_values.shape[0]):
+        #     r_values[r] = r_val
 
         # calculate times as a fraction of T
         added_times = T * r_values
@@ -1690,15 +1691,19 @@ def BF_Noise_Threshold_Relative_XY(
         # now apply these random time shifts to the aligned traces
         noise_traces = np.zeros(shifted_traces_t0.shape)
 
+        pts_shift_noise = added_times * sampling_rate
+
+        noise_traces = roll_2D(shifted_traces_t0, pts_shift_noise)
+
         # noise_stack = np.zeros(lin_stack.shape)
-        for z in range(noise_traces.shape[0]):
-            pts_shift_noise = int(added_times[int(z)] * sampling_rate)
-            shift_trace_noise = np.roll(shifted_traces_t0[int(z)], pts_shift_noise)
-            noise_traces[int(z)] = shift_trace_noise
+        # for z in range(noise_traces.shape[0]):
+        #     pts_shift_noise = int(added_times[int(z)] * sampling_rate)
+        #     shift_trace_noise = roll_1D(shifted_traces_t0[int(z)], pts_shift_noise)
+        #     noise_traces[int(z)] = shift_trace_noise
 
         noise_stack = np.sum(noise_traces, axis=0) / ntrace
 
-        noise_p = np.trapz(noise_stack**2)
+        noise_p = np.sum(noise_stack**2)
         noise_powers[int(t)] = noise_p
 
     # take mean of all 1000 values
