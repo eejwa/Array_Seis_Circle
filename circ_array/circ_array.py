@@ -830,7 +830,11 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
     Returns
     -------
     peaks : 2D array of floats
-        The top N peaks of the array of the format [[x,y]].
+        The top N peaks of the array of the format [[x,y]],
+        where x and y are the coordinate locations in slowness
+        space.
+    power_vals : 1D array of floats
+        The power of the respective peak in the peaks arrays.
     """
 
     # define space
@@ -873,6 +877,9 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
     val_x_points_sorted = val_points_sorted[:, 2]
     val_y_points_sorted = val_points_sorted[:, 1]
 
+    # get power values of top N points
+    val_points_power = val_points_sorted[:, 0]
+
     # find this location in slowness space
     x_peaks_space = xmin + (x_peak * xstep)
     y_peaks_space = ymin + (y_peak * ystep)
@@ -883,7 +890,7 @@ def findpeaks_XY(Array, xmin, xmax, ymin, ymax, xstep, ystep, N=10):
     peaks_combined = np.array((x_peaks_space, y_peaks_space)).T
     peaks_combined_vals = np.array((x_vals_peaks_space, y_vals_peaks_space)).T
 
-    return peaks_combined_vals
+    return peaks_combined_vals, val_points_power
 
 
 def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
