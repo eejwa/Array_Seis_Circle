@@ -465,7 +465,6 @@ def calculate_time_shifts_elevation(
 
     return shifts, times
 
-
 @jit(nopython=True, fastmath=True)
 def shift_traces(
     traces,
@@ -476,6 +475,8 @@ def shift_traces(
     centre_x,
     centre_y,
     sampling_rate,
+    elevation=False,
+    incidence=None,
     type="circ",
 ):
     """
@@ -510,6 +511,14 @@ def shift_traces(
     type : string
         Will calculate either using a curved (circ) or plane (plane) wavefront.
 
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections.
+
     Returns
     -------
         shifted_traces : 2D numpy array of floats
@@ -518,16 +527,27 @@ def shift_traces(
             slowness.
     """
 
-
-    shifts, times = calculate_time_shifts(
-                                          geometry,
-                                          abs_slow,
-                                          baz,
-                                          distance,
-                                          centre_x,
-                                          centre_y,
-                                          type=type
-                                          )
+    if elevation == False:
+        shifts, times = calculate_time_shifts(
+                                              geometry,
+                                              abs_slow,
+                                              baz,
+                                              distance,
+                                              centre_x,
+                                              centre_y,
+                                              type=type,
+                                              )
+    elif elevation == True:
+        shifts, times = calculate_time_shifts_elevation(
+                                              geometry,
+                                              abs_slow,
+                                              baz,
+                                              distance,
+                                              centre_x,
+                                              centre_y,
+                                              type=type,
+                                              incidence = incidence
+                                              )
 
     pts_shifts = shifts * sampling_rate
 
@@ -535,7 +555,6 @@ def shift_traces(
 
 
     return shifted_traces
-
 
 @jit(nopython=True, fastmath=True)
 def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz, type='circ'):
