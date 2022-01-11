@@ -2,7 +2,7 @@
 
 from numba import jit, jit_module
 import numpy as np
-from shift_stack import roll_1D, roll_2D
+from shift_stack import roll_1D, roll_2D, stack_2D
 
 
 @jit(nopython=True, fastmath=True)
@@ -289,10 +289,10 @@ def ARF_process_f_s_spherical(
                         complex(0.0, (sta_distances[int(l)] * abs_slow) * 2 * np.pi * f)
                     )
                 buff[int(k)] = abs(_sum) ** 2
-            transff[i, j] = np.trapz(buff)  # cumtrapz(buff, dx=fstep)[-1]
+            transff[i, j] = np.sum(buff)  # cumtrapz(buff, dx=fstep)[-1]
 
             point = int(int(j) + int(slow_xs.shape[0] * i))
-            ARF_arr[point] = np.array([sx, sy, np.trapz(buff)])
+            ARF_arr[point] = np.array([sx, sy, np.sum(buff)])
 
     # normalise the array response function
     transff /= transff.max()
@@ -743,7 +743,7 @@ def BF_Spherical_XY_all(
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
             # linear stack
-            power_lin = np.trapz(lin_stack**2)
+            power_lin = np.sum(lin_stack**2)
 
             # phase weighted stack
             shifted_phase_traces = shift_traces(
@@ -761,7 +761,7 @@ def BF_Spherical_XY_all(
                 np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
             )
             phase_weight_stack = lin_stack * (phase_stack**degree)
-            power_pws = np.trapz(phase_weight_stack**2)
+            power_pws = np.sum(phase_weight_stack**2)
 
             # F statistic
             Residuals_Trace_Beam = np.subtract(shifted_traces_lin, lin_stack)
@@ -769,7 +769,7 @@ def BF_Spherical_XY_all(
                 (Residuals_Trace_Beam**2), axis=0
             )
 
-            Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
+            Residuals_Power_Int = np.sum(Residuals_Trace_Beam_Power)
 
             F = (shifted_traces_lin.shape[0] - 1) * (
                 (shifted_traces_lin.shape[0] * power_lin) / (Residuals_Power_Int)
@@ -891,7 +891,7 @@ def BF_Spherical_XY_Lin(
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
             # linear stack
-            power_lin = np.trapz(lin_stack**2)
+            power_lin = np.sum(lin_stack**2)
 
             lin_tp[i, j] = power_lin
 
@@ -1037,7 +1037,7 @@ def BF_Spherical_XY_PWS(
                 np.absolute(np.sum(np.exp(shifted_phase_traces * 1j), axis=0)) / ntrace
             )
             phase_weight_stack = lin_stack * (phase_stack**degree)
-            power_pws = np.trapz(phase_weight_stack**2)
+            power_pws = np.sum(phase_weight_stack**2)
 
             pws_tp[i, j] = power_pws
 
@@ -1194,10 +1194,10 @@ def BF_Spherical_Pol_all(
                 (Residuals_Trace_Beam**2), axis=0
             )
 
-            Residuals_Power_Int = np.trapz(Residuals_Trace_Beam_Power)
+            Residuals_Power_Int = np.sum(Residuals_Trace_Beam_Power)
 
-            power_lin = np.trapz(lin_stack**2)
-            power_pws = np.trapz(phase_weight_stack**2)
+            power_lin = np.sum(lin_stack**2)
+            power_pws = np.sum(phase_weight_stack**2)
 
             lin_tp[i, j] = power_lin
             pws_tp[i, j] = power_pws
@@ -1354,7 +1354,7 @@ def BF_Spherical_Pol_Lin(
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
 
-            power_lin = np.trapz(lin_stack ** 2)
+            power_lin = np.sum(lin_stack ** 2)
             lin_tp[i, j] = power_lin
 
             point = int(int(i) + int(slows.shape[0] * j))
@@ -1504,7 +1504,7 @@ def BF_Spherical_Pol_PWS(
             )
             phase_weight_stack = lin_stack * (phase_stack** degree)
 
-            power_pws = np.trapz(phase_weight_stack** 2)
+            power_pws = np.sum(phase_weight_stack** 2)
 
             pws_tp[i, j] = power_pws
 
@@ -1629,7 +1629,7 @@ def BF_Noise_Threshold_Relative_XY(
 
             # stack, get power and store in array
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
-            power_lin = np.trapz(lin_stack**2)
+            power_lin = np.sum(lin_stack**2)
             lin_tp[i, j] = power_lin
 
     # initialise peak array
