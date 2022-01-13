@@ -34,15 +34,30 @@ def roll_2D(array, shifts):
 
     return array_new
 
-@jit(nopython=True, nogil=True)
+@jit(nopython=True)
+def my_sum(array):
+    """
+    Function to sum a 1D array.
+    """
+
+    total = 0
+
+    for i in range(len(array)):
+        total += array[i]
+
+    return total
+
+
+
+@jit(nopython=True)
 def stack_2D(t):
     """
     Takes the mean across a 2D array (t) as if 'stacking'
     """
-    nx = x.shape[0]
-    lx = x.shape[1]
-    sumx = np.zeros(lx)
-    for xi in x:
-        sumx += xi
-    meanx = sumx / nx
-    return meanx
+    nt = t.shape[0]
+    lt = t.shape[1]
+    sumt = np.zeros(lt)
+    for ti in t:
+        sumt += ti
+    meant = sumt / nt
+    return meant
