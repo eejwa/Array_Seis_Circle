@@ -379,6 +379,93 @@ def calculate_time_shifts(
 
 
 @jit(nopython=True, fastmath=True)
+def calculate_time_shifts_elevation(
+    incidence, geometry, abs_slow, baz, distance, centre_x, centre_y, type="circ"
+):
+    """
+    Calculates the time delay for each station relative to the time the phase
+    should arrive at the centre of the array. Will use either a plane or curved
+    wavefront approximation. This function also adds the relative time shifts
+    due to elevation differences of the stations.
+
+    Parameters
+    ----------
+    incidence : float
+        The incidence angle of the phase at the centre of the array.
+
+    geometry : 2D array of floats
+        2D array describing the lon lat and elevation of the stations [lon,lat,depth]
+
+    distance : float
+        Epicentral distance from the event to the centre of the array.
+
+    abs_slow : float
+        Horizontal slowness you want to align traces over.
+
+    baz : float
+        Backazimuth you want to align traces over.
+
+    centre_x : float
+        Mean longitude.
+
+    centre_y : float
+        Mean latitude.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    Returns
+    -------
+    times : 1D numpy array of floats
+        The arrival time for the phase at
+        each station relative to the centre.
+
+    shifts : 1D numpy array of floats
+        The time shift to align on a phase at
+        each station relative to the centre.
+    """
+
+    slow_x = abs_slow * np.sin(np.radians(baz))
+    slow_y = abs_slow * np.cos(np.radians(baz))
+
+    lat_new, lon_new = coords_lonlat_rad_bearing(
+        lat1=centre_y, lon1=centre_x, dist_deg=distance, brng=baz
+    )
+
+    if type == "circ":
+
+        dists = haversine_deg(lat1=lat_new, lon1=lon_new, lat2=geometry[:,1], lon2=geometry[:,0])
+
+        # get the relative distance
+        dists_rel = dists - distance
+
+        # get the travel time for this distance
+        times = dists_rel * abs_slow
+
+        # the correction will be dt *-1
+        shifts = times * -1
+
+
+    elif type == "plane":
+
+        shifts = ((geometry[:,0] - centre_x) * slow_x) + ((geometry[:,1] - centre_y) * slow_y)
+
+        times = shifts * -1
+
+    else:
+        print("not plane or circ")
+
+    # Now need to add the effect of station elevation on times and shifts
+    # multiply the relative elevations by the cosine of the incidence
+    # of the phase and the 1-D velocity of PREM (approx 4.5).
+    elevation_times = (geometry[:,2] - np.mean(geometry[:,2])) * np.cos(incidence) * 4.5
+
+    times = times + elevation_times
+    shifts = shifts + (elevation_times * -1)
+
+    return shifts, times
+
+@jit(nopython=True, fastmath=True)
 def shift_traces(
     traces,
     geometry,
@@ -388,6 +475,8 @@ def shift_traces(
     centre_x,
     centre_y,
     sampling_rate,
+    elevation=False,
+    incidence=90,
     type="circ",
 ):
     """
@@ -419,6 +508,15 @@ def shift_traces(
     sampling_rate : float
         Sampling rate of the data points in s^-1.
 
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections.
+        Default is 90.
+
     type : string
         Will calculate either using a curved (circ) or plane (plane) wavefront.
 
@@ -430,16 +528,27 @@ def shift_traces(
             slowness.
     """
 
-
-    shifts, times = calculate_time_shifts(
-                                          geometry,
-                                          abs_slow,
-                                          baz,
-                                          distance,
-                                          centre_x,
-                                          centre_y,
-                                          type=type
-                                          )
+    if elevation == False:
+        shifts, times = calculate_time_shifts(
+                                              geometry,
+                                              abs_slow,
+                                              baz,
+                                              distance,
+                                              centre_x,
+                                              centre_y,
+                                              type=type,
+                                              )
+    elif elevation == True:
+        shifts, times = calculate_time_shifts_elevation(
+                                              incidence,
+                                              geometry,
+                                              abs_slow,
+                                              baz,
+                                              distance,
+                                              centre_x,
+                                              centre_y,
+                                              type=type
+                                              )
 
     pts_shifts = shifts * sampling_rate
 
@@ -448,9 +557,9 @@ def shift_traces(
 
     return shifted_traces
 
-
 @jit(nopython=True, fastmath=True)
-def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
+def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz, type='circ',
+    elevation=False, incidence=90):
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
 
@@ -474,6 +583,17 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
     baz : float
         Backazimuth you want to align traces over.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     lin_stack : 1D numpy array of floats
@@ -495,6 +615,9 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type,
+        elevation=elevation,
+        incidence=incidence
     )
 
     # Stack the traces (i.e. take mean)
@@ -505,7 +628,8 @@ def linear_stack_baz_slow(traces, sampling_rate, geometry, distance, slow, baz):
 
 @jit(nopython=True, fastmath=True)
 def pws_stack_baz_slow(
-    traces, phase_traces, sampling_rate, geometry, distance, slow, baz, degree
+    traces, phase_traces, sampling_rate, geometry, distance, slow, baz, degree, type='circ',
+    elevation=False, incidence=90
 ):
     """
     Function to stack the given traces along a backazimuth and horizontal slownes.
@@ -534,6 +658,17 @@ def pws_stack_baz_slow(
     baz : float
         Backazimuth you want to align traces over.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     stack : 1D numpy array of floats
@@ -555,6 +690,9 @@ def pws_stack_baz_slow(
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type,
+        elevation=elevation,
+        incidence=incidence
     )
 
     # shift the phase traces
@@ -567,6 +705,9 @@ def pws_stack_baz_slow(
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type,
+        elevation=elevation,
+        incidence=incidence
     )
 
     # get linear and phase stacks
@@ -620,7 +761,7 @@ def get_max_power_loc(tp, sxmin, symin, s_space):
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_all(
+def BF_XY_all(
     traces,
     phase_traces,
     sampling_rate,
@@ -632,6 +773,9 @@ def BF_Spherical_XY_all(
     symax,
     s_space,
     degree,
+    type='circ',
+    elevation=False,
+    incidence=90,
 ):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
@@ -674,6 +818,17 @@ def BF_Spherical_XY_all(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
 
     Returns
     -------
@@ -738,6 +893,9 @@ def BF_Spherical_XY_all(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -755,6 +913,9 @@ def BF_Spherical_XY_all(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             phase_stack = (
@@ -804,8 +965,9 @@ def BF_Spherical_XY_all(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_Lin(
-    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space
+def BF_XY_Lin(
+    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, type='circ',
+    elevation=False, incidence=90
 ):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
@@ -831,6 +993,16 @@ def BF_Spherical_XY_Lin(
         Minimun magnitude of the slowness on y axis, used for creating the slowness grid.
     s_space : float
         The slowness interval for each step e.g. 0.1.
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront. default
+        is 'circ'.
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     lin_tp : 2D numpy array of floats.
@@ -886,6 +1058,9 @@ def BF_Spherical_XY_Lin(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -909,7 +1084,7 @@ def BF_Spherical_XY_Lin(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_XY_PWS(
+def BF_XY_PWS(
     traces,
     phase_traces,
     sampling_rate,
@@ -921,6 +1096,9 @@ def BF_Spherical_XY_PWS(
     symax,
     s_space,
     degree,
+    type='circ',
+    elevation=False,
+    incidence=90
 ):
     """
     Function to search over a range of slowness vectors, described in cartesian coordinates, and measure
@@ -963,6 +1141,17 @@ def BF_Spherical_XY_PWS(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
 
     Returns
     -------
@@ -1018,6 +1207,9 @@ def BF_Spherical_XY_PWS(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             shifted_phase_traces = shift_traces(
@@ -1029,6 +1221,9 @@ def BF_Spherical_XY_PWS(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1055,7 +1250,7 @@ def BF_Spherical_XY_PWS(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_all(
+def BF_Pol_all(
     traces,
     phase_traces,
     sampling_rate,
@@ -1068,6 +1263,9 @@ def BF_Spherical_Pol_all(
     s_space,
     baz_space,
     degree,
+    type='circ',
+    elevation=False,
+    incidence=90
 ):
     """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
@@ -1113,6 +1311,17 @@ def BF_Spherical_Pol_all(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
 
     Returns
     -------
@@ -1171,6 +1380,9 @@ def BF_Spherical_Pol_all(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
             shifted_phase_traces = shift_traces(
                 traces=phase_traces,
@@ -1181,6 +1393,9 @@ def BF_Spherical_Pol_all(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1251,7 +1466,7 @@ def BF_Spherical_Pol_all(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_Lin(
+def BF_Pol_Lin(
     traces,
     sampling_rate,
     geometry,
@@ -1262,6 +1477,9 @@ def BF_Spherical_Pol_Lin(
     bazmax,
     s_space,
     baz_space,
+    type='circ',
+    elevation=False,
+    incidence=90
 ):
     """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
@@ -1299,6 +1517,17 @@ def BF_Spherical_Pol_Lin(
 
     baz_space : float
         The backazimuth interval for each step e.g. 0.1.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
 
     Returns
     -------
@@ -1350,6 +1579,9 @@ def BF_Spherical_Pol_Lin(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1377,7 +1609,7 @@ def BF_Spherical_Pol_Lin(
 
 
 @jit(nopython=True, fastmath=True)
-def BF_Spherical_Pol_PWS(
+def BF_Pol_PWS(
     traces,
     phase_traces,
     sampling_rate,
@@ -1390,6 +1622,9 @@ def BF_Spherical_Pol_PWS(
     s_space,
     baz_space,
     degree,
+    type='circ',
+    elevation=False,
+    incidence=90
 ):
     """
     Function to search over a range of slowness vectors described in polar coordinates and estimates the
@@ -1435,6 +1670,17 @@ def BF_Spherical_Pol_PWS(
 
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
 
     Returns
     -------
@@ -1486,6 +1732,9 @@ def BF_Spherical_Pol_PWS(
                 centre_x=float(centre_x),
                 centre_y=float(centre_y),
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
             shifted_phase_traces = shift_traces(
                 traces=phase_traces,
@@ -1496,6 +1745,9 @@ def BF_Spherical_Pol_PWS(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             lin_stack = np.sum(shifted_traces_lin, axis=0) / ntrace
@@ -1528,7 +1780,8 @@ def BF_Spherical_Pol_PWS(
 
 @jit(nopython=True, fastmath=True)
 def BF_Noise_Threshold_Relative_XY(
-    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space
+    traces, sampling_rate, geometry, distance, sxmin, sxmax, symin, symax, s_space, type='circ',
+    elevation=False, incidence=90
 ):
     """
     Function to calculate the TP plot or power grid given traces and a
@@ -1572,6 +1825,18 @@ def BF_Noise_Threshold_Relative_XY(
 
     s_space : float
         The slowness interval for each step e.g. 0.1.
+
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is
+        None.
 
     Returns
     -------
@@ -1622,6 +1887,9 @@ def BF_Noise_Threshold_Relative_XY(
                 centre_x=centre_x,
                 centre_y=centre_y,
                 sampling_rate=sampling_rate,
+                type=type,
+                elevation=elevation,
+                incidence=incidence
             )
 
             # stack, get power and store in array
@@ -1660,6 +1928,9 @@ def BF_Noise_Threshold_Relative_XY(
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        type=type,
+        elevation=elevation,
+        incidence=incidence
     )
 
     #  Now need to get values for noise time shift
@@ -1694,12 +1965,6 @@ def BF_Noise_Threshold_Relative_XY(
         pts_shift_noise = added_times * sampling_rate
 
         noise_traces = roll_2D(shifted_traces_t0, pts_shift_noise)
-
-        # noise_stack = np.zeros(lin_stack.shape)
-        # for z in range(noise_traces.shape[0]):
-        #     pts_shift_noise = int(added_times[int(z)] * sampling_rate)
-        #     shift_trace_noise = roll_1D(shifted_traces_t0[int(z)], pts_shift_noise)
-        #     noise_traces[int(z)] = shift_trace_noise
 
         noise_stack = np.sum(noise_traces, axis=0) / ntrace
 
@@ -1745,7 +2010,6 @@ def calculate_locus(P1, P2):
 
     del_x = P1_x - P2_x
     del_y = P1_y - P2_y
-    print(del_x,del_y)
 
     Theta = np.degrees(np.arctan2(del_x, del_y))
 
@@ -1768,16 +2032,12 @@ def calculate_locus(P1, P2):
 
     Midpoint = np.array([Midpoint_X, Midpoint_Y])
 
-    # print("Theta:", Theta)
-    # print("Midpoint_Y:", Midpoint_Y)
-    # print("Midpoint_X:", Midpoint_X)
-    # print("Phi_1:", Phi_1)
-    # print("Phi_2:", Phi_2)
     return Theta, Midpoint, Phi_1, Phi_2
 
 
 @jit(nopython=True, fastmath=True)
-def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_space):
+def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_space, type='circ',
+                  elevation=False, incidence=90):
     """
     Function to calculate the slowness vespagram of given traces using linear stacking.
 
@@ -1808,6 +2068,17 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
     s_space : float
         The slowness interval for each step e.g. 0.05.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     ves_lin : 2D numpy array of floats
@@ -1831,6 +2102,9 @@ def Vespagram_Lin(traces, sampling_rate, geometry, distance, baz, smin, smax, s_
             distance=distance,
             slow=slow,
             baz=baz,
+            type=type,
+            elevation=elevation,
+            incidence=incidence
         )
 
         ves_lin[i] = lin_stack
@@ -1850,6 +2124,9 @@ def Vespagram_PWS(
     smax,
     s_space,
     degree,
+    type='circ',
+    elevation=False,
+    incidence=90
 ):
     """
     Function to calculate the slowness vespagram of given traces using phase weighted stacking.
@@ -1889,6 +2166,17 @@ def Vespagram_PWS(
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     ves_pws : 2D numpy array of floats
@@ -1915,6 +2203,9 @@ def Vespagram_PWS(
             slow=slow,
             baz=baz,
             degree=degree,
+            type=type,
+            elevation=elevation,
+            incidence=incidence
         )
 
         ves_pws[i] = pws_stack
@@ -1924,7 +2215,8 @@ def Vespagram_PWS(
 
 @jit(nopython=True, fastmath=True)
 def Baz_vespagram_Lin(
-    traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space
+    traces, sampling_rate, geometry, distance, slow, bmin, bmax, b_space, type='circ',
+    elevation=False, incidence=90
 ):
     """
     Function to calculate the backazimuth vespagram of given traces using linear stacking.
@@ -1956,6 +2248,17 @@ def Baz_vespagram_Lin(
     b_space : float
         The backazimuth interval for each step e.g. 0.05.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     ves_lin : 2D numpy array of floats
@@ -1979,6 +2282,9 @@ def Baz_vespagram_Lin(
             distance=distance,
             slow=slow,
             baz=baz,
+            type=type,
+            elevation=elevation,
+            incidence=incidence
         )
 
         ves_lin[i] = lin_stack
@@ -1998,6 +2304,9 @@ def Baz_vespagram_PWS(
     bmax,
     b_space,
     degree,
+    type='circ',
+    elevation=False,
+    incidence=90
 ):
     """
     Function to calculate the backazimuth vespagram of given traces using phase weighted stacking.
@@ -2037,6 +2346,17 @@ def Baz_vespagram_PWS(
     degree : float
         The degree for the phase weighted stacking to reduce incoherent arrivals by.
 
+    type : string
+        Will calculate either using a curved (circ) or plane (plane) wavefront.
+
+    elevation : bool
+        If True, elevation corrections will be added. If False, no elevation
+        corrections will be accounted for. Default is False.
+
+    incidence : float
+        Not used unless elevation is True. Give incidence angle from vertical
+        at the centre of the array to calculate elevation corrections. Default is 90.
+
     Returns
     -------
     ves_pws : 2D numpy array of floats
@@ -2063,6 +2383,9 @@ def Baz_vespagram_PWS(
             slow=slow,
             baz=baz,
             degree=degree,
+            type=type,
+            elevation=elevation,
+            incidence=incidence
         )
 
         ves_pws[i] = pws_stack
