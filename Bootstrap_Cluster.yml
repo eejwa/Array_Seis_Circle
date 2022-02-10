@@ -1,8 +1,7 @@
 name: Boots_Cluster
 channels:
-  - r
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - numba
   - netcdf4
@@ -10,12 +9,10 @@ dependencies:
   - seaborn
   - obspy
   - scikit-image
-  - hdbscan
   - jupyter
   - ipython
-  - bleach
-  - matplotlib
+  - matplotlib=3.4.1
   - basemap
-  - cartopy
-  - black
+  - cartopy=0.20
+  - python
 prefix: /opt/anaconda3/envs/Boots_Cluster
