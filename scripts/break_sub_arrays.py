@@ -7,12 +7,12 @@
 import obspy
 import numpy as np
 import matplotlib.pyplot as plt
-import circ_array as c
 import cartopy.crs as ccrs
 import cartopy
 import argparse
 from array_plotting import plotting
 from sklearn.neighbors import BallTree
+from make_sub_array import break_sub_arrays
 
 parser = argparse.ArgumentParser(
     description="Break larger array into sub array and plot onto a map"
@@ -79,7 +79,7 @@ filepath = args.filepath
 min_dist = np.deg2rad(radius)
 spacing =  np.deg2rad(distance)
 
-header = "event centroid_lo centroid_la, n_stations, stations\n"
+header = "event centroid_lo centroid_la n_stations stations\n"
 
 with open(Res_file, 'w') as w_file:
     w_file.write(header)
@@ -88,22 +88,19 @@ with open(Res_file, 'w') as w_file:
 # try:
 st = obspy.read(filepath)
 
-final_centroids, lats_lons_use, lats_lons_core, stations_use = c.break_sub_arrays(st=st,
+final_centroids, lats_lons_use, lats_lons_core, stations_use = break_sub_arrays(st=st,
                                                                                   min_stat = min_stat,
                                                                                   min_dist = min_dist,
                                                                                   spacing = spacing)
 
 
-fig = plt.figure(figsize=(10,8), tight_layout=True)
+fig = plt.figure(figsize=(10,8))
 
 ax1 = fig.add_subplot(111, projection=ccrs.Robinson())
 
 
 p = plotting(ax1)
 p.plot_stations(st)
-
-print(lats_lons_use)
-
 
 use_tree = BallTree(lats_lons_use, leaf_size=lats_lons_use.shape[0]/2, metric='haversine')
 with open(Res_file, 'a') as a_file:
@@ -113,13 +110,10 @@ with open(Res_file, 'a') as a_file:
         lat_centre = np.around(centroid[0], 2)
         lon_centre = np.around(centroid[1], 2)
         sub_array = use_tree.query_radius(X=[centroid], r=min_dist)[0]
-        print(lon_centre, lat_centre)
-        print(sub_array)
         stat_string = ",".join(list(stations_use[sub_array]))
-        print(f"stations: {len(sub_array)}", f"names: {stations_use[sub_array]}")
+        print(f"stations: {len(sub_array)}" f"names: {stations_use[sub_array]}")
         # event_name = os.path.basename(event)
         a_file.write(f"{i} {lon_centre} {lat_centre} {len(sub_array)} {stat_string}\n")
-        print('3')
 
         ax1.scatter(np.degrees(lats_lons_use[:,1][sub_array]), np.degrees(lats_lons_use[:,0][sub_array]),
                     transform=ccrs.Geodetic(), zorder=3)
@@ -127,7 +121,7 @@ with open(Res_file, 'a') as a_file:
         ax1.scatter(np.degrees(lon_centre), np.degrees(lat_centre),
                     transform=ccrs.Geodetic(), zorder=3, c='black')
 
-plt.savefig("Sub_array_summary.pdf", type='pdf')
+# plt.savefig("Sub_array_summary.pdf", type='pdf')
 plt.show()
 # except:
 #     print(f"no data or no dense stations")

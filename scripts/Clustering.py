@@ -19,17 +19,17 @@ import numpy as np
 import obspy
 from Parameters_Bootstrap import *
 
-import circ_array as ca
+from array_info import array
 from cluster_utilities import cluster_utilities
-from circ_beam import shift_traces, linear_stack_baz_slow
+from shift_stack import shift_traces, linear_stack_baz_slow
 from obspy.taup import TauPyModel
 
 model = TauPyModel(model=pred_model)
 
 st = obspy.read(filepath)
-
-event_time = ca.get_eventtime(st)
-Target_phase_times, time_header_times = ca.get_predicted_times(st, phase)
+a = array(st)
+event_time = a.eventtime()
+Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 # the traces need to be trimmed to the same start and end time
 # for the shifting and clipping traces to work (see later).
@@ -48,9 +48,9 @@ evla = st[0].stats.sac.evla
 evlo = st[0].stats.sac.evlo
 evdp = st[0].stats.sac.evdp
 
-distances = ca.get_distances(st, type="deg")
+distances = a.distances(type="deg")
 mean_dist = np.mean(distances)
-geometry = ca.get_geometry(st)
+geometry = a.geometry()
 centre_lo, centre_la = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
 sampling_rate = st[0].stats.sampling_rate
 
@@ -58,7 +58,7 @@ mean_lo = (evlo + centre_lo)/2
 mean_la = (evla + centre_la)/2
 
 # get predicted slownesses and backazimuths
-predictions = ca.pred_baz_slow(stream=st, phases=phases, one_eighty=True)
+predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
 
 # find the line with the predictions for the phase of interest
@@ -94,8 +94,8 @@ new_labels = cu.remove_noisy_arrivals(st=st, phase=phase, slow_vec_error=slow_ve
 # get traces
 
 st_traces = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax,corners=1, zerophase=True)
-
-Traces = ca.get_traces(st_traces)
+array_new = array(st_traces)
+Traces = array_new.traces()
 
 # align the traces
 Shifted_Traces = shift_traces(
@@ -107,6 +107,8 @@ Shifted_Traces = shift_traces(
     centre_x=float(centre_lo),
     centre_y=float(centre_la),
     sampling_rate=sampling_rate,
+    elevation=True,
+    incidence=8
 )
 
 
@@ -250,7 +252,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     )
 
     for times in arrival_times:
-        print(np.mean(times))
         ax2.vlines(
             x=np.mean(times - arrivals[0].time), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="mean_time_cluster"
             , color='blue'
@@ -308,7 +309,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     for i,arrival_mean in enumerate(means_baz_slow):
         baz = arrival_mean[0]
         slow = arrival_mean[1]
-        print(baz)
+
         lin_stack = linear_stack_baz_slow(cut_shifted_traces, sampling_rate, geometry, mean_dist, slow, baz)
 
         fig = plt.figure(figsize=(10, 5))
@@ -361,7 +362,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     pdf.savefig()
     plt.close()
 
-    ### plot great circle path
+    ## plot great circle path
 
     fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(111, projection=ccrs.Robinson(central_longitude=mean_lo))

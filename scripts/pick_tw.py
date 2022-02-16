@@ -4,7 +4,7 @@
 
 import obspy
 
-import circ_array as c
+from manual_pick import pick_tw
 
 st = obspy.read("./*sac")
 phase = "SKS"

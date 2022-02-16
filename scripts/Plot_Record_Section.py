@@ -91,19 +91,17 @@ if Filter:
 else:
     pass
 
-print(st)
-
 #  plot!
 fig = plt.figure(figsize=(10, 8))
 ax1 = fig.add_subplot(121)
 
 p = plotting(ax=ax1)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True)
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False)
 
 ax2 = fig.add_subplot(122)
 
 p = plotting(ax=ax2)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True, type='baz')
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False, type='baz')
 
 plt.tight_layout()
 

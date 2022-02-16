@@ -9,23 +9,29 @@ filepath='*SAC'
 pred_model = "prem"
 
 # target phase
-phase = "SKS"
+phase = "SKKS"
 
 # phases of interest
-phases = [
-    "SKS",
-    "SKKS",
-    "sSKS",
-    "ScS",
-    "Sdiff",
-    "SS",
-    "pScS",
-    "sScS",
-    "pSKS",
-    "SKIKS",
-    "SKiKS",
-]
-# phases = ['SKS','SKKS']
+# phases = [
+#     "SKS",
+#     "SKKS",
+#     "sSKS",
+#     "ScS",
+#     "Sdiff",
+#     "SS",
+#     "pScS",
+#     "sScS",
+#     "pSKS",
+#     "SKIKS",
+#     "SKiKS",
+#     "PKiKP",
+#     "Pdiff",
+# ]
+
+#
+# phases = ['PKIKP','PKiKP', 'Pdiff', 'sPdiff', 'pPdiff']
+
+phases = ['SKKS', 'SKKKS', 'SKKKKS', 'SKS', 'sSKKS', 'ScS', 'Sdiff']
 
 # Do you want to filter?
 Filt = True
@@ -35,8 +41,8 @@ numpy_dir = "./Results/numpy_arrays/"
 Res_dir = "./Results/"
 
 # frequency band
-fmin = 0.15
-fmax = 0.30
+fmin = 0.10
+fmax = 0.20
 
 # cut min/max - for some reason the aligning function does not
 # work if the traces are too long
@@ -50,7 +56,7 @@ s_space = 0.05
 
 # time window to define around the traces
 # aligned on the predicted slowness of the target phase
-t_min = -20
+t_min = -10
 t_max = 40
 
 # Do you want to align the traces?

@@ -6,46 +6,53 @@
 # imports
 # Force matplotlib to not use any Xwindows backend.
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import obspy
 import numpy as np
 import time
 from Parameters_TP_XY import *
 from obspy.taup import TauPyModel
-
+from output_writing import write_to_file
+from slow_vec_calcs import get_slow_baz
 model = TauPyModel(model=pred_model)
 
-import circ_array as c
-from circ_beam import (
-    BF_Spherical_XY_all,
-    BF_Spherical_XY_Lin,
-    BF_Spherical_XY_PWS,
-    shift_traces,
+from array_info import array
+from beamforming_xy import (
+    BF_XY_all,
+    BF_XY_Lin,
+    BF_XY_PWS
 )
+from shift_stack import shift_traces
 from array_plotting import plotting
 import matplotlib.pyplot as plt
 
 from matplotlib.backends.backend_pdf import PdfPages
 import cartopy.crs as ccrs
-
+from manual_pick import pick_tw
 
 
 # import parameters
 
 st = obspy.read(filepath)
+a = array(st)
+
 
 # get array metadata
-event_time = c.get_eventtime(st)
-geometry = c.get_geometry(st)
-distances = c.get_distances(st, type="deg")
+event_time = a.eventtime()
+geometry = a.geometry()
+distances = a.distances(type="deg")
 mean_dist = np.mean(distances)
-stations = c.get_stations(st)
+stations = a.stations()
 centre_x, centre_y = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
 sampling_rate = st[0].stats.sampling_rate
 evdp = st[0].stats.sac.evdp
 
+# convert elevation to km
+geometry[:,2] /= 1000
 
-filter
+
+
+# filter
 if Filter == True:
     st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=2, zerophase=True)
 else:
@@ -53,7 +60,7 @@ else:
 
 # get travel time information and define a window
 if phase is not None:
-    Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
+    Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
     min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
     max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
@@ -72,7 +79,7 @@ else:
 
 
 # get predicted slownesses and backazimuths
-predictions = c.pred_baz_slow(stream=st, phases=phases, one_eighty=True)
+predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
@@ -84,14 +91,14 @@ P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = prediction
 if Man_Pick == True:
 
     # get the user to pick the time window
-    window = c.pick_tw(stream=st, phase=phase, align=Align, tmin=cut_min, tmax=cut_max)
+    window = pick_tw(stream=st, phase=phase, align=Align, tmin=cut_min, tmax=cut_max)
 
     rel_tmin = window[0]
     rel_tmax = window[1]
 
 elif Man_Pick == False:
-    rel_tmin = t_min
-    rel_tmax = t_max
+    rel_tmin = t_min + np.min(TIME)
+    rel_tmax = t_max + np.max(TIME)
     window = np.array([t_min, t_max])
 else:
     print("Man_Pick needs to be set to True or False!")
@@ -100,8 +107,9 @@ else:
 # st_filt = st_filt.resample(20)
 if Align == True:
     # get the traces and phase traces
-    Traces = c.get_traces(st_norm)
-    Phase_traces = c.get_phase_traces(st_norm)
+    array_norm = array(st_norm)
+    Traces = array_norm.traces()
+    Phase_traces = array_norm.phase_traces()
     # align the traces and phase traces
     Shifted_Traces = shift_traces(
         traces=Traces,
@@ -112,7 +120,18 @@ if Align == True:
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        elevation=True,
+        incidence=8
     )
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(111)
+    for b,trace in enumerate(Shifted_Traces):
+        ax.plot(trace + distances[b], color='black')
+
+    plt.show()
+    exit()
+
 
     Shifted_Phase_Traces = shift_traces(
         traces=Phase_traces,
@@ -123,6 +142,8 @@ if Align == True:
         centre_x=float(centre_x),
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
+        elevation=True,
+        incidence=8
     )
 
     ## cut the shifted traces within the defined time window
@@ -153,9 +174,10 @@ elif Align == False:
     st_trim = st.copy().trim(starttime=stime, endtime=etime)
     st_norm = st_trim.normalize()
 
+    array_norm = array(st_norm)
     # get the traces and phase traces
-    cut_traces = c.get_traces(st_norm)
-    cut_phase_traces = c.get_phase_traces(st_norm)
+    cut_traces = array_norm.traces()
+    cut_phase_traces = array_norm.phase_traces()
 
     sx_min = float(PRED_BAZ_X) + slow_min
     sx_max = float(PRED_BAZ_X) + slow_max
@@ -175,13 +197,15 @@ kwarg_dict = {
     "symin": sy_min,
     "symax": sy_max,
     "s_space": s_space,
+    "elevation":True,
+    "incidence":8
 }
 
 
 
 if Stack_type == "Both":
     # run the beamforming!
-    Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(
+    Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_XY_all(
         phase_traces=cut_phase_traces, degree=2, **kwarg_dict
     )
 
@@ -194,7 +218,7 @@ if Stack_type == "Both":
 
 elif Stack_type == "LIN":
 
-    Lin_arr, Results_arr, peaks = BF_Spherical_XY_Lin(**kwarg_dict)
+    Lin_arr, Results_arr, peaks = BF_XY_Lin(**kwarg_dict)
 
 
     peaks = np.c_[peaks, np.array(["LIN"])]
@@ -205,7 +229,7 @@ elif Stack_type == "LIN":
 
 elif Stack_type == "PWS":
 
-    PWS_arr, Results_arr, peaks = BF_Spherical_XY_PWS(
+    PWS_arr, Results_arr, peaks = BF_XY_PWS(
         phase_traces=cut_phase_traces, degree=degree, **kwarg_dict
     )
 
@@ -232,13 +256,13 @@ filepath = Res_dir + "XY_Results.txt"
 slow_vec_obs = []
 for peak in peaks:
 
-    slow_obs, baz_obs = c.get_slow_baz(float(peak[0]), float(peak[1]), dir_type="az")
+    slow_obs, baz_obs = get_slow_baz(float(peak[0]), float(peak[1]), dir_type="az")
     slow_vec_obs.append([baz_obs, slow_obs])
 
 slow_vec_obs = np.array(slow_vec_obs).astype(float)
 pred_file = np.array([BAZ, S]).astype(float)
 
-c.write_to_file(
+write_to_file(
     filepath=filepath,
     st=st,
     peaks=slow_vec_obs,
@@ -270,9 +294,6 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
     pdf.savefig()
     plt.close()
 
-
-
-    print(st)
 
     fig = plt.figure(figsize=(10, 8))
     ax2 = fig.add_subplot(111)
@@ -331,20 +352,20 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
 
     ### plot great circle path
 
-    # fig = plt.figure(figsize=(6, 6))
-    # ax = fig.add_subplot(111, projection=ccrs.Robinson())
-    #
-    # p = plotting(ax=ax)
-    # p.plot_paths(st)
-    #
-    # pdf.savefig()
-    # plt.close()
-    #
-    # fig = plt.figure(figsize=(6, 6))
-    # ax = fig.add_subplot(111, projection=ccrs.Robinson())
-    #
-    # p = plotting(ax=ax)
-    # p.plot_stations(st)
-    #
-    # pdf.savefig()
-    # plt.close()
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+
+    p = plotting(ax=ax)
+    p.plot_paths(st)
+
+    pdf.savefig()
+    plt.close()
+
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+
+    p = plotting(ax=ax)
+    p.plot_stations(st)
+
+    pdf.savefig()
+    plt.close()
