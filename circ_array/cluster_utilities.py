@@ -1,13 +1,23 @@
 import numpy as np
 from scipy.stats import circmean, circstd, circvar
 import obspy
+from slow_vec_calcs import get_slow_baz
+from array_info import array
+from utilities import myround
+from geo_sphere_calcs import relocate_event_baz_slow
+from shift_stack import linear_stack_baz_slow, shift_traces
+import obspy.signal.filter as o
+from sklearn.neighbors import KDTree
+import os
+from obspy.taup import TauPyModel
 
-import circ_array as c
+
+
 
 
 class cluster_utilities:
 
-    """
+    description = """
     This class holds functions to give information about the clusters such as their mean,
     standard deviations, area, ellipse properties.
 
@@ -128,7 +138,7 @@ class cluster_utilities:
                 np.mean(self.points[np.where(self.labels == p)][:, 1]),
             )
 
-            mean_abs_slow, mean_baz = c.get_slow_baz(p_x, p_y, dir_type="az")
+            mean_abs_slow, mean_baz = get_slow_baz(p_x, p_y, dir_type="az")
 
             mean_abs_slow = np.around(mean_abs_slow, 2)
             mean_baz = np.around(mean_baz, 1)
@@ -182,7 +192,7 @@ class cluster_utilities:
             azs = np.degrees(np.arctan2(rel_ys,rel_xs))
             mags = np.sqrt(rel_xs**2 + rel_ys**2)
 
-            azs[azs<0] += 360
+            azs = np.where(azs<0, azs + 360, azs)
 
             az_std = np.around(np.degrees(circstd(np.radians(azs))), 1)
             mag_std = np.std(mags)
@@ -192,7 +202,16 @@ class cluster_utilities:
 
             points_cluster = np.array([points_x, points_y]).T
 
-            abs_slows, bazs = c.get_slow_baz(points_x, points_y, dir_type="az")
+            abs_slows = np.zeros(points_x.shape)
+            bazs = np.zeros(points_x.shape)
+
+            for i,point_x in enumerate(points_x):
+
+                point_y = points_y[i]
+
+                abs_slow, baz = get_slow_baz(point_x, point_y, dir_type="az")
+                abs_slows[i] = abs_slow
+                bazs[i] = baz
 
             abs_slow_std_dev = np.around(np.std(abs_slows), 2)
             # stdev - use scipy's circstd
@@ -450,9 +469,10 @@ class cluster_utilities:
             1D numpy array of the labels describing which points are
             noise and which are clusters.
         """
-
+        from array_info import array
+        array = array(st)
         # get predicted slownesses and backazimuths
-        predictions = c.pred_baz_slow(stream=st, phases=[phase], one_eighty=True)
+        predictions = array.pred_baz_slow(phases=[phase], one_eighty=True)
 
         # find the line with the predictions for the phase of interest
         row = np.where((predictions == phase))[0]
@@ -478,8 +498,8 @@ class cluster_utilities:
         if no_clusters != 0:
             for i in range(no_clusters):
 
-                slow_x_obs = c.myround(means_xy[i, 0])
-                slow_y_obs = c.myround(means_xy[i, 1])
+                slow_x_obs = myround(means_xy[i, 0])
+                slow_y_obs = myround(means_xy[i, 1])
 
                 del_x_slow = slow_x_obs - PRED_BAZ_X
                 del_y_slow = slow_y_obs - PRED_BAZ_Y
@@ -511,9 +531,6 @@ class cluster_utilities:
 
         """
 
-        from circ_beam import linear_stack_baz_slow
-        import obspy.signal.filter as o
-
         times_arrivals = []
 
         # for each cluster
@@ -525,10 +542,20 @@ class cluster_utilities:
             )
 
 
-            points_x = points_x - pred_x
-            points_y = points_y - pred_y
+            points_x -= pred_x
+            points_y -= pred_y
 
-            abs_slows, bazs = c.get_slow_baz(points_x, points_y, dir_type="az")
+            abs_slows = np.zeros(points_x.shape)
+            bazs = np.zeros(points_x.shape)
+
+            for i,point_x in enumerate(points_x):
+
+                point_y = points_y[i]
+
+                abs_slow, baz = get_slow_baz(point_x, point_y, dir_type="az")
+                abs_slows[i] = abs_slow
+                bazs[i] = baz
+
 
             for i,baz in enumerate(bazs):
                 slow = abs_slows[i]
@@ -608,12 +635,6 @@ class cluster_utilities:
 
         """
 
-        from scipy.spatial import distance
-        from sklearn.neighbors import KDTree
-        import os
-        from circ_beam import shift_traces
-        from obspy.taup import TauPyModel
-
         model = TauPyModel(model='prem')
 
         newlines = []
@@ -626,11 +647,15 @@ class cluster_utilities:
                   "ellispe_theta ellipse_rel_density multi phase no_stations "
                   "stations t_window_start t_window_end Boots\n"
                   )
-        event_time = c.get_eventtime(st)
-        geometry = c.get_geometry(st)
-        distances = c.get_distances(st, type="deg")
+
+        from array_info import array
+
+        a = array(st)
+        event_time = a.eventtime()
+        geometry = a.geometry()
+        distances = a.distances(type="deg")
         mean_dist = np.mean(distances)
-        stations = c.get_stations(st)
+        stations = a.stations()
         no_stations = len(stations)
         sampling_rate = st[0].stats.sampling_rate
         stlo_mean, stla_mean = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
@@ -639,7 +664,7 @@ class cluster_utilities:
         evla = st[0].stats.sac.evla
         t_min = window[0]
         t_max = window[1]
-        Target_phase_times, time_header_times = c.get_predicted_times(st, phase)
+        Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
         # the traces need to be trimmed to the same start and end time
         # for the shifting and clipping traces to work (see later).
@@ -656,7 +681,7 @@ class cluster_utilities:
         st = st.normalize()
 
         # get predicted slownesses and backazimuths
-        predictions = c.pred_baz_slow(stream=st, phases=[phase], one_eighty=True)
+        predictions = a.pred_baz_slow(phases=[phase], one_eighty=True)
 
         # find the line with the predictions for the phase of interest
         row = np.where((predictions == phase))[0]
@@ -687,8 +712,8 @@ class cluster_utilities:
             + f"{event_time.second:02d}"
         )
 
-
-        traces = c.get_traces(st)
+        a1 = array(st)
+        traces = a1.traces()
         shifted_traces = shift_traces(traces=traces,
                                       geometry=geometry,
                                       abs_slow=float(S),
@@ -790,8 +815,8 @@ class cluster_utilities:
                 slow_obs = means_baz_slow[i, 1]
                 slow_diff = slow_obs - float(S)
 
-                slow_x_obs = c.myround(means_xy[i, 0])
-                slow_y_obs = c.myround(means_xy[i, 1])
+                slow_x_obs = myround(means_xy[i, 0])
+                slow_y_obs = myround(means_xy[i, 1])
 
                 del_x_slow = slow_x_obs - PRED_BAZ_X
                 del_y_slow = slow_y_obs - PRED_BAZ_Y
@@ -822,7 +847,7 @@ class cluster_utilities:
 
 
                 # relocated event location
-                reloc_evla, reloc_evlo = c.relocate_event_baz_slow(evla=evla,
+                reloc_evla, reloc_evlo = relocate_event_baz_slow(evla=evla,
                                                                 evlo=evlo,
                                                                 evdp=evdp,
                                                                 stla=stla_mean,

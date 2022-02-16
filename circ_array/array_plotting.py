@@ -1,8 +1,9 @@
-import circ_array as c
 import obspy
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+from array_info import array
+from extract_peaks import findpeaks_XY
 
 plt.set_cmap("turbo")
 
@@ -54,16 +55,17 @@ class plotting:
         Return:
             Plots record section, does not return anything.
         """
-
+        from array_info import array
+        array = array(st)
 
         if phase is not None:
 
             # get header with travel times for predicted phase
-            Target_time_header = c.get_t_header_pred_time(stream=st, phase=phase)
+            Target_time_header = array.get_t_header_pred_time(phase=phase)
 
             # get predicted travel times
-            Target_phase_times, time_header_times = c.get_predicted_times(
-                stream=st, phase=phase
+            Target_phase_times, time_header_times = array.get_predicted_times(
+                phase=phase
             )
 
             # get min and max predicted times of pahse at the array
@@ -79,7 +81,7 @@ class plotting:
         win_st = float(min_target_time + tmin)
         win_end = float(max_target_time + tmax)
 
-        event_time = c.get_eventtime(st)
+        event_time = array.eventtime()
 
         # copy stream and trim it around the time window
         stream_plot = st.copy
@@ -473,6 +475,9 @@ class plotting:
         nslow = int(np.round(((smax - smin) / sstep) + 1))
         nbaz = int(np.round(((bazmax - bazmin) / bazstep) + 1))
 
+        print('s',nslow)
+        print('b',nbaz)
+
         slows = np.linspace(smin, smax, nslow, endpoint=True)
         bazs = np.linspace(bazmin, bazmax, nbaz, endpoint=True)
 
@@ -490,10 +495,6 @@ class plotting:
             )
         else:
             pass
-
-        # initialise figure
-        # fig = plt.figure(figsize=(7,7))
-        # ax = fig.add_subplot(111, polar=True)
 
         # if log, convert values
         if log == True:
@@ -556,15 +557,20 @@ class plotting:
             ha="center",
             va="center",
         )
-        self.ax.text(
-            np.radians((bazmin + bazmax) / 2),
-            smin - 0.25,
-            "$\\theta \ (^{\circ})$",
-            fontsize=14,
-            rotation=180 - ((bazmax + bazmin) / 2),
-            ha="center",
-            va="center",
-        )
+
+        if smin != 0:
+            self.ax.text(
+                np.radians((bazmin + bazmax) / 2),
+                smin - 0.25,
+                "$\\theta \ (^{\circ})$",
+                fontsize=14,
+                rotation=180 - ((bazmax + bazmin) / 2),
+                ha="center",
+                va="center",
+            )
+        else:
+            self.ax.set_ylabel("$\\theta \ (^{\circ})$", labelpad=30,
+                               fontsize=14)
 
         return
 
@@ -673,7 +679,7 @@ class plotting:
         smoothed_vesp = scipy.ndimage.filters.gaussian_filter(
             vespagram, 2, mode="constant"
         )
-        peaks = c.findpeaks_XY(
+        peaks = findpeaks_XY(
             smoothed_vesp,
             xmin=tmin,
             xmax=tmax,
@@ -717,7 +723,7 @@ class plotting:
 
         # plot peaks
         self.ax.scatter(
-            peaks[:, 0], peaks[:, 1], marker="x", color="red", label="peaks"
+            peaks[0][:, 0], peaks[0][:, 1], marker="x", color="red", label="peaks"
         )
 
         self.ax.set_title(title)
