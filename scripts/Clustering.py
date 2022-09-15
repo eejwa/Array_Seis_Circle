@@ -24,6 +24,11 @@ from cluster_utilities import cluster_utilities
 from shift_stack import shift_traces, linear_stack_baz_slow
 from obspy.taup import TauPyModel
 
+from slow_vec_calcs import get_slow_baz
+
+from vespagram import Vespagram_Lin
+
+
 model = TauPyModel(model=pred_model)
 
 st = obspy.read(filepath)
@@ -33,8 +38,8 @@ Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 # the traces need to be trimmed to the same start and end time
 # for the shifting and clipping traces to work (see later).
-min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-50)
-max_target = int(np.nanmax(Target_phase_times, axis=0)) + (50)
+min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-100)
+max_target = int(np.nanmax(Target_phase_times, axis=0)) + (100)
 
 stime = event_time + min_target
 etime = event_time + max_target
@@ -93,7 +98,7 @@ new_labels = cu.remove_noisy_arrivals(st=st, phase=phase, slow_vec_error=slow_ve
 
 # get traces
 
-st_traces = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax,corners=1, zerophase=True)
+st_traces = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax, corners=1, zerophase=True)
 array_new = array(st_traces)
 Traces = array_new.traces()
 
@@ -145,7 +150,7 @@ cu_rel = cluster_utilities(labels=new_labels, points=rel_points)
 
 
 means_xy, means_baz_slow = cu_rel.cluster_means()
-
+mean_baz = means_baz_slow[0][0]
 
 # estimate times without aligning tracesfor sanity
 # times = cu.estimate_travel_times(traces=Traces,
@@ -190,6 +195,39 @@ newlines_unfiltered = cu.create_newlines(
     slow_vec_error=slow_vec_error,
     Filter=False,
 )
+
+# cluster times 
+
+rel_times = arrival_times - arrivals[0].time
+core_samples_time, labels_time = dbscan(
+    X=rel_times[0].reshape(-1, 1), eps=1, 
+    min_samples=int(Boots * MinPts)
+)
+
+
+slowness_cluster = cu.group_points_clusters()[0]
+print(slowness_cluster[:,1])
+
+
+slows = np.sqrt((slowness_cluster[:,0] ** 2) + (slowness_cluster[:,1] ** 2))
+azimuths = np.degrees(np.arctan2(slowness_cluster[:,0], slowness_cluster[:,1]))  # * (180. / math.pi)
+
+# % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
+bazs = azimuths % -360 + 180
+
+print(mean_baz)
+
+vesp_lin = Vespagram_Lin(Traces,  sampling_rate = sampling_rate, geometry=geometry, 
+                         distance=mean_dist, baz=float(mean_baz), smin=0, smax=5, s_space=0.05)
+
+ny = int(np.round(((0 + 5) / 0.05) + 1))
+ys = np.linspace(0, 5, ny, endpoint=True)
+ntime = int(np.round(((t_max - t_min) * sampling_rate)))
+vesp_times = np.linspace(t_min, t_max, ntime, endpoint=True) + arrivals[0].time
+plot_times = np.arange(min_target, max_target + (1/sampling_rate), 1/sampling_rate)
+
+for i, stack in enumerate(vesp_lin):
+    vesp_lin[i] = obspy.signal.filter.envelope(stack)
 
 # df = pd.DataFrame({"Slow_x":All_Thresh_Peaks_arr[:,0], "Slow_y":All_Thresh_Peaks_arr[:,1], "Labels":new_labels})
 
@@ -251,11 +289,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         , color='red'
     )
 
-    for times in arrival_times:
-        ax2.vlines(
-            x=np.mean(times - arrivals[0].time), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="mean_time_cluster"
-            , color='blue'
-        )
     ax2.legend(loc='best')
 
     ax2.hlines(
@@ -290,12 +323,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         , color='red'
     )
 
-    for times in arrival_times:
-        ax2.vlines(
-            x=np.mean(times - arrivals[0].time), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="mean_time_cluster"
-            , color='blue'
-        )
-
     ax2.set_title(f"Backazimuth Record Section Aligned on Predicted {phase}")
 
 
@@ -304,40 +331,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     plt.close()
 
     time_plot = np.arange(t_min, t_max, 1/sampling_rate)
-
-    # plot lin_stacks of arrivals
-    for i,arrival_mean in enumerate(means_baz_slow):
-        baz = arrival_mean[0]
-        slow = arrival_mean[1]
-
-        lin_stack = linear_stack_baz_slow(cut_shifted_traces, sampling_rate, geometry, mean_dist, slow, baz)
-
-        fig = plt.figure(figsize=(10, 5))
-        ax_stack = fig.add_subplot(111)
-        ax_stack.plot(time_plot, lin_stack, color='black')
-        ax_stack.set_title(f"Cluster {i}")
-        ax_stack.set_xlabel("Time (s)")
-        ax_stack.set_ylabel("Amplitude (m)")
-        ax_stack.vlines(
-            x=np.mean(arrival_times[i] - arrivals[0].time), ymin=ax_stack.get_ylim()[0], ymax=ax_stack.get_ylim()[1], label="mean_time_cluster"
-            , color='blue'
-        )
-
-        ax_stack.vlines(
-            x=np.mean(arrival_times[i] - arrivals[0].time) + (np.std(arrival_times[i]*2)), ymin=ax_stack.get_ylim()[0], ymax=ax_stack.get_ylim()[1], label="2 std dev"
-            , color='blue', linewidth=0.5, linestyle='--'
-        )
-
-        ax_stack.vlines(
-            x=np.mean(arrival_times[i] - arrivals[0].time) - (np.std(arrival_times[i]*2)), ymin=ax_stack.get_ylim()[0], ymax=ax_stack.get_ylim()[1], label="2 std dev"
-            , color='blue', linewidth=0.5, linestyle='--'
-        )
-
-
-        pdf.savefig()
-        plt.close()
-
-
 
     ### plot stations
 
@@ -372,3 +365,53 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
 
     pdf.savefig()
     plt.close()
+
+    fig = plt.figure(figsize=(10, 8))
+    ax2 = fig.add_subplot(111)
+    ax2.hist(rel_times[0], 30, color='blue')
+    ax2.set_xlabel("Relative arrival times (s)", fontsize=14)
+    ax2.set_ylabel("Counts", fontsize=14)
+    plt.savefig("travel_time_histogram.pdf")
+    pdf.savefig()
+    plt.close()
+
+    # plot the clusters found from their arrival times
+    fig = plt.figure(figsize=(10, 8))
+    ax2 = fig.add_subplot(111)
+
+    # v = ax2.contourf(plot_times[point_before:point_after], ys, vesp_lin[:, point_before:point_after], 50)
+    for p in range(np.amax(labels_time) + 1):
+        # if p == 0:
+        #     ax2.scatter(rel_times[0][np.where(labels_time == p)], slows[np.where(labels_time == p)], color='black', label=)
+        # else: 
+        ax2.scatter(rel_times[0][np.where(labels_time == p)],  slows[np.where(labels_time == p)], label=f"Cluster {p}")
+    
+    ax2.set_xlim([-10, 0])
+    # ax2.set_ylim([2, 5])
+    ax2.set_xlabel("Window Time Relative to PKIKP (s)", fontsize=14)
+    ax2.set_ylabel("$p$ ($s/^{\circ}$)", fontsize=14)
+    plt.legend(loc='best')
+    plt.savefig("hslow_time_distribution.pdf")
+    pdf.savefig()
+    plt.close()
+
+        # plot the clusters found from their arrival times
+    fig = plt.figure(figsize=(10, 8))
+    ax2 = fig.add_subplot(111)
+
+    # v = ax2.contourf(plot_times[point_before:point_after], ys, vesp_lin[:, point_before:point_after], 50)
+    for p in range(np.amax(labels_time) + 1):
+        # if p == 0:
+        #     ax2.scatter(rel_times[0][np.where(labels_time == p)], bazs[np.where(labels_time == p)], color='black', label='noise')
+        # else: 
+        ax2.scatter(rel_times[0][np.where(labels_time == p)],  bazs[np.where(labels_time == p)], label=f"Cluster {p}")
+    
+    ax2.set_xlim([-10, 0])
+    # ax2.set_ylim([1, 5])
+    ax2.set_xlabel("Window Time Relative to PKIKP (s)", fontsize=14)
+    ax2.set_ylabel("$\\theta$ ($^{\circ}$)", fontsize=14)
+    plt.legend(loc='best')
+    plt.savefig("baz_time_distribution.pdf")
+    pdf.savefig()
+    plt.close()
+
