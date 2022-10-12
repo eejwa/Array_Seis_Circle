@@ -1,3 +1,4 @@
+from sklearn.metrics.pairwise import haversine_distances
 
 def myround(x, prec=2, base=0.05):
     """
@@ -45,3 +46,24 @@ def clip_traces(stream):
     stream = stream.trim(starttime=np.max(stimes), endtime=np.amin(etimes))
 
     return stream
+
+def closest_station(centre, seis_array):
+    """
+    Parameters
+    ----------
+
+    centre = 1d array of floats
+        = [lon,lat] of centre in radians.
+    seis_array  = 2D array of floats
+        = coordinates of stations in array [lon,lat]
+            in radians.
+
+    Returns
+    -------
+    station = 1d array of floats
+            = [lon, lat] of station closest to centre.
+
+
+    """
+    closest_index = haversine_distances([centre], seis_array).argmin()
+    return seis_array[closest_index], closest_index
