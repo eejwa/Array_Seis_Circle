@@ -2,6 +2,8 @@ import numpy as np
 from array_info import array as info
 from utilities import closest_station
 from sklearn.metrics.pairwise import haversine_distances
+from geo_sphere_calcs import coords_lonlat_rad_bearing, predict_pierce_points
+
 
 from scipy.linalg import lstsq as l_lstsq
 from scipy.optimize import least_squares as nl_lstsq
@@ -15,7 +17,7 @@ class SlowVecInversion():
 
         Parameters
         ----------
-        geometry : 2d arrat of floats
+        geometry : 2d array of floats
                 : geometry of the array in [lon,lat,elevation]
 
         distances : 1d array of floats
@@ -34,11 +36,17 @@ class SlowVecInversion():
         self.ttimes = ttimes
         self.stlos = self.geometry[:,0]
         self.stlas = self.geometry[:,1]
-        self.centre_station, self.centre_station_index  = closest_station(centre = [np.mean(self.stlos), np.mean(self.stlos)], seis_array = self.geometry[:,:2])
+        self.centre_station, self.centre_station_index  = closest_station(centre = np.radians([np.mean(self.stlas), np.mean(self.stlos)]), 
+                                                                          seis_array = np.radians(np.stack([self.stlas, self.stlos]).T))
 
-        self.del_xs = self.stlos - self.centre_station[1]
-        self.del_ys = self.stlas - self.centre_station[0]
+        self.centre_station = np.degrees(self.centre_station)
 
+        self.centre_station_lo = self.centre_station[1]
+        self.centre_station_la = self.centre_station[0]
+        self.centre_station_dist = self.distances[self.centre_station_index]
+
+        self.del_xs = self.stlos - self.centre_station_lo
+        self.del_ys = self.stlas - self.centre_station_la
         self.del_ttimes = self.ttimes - self.ttimes[self.centre_station_index]
 
     def circ_wave(self, slow_vec):
@@ -49,24 +57,21 @@ class SlowVecInversion():
 
         baz, slow = slow_vec
         # relocate event from the centre of the array 
-        lat2 = np.arcsin(
-            (np.sin(self.centre_station[1]) * np.cos(self.dists[self.centre_station_index])) + (np.cos(self.centre_station[1]) * np.sin(self.dists[self.centre_station_index]) * np.cos(np.radians(baz)))
-        )[0][0]
-        lon2 = self.centre_station[0] + np.arctan2(
-            np.sin(np.radians(baz)) * np.sin(self.dists[self.centre_station_index]) * np.cos(self.centre_station[1]), np.cos(self.dists[self.centre_station_index]) - np.sin(self.centre_station[1]) * np.sin(lat2)
-        )[0][0]
-
-        print(lat2,lon2)
+        lat2, lon2 = coords_lonlat_rad_bearing(lat1 = self.centre_station_la, 
+                                               lon1 = self.centre_station_lo, 
+                                               dist_deg = self.centre_station_dist, 
+                                               brng = baz)
 
         # calculate distances from new event to stations
-        new_dists = haversine_distances(np.radians(self.geometry[:,:2]), [[lat2,lon2]])
+        new_dists = np.degrees(haversine_distances(np.radians(np.stack([self.stlas, self.stlos]).T), 
+                                        [np.radians([lat2,lon2])]))
 
         # get relative distances 
         rel_dist = new_dists - np.mean(new_dists)
 
         # multiply by slowness 
-        times = np.degrees(rel_dist) * slow
-        residual = self.traveltimes - times[:,0]
+        times = rel_dist * slow
+        residual = self.ttimes - times[:,0]
 
         return residual
 
@@ -118,8 +123,8 @@ class SlowVecInversion():
         A = np.array(list(zip(self.del_xs, self.del_ys)))
         slow_vec, res, rnk, s = l_lstsq(A, self.del_ttimes)
 
-        p_pred = np.sqrt(p[0]**2 + p[1]**2)
-        az_pred = np.degrees(np.arctan2(p[0], p[1]))  # * (180. / math.pi)
+        p_pred = np.sqrt(slow_vec[0]**2 + slow_vec[1]**2)
+        az_pred = np.degrees(np.arctan2(slow_vec[0], slow_vec[1]))  # * (180. / math.pi)
         baz_pred = (az_pred % -360) + 180
 
         if baz_pred < 0:
