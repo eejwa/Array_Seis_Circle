@@ -10,7 +10,7 @@ import obspy.signal.filter as o
 from sklearn.neighbors import KDTree
 import os
 from obspy.taup import TauPyModel
-
+import obspy.signal
 
 
 
@@ -567,7 +567,10 @@ class cluster_utilities:
 
                 # calculate the envelope of this stack and recover the maximum
 
-                data_envelope = abs(lin_stack)
+                try:
+                    data_envelope = obspy.signal.filter.envelope(lin_stack)
+                except:
+                    continue
 
                 # get the index of the max value
                 imax = np.where(data_envelope == np.amax(data_envelope))[0][0]
@@ -578,6 +581,7 @@ class cluster_utilities:
                 times.append(time)
                 # import matplotlib.pyplot as plt
                 # plt.plot(lin_stack)
+                # plt.plot(data_envelope)
                 # plt.title(imax)
                 # plt.show()
 
