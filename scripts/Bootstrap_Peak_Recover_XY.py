@@ -168,8 +168,7 @@ for i in range(0, processes_per_core):
         symin=slow_min,
         symax=slow_max,
         s_space=s_space,
-        elevation=False,
-        incidence=8
+        elevation=False
     )
 
     end = time.time()
@@ -205,6 +204,8 @@ for i in range(0, processes_per_core):
     Lin_list.append(lin_tp)
     Noise_list.append(noise_mean)
     threshold_peaks_list.append(peaks)
+
+    print(peaks)
 
 Lin_mean = np.mean(np.array(Lin_list), axis=0)
 
