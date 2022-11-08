@@ -5,7 +5,7 @@ from sklearn.cluster import dbscan
 
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -132,6 +132,9 @@ point_after = int(pred_point + (t_max * sampling_rate))
 
 cut_shifted_traces = Shifted_Traces[:, point_before:point_after]
 
+for shtr in cut_shifted_traces:
+    shtr /= shtr.max()
+
 
 min_time = arrivals[0].time + t_min
 cu_times = cluster_utilities(labels=new_labels, points=All_Thresh_Peaks_arr)
@@ -204,6 +207,9 @@ core_samples_time, labels_time = dbscan(
     min_samples=int(Boots * MinPts)
 )
 
+print(arrivals[0].time)
+print(arrival_times)
+print(rel_times)
 
 slowness_cluster = cu.group_points_clusters()[0]
 print(slowness_cluster[:,1])
@@ -276,7 +282,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
-        type='distance'
+        type='distance', scale=0.01
     )
 
     ax2.vlines(
@@ -310,7 +316,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
-        type='baz'
+        type='baz', scale=0.01
     )
 
     ax2.vlines(
@@ -386,9 +392,9 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         # else: 
         ax2.scatter(rel_times[0][np.where(labels_time == p)],  slows[np.where(labels_time == p)], label=f"Cluster {p}")
     
-    ax2.set_xlim([-10, 0])
+    ax2.set_xlim([t_min, t_max])
     # ax2.set_ylim([2, 5])
-    ax2.set_xlabel("Window Time Relative to PKIKP (s)", fontsize=14)
+    ax2.set_xlabel(f"Window Time Relative to {phase} (s)", fontsize=14)
     ax2.set_ylabel("$p$ ($s/^{\circ}$)", fontsize=14)
     plt.legend(loc='best')
     plt.savefig("hslow_time_distribution.pdf")
@@ -406,9 +412,9 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         # else: 
         ax2.scatter(rel_times[0][np.where(labels_time == p)],  bazs[np.where(labels_time == p)], label=f"Cluster {p}")
     
-    ax2.set_xlim([-10, 0])
+    ax2.set_xlim([t_min, t_max])
     # ax2.set_ylim([1, 5])
-    ax2.set_xlabel("Window Time Relative to PKIKP (s)", fontsize=14)
+    ax2.set_xlabel(f"Window Time Relative to {phase} (s)", fontsize=14)
     ax2.set_ylabel("$\\theta$ ($^{\circ}$)", fontsize=14)
     plt.legend(loc='best')
     plt.savefig("baz_time_distribution.pdf")
