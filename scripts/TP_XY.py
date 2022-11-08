@@ -34,6 +34,7 @@ from manual_pick import pick_tw
 # import parameters
 
 st = obspy.read(filepath)
+st.normalize()
 a = array(st)
 
 
@@ -67,6 +68,7 @@ if phase is not None:
 
     stime = event_time + min_target
     etime = event_time + max_target
+
     #
     # # trim the stream
     # Normalise and cut seismogram around defined window
@@ -88,6 +90,7 @@ P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = prediction
 ][0]
 
 
+
 if Man_Pick == True:
 
     # get the user to pick the time window
@@ -97,8 +100,8 @@ if Man_Pick == True:
     rel_tmax = window[1]
 
 elif Man_Pick == False:
-    rel_tmin = t_min + np.min(TIME)
-    rel_tmax = t_max + np.max(TIME)
+    rel_tmin = t_min + float(TIME)
+    rel_tmax = t_max + float(TIME)
     window = np.array([t_min, t_max])
 else:
     print("Man_Pick needs to be set to True or False!")
@@ -110,6 +113,7 @@ if Align == True:
     array_norm = array(st_norm)
     Traces = array_norm.traces()
     Phase_traces = array_norm.phase_traces()
+
     # align the traces and phase traces
     Shifted_Traces = shift_traces(
         traces=Traces,
@@ -121,16 +125,7 @@ if Align == True:
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
         elevation=True,
-        incidence=8
     )
-
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(111)
-    for b,trace in enumerate(Shifted_Traces):
-        ax.plot(trace + distances[b], color='black')
-
-    plt.show()
-    exit()
 
 
     Shifted_Phase_Traces = shift_traces(
@@ -143,8 +138,9 @@ if Align == True:
         centre_y=float(centre_y),
         sampling_rate=sampling_rate,
         elevation=True,
-        incidence=8
     )
+
+    
 
     ## cut the shifted traces within the defined time window
     ## from the rel_tmin and rel_tmax
@@ -154,11 +150,17 @@ if Align == True:
     )
 
     pred_point = int(sampling_rate * (arrivals[0].time - min_target))
-    point_before = int(pred_point + (rel_tmin * sampling_rate))
-    point_after = int(pred_point + (rel_tmax * sampling_rate))
+    point_before = int(pred_point + (t_min * sampling_rate))
+    point_after = int(pred_point + (t_max * sampling_rate))
+
+    print(Traces.shape)
+    print(pred_point, point_before, point_after, sampling_rate)
+    print(arrivals[0].time)
 
     cut_traces = Shifted_Traces[:, point_before:point_after]
     cut_phase_traces = Shifted_Phase_Traces[:, point_before:point_after]
+
+
 
     sx_min = slow_min
     sx_max = slow_max
@@ -201,8 +203,6 @@ kwarg_dict = {
     "incidence":8
 }
 
-
-
 if Stack_type == "Both":
     # run the beamforming!
     Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_XY_all(
@@ -232,6 +232,9 @@ elif Stack_type == "PWS":
     PWS_arr, Results_arr, peaks = BF_XY_PWS(
         phase_traces=cut_phase_traces, degree=degree, **kwarg_dict
     )
+
+
+    print(PWS_arr)
 
     peaks = np.c_[peaks, np.array(["PWS"])]
 
@@ -286,7 +289,7 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
         symin=sy_min_plot,
         symax=sy_max_plot,
         sstep=s_space,
-        contour_levels=20,
+        contour_levels=50,
         title="%s Plot" % Stack_type,
         predictions=predictions,
         log=False,
@@ -304,7 +307,7 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=cut_min, tmax=cut_max, align=Align,
-        type='distance'
+        type='distance', scale=0.05
     )
 
     ax2.vlines(
