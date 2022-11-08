@@ -72,6 +72,16 @@ parser.add_argument(
     default=0.5
 )
 
+parser.add_argument(
+    "-s",
+    "--scale",
+    help="scale to multiply to amplitudes (default = 1.0)",
+    type=float,
+    required=False,
+    action="store",
+    default=0.1
+)
+
 
 args = parser.parse_args()
 filepath = args.file_path
@@ -81,12 +91,14 @@ tmax = args.time_max
 Filter=args.filter_question
 fmin = args.freq_min
 fmax = args.freq_max
+scale = args.scale
 
 
 # read in the SAC files
 st = obspy.read(filepath)
 
 if Filter:
+    print('filtering')
     st = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax)
 else:
     pass
@@ -96,12 +108,12 @@ fig = plt.figure(figsize=(10, 8))
 ax1 = fig.add_subplot(121)
 
 p = plotting(ax=ax1)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False)
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True, scale=scale)
 
 ax2 = fig.add_subplot(122)
 
 p = plotting(ax=ax2)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False, type='baz')
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True, type='baz', scale=scale)
 
 plt.tight_layout()
 
