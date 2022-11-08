@@ -210,7 +210,6 @@ def create_plotting_file(filepath,
     locus_newlines.append(locus_header)
     for index, row in results_df.iterrows():
         print(row)
-        dir = row['dir']
         name = row['Name']
         evla = row['evla']
         evlo = row['evlo']
@@ -261,10 +260,15 @@ def create_plotting_file(filepath,
                                                                                                                target_depth=depth,
                                                                                                                mod=mod)
 
-            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff", "slow_std_dev",
-                           "baz_pred", "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "mag", "az", "error_ellipse_area", "multi",
-                           "phase"]].astype(str))
 
+            try:
+                newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff", "slow_std_dev",
+                            "baz_pred", "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "mag", "az", "error_ellipse_area", "multi",
+                            "phase"]].astype(str))
+            except:
+                newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff",
+                           "baz_pred", "baz_diff", "del_x_slow", "del_y_slow", "mag", "az", "multi",
+                           "phase"]].astype(str))
 
             for new_item in [s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo]:
                 newline.append(new_item)
@@ -282,9 +286,12 @@ def create_plotting_file(filepath,
                                                                                                                target_depth=depth,
                                                                                                                mod=mod)
 
-            newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff", "slow_std_dev",
-                           "baz_pred", "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "mag", "az", "error_ellipse_area", "multi"]].astype(str))
-
+            try:
+                newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff", "slow_std_dev",
+                            "baz_pred", "baz_diff", "baz_std_dev", "del_x_slow", "del_y_slow", "mag", "az", "error_ellipse_area", "multi"]].astype(str))
+            except:
+                newline = list(row[["Name", "evla", "evlo", "evdp", "stla_mean", "stlo_mean", "slow_pred", "slow_diff",
+                           "baz_pred", "baz_diff", "del_x_slow", "del_y_slow", "mag", "az", "multi"]].astype(str))
 
             for new_item in ['ScS', s_pierce_la, s_pierce_lo, r_pierce_la, r_pierce_lo, s_reloc_pierce_la, s_reloc_pierce_lo, r_reloc_pierce_la, r_reloc_pierce_lo]:
                 newline.append(new_item)
