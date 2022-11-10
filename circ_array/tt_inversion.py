@@ -67,11 +67,14 @@ class SlowVecInversion():
                                         [np.radians([lat2,lon2])]))
 
         # get relative distances 
-        rel_dist = new_dists - np.mean(new_dists)
+        # print(new_dists)
+        print(self.centre_station_dist, np.mean(new_dists))
+        rel_dist = new_dists - self.centre_station_dist
+        # print(rel_dist)
 
         # multiply by slowness 
         times = rel_dist * slow
-        residual = self.ttimes - times[:,0]
+        residual = self.del_ttimes - times[:,0]
 
         return residual
 
