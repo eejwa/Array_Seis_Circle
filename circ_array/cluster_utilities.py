@@ -672,8 +672,8 @@ class cluster_utilities:
 
         # the traces need to be trimmed to the same start and end time
         # for the shifting and clipping traces to work (see later).
-        min_target = int(np.nanmin(Target_phase_times, axis=0)) + (t_min)
-        max_target = int(np.nanmax(Target_phase_times, axis=0)) + (t_max)
+        min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-100)
+        max_target = int(np.nanmax(Target_phase_times, axis=0)) + (100)
 
         stime = event_time + min_target
         etime = event_time + max_target
@@ -682,7 +682,6 @@ class cluster_utilities:
         # trim the stream
         # Normalise and cut seismogram around defined window
         st = st.copy().trim(starttime=stime, endtime=etime)
-        st = st.normalize()
 
         # get predicted slownesses and backazimuths
         predictions = a.pred_baz_slow(phases=[phase], one_eighty=True)
@@ -738,13 +737,17 @@ class cluster_utilities:
 
         # get point of the predicted arrival time
         pred_point = int(sampling_rate * (pred_time - min_target))
-
         # get points to clip window
         point_before = int(pred_point + (t_min * sampling_rate))
         point_after = int(pred_point + (t_max * sampling_rate))
 
+
         # clip the traces
         cut_shifted_traces = shifted_traces[:, point_before:point_after]
+
+        # normalise traces
+        for shtr in cut_shifted_traces:
+            shtr /= shtr.max()
 
         # get the min time of the traces
         min_time = pred_time + t_min
@@ -755,6 +758,7 @@ class cluster_utilities:
         ellipse_areas = self.cluster_ellipse_areas(std_dev=2)
         ellipse_properties = self.cluster_ellipse_properties(std_dev=2)
         points_clusters = self.group_points_clusters()
+
         arrival_times = self.estimate_travel_times(traces=cut_shifted_traces,
                                                    tmin=min_time,
                                                    sampling_rate=sampling_rate,
@@ -762,7 +766,6 @@ class cluster_utilities:
                                                    distance=mean_dist,
                                                    pred_x=PRED_BAZ_X,
                                                    pred_y=PRED_BAZ_Y)
-
 
         # Option to filter based on ellipse size or vector deviation
         if Filter == True:
