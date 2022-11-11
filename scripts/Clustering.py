@@ -47,7 +47,6 @@ etime = event_time + max_target
 # trim the stream
 # Normalise and cut seismogram around defined window
 st = st.copy().trim(starttime=stime, endtime=etime)
-st = st.normalize()
 
 evla = st[0].stats.sac.evla
 evlo = st[0].stats.sac.evlo
@@ -112,8 +111,7 @@ Shifted_Traces = shift_traces(
     centre_x=float(centre_lo),
     centre_y=float(centre_la),
     sampling_rate=sampling_rate,
-    elevation=True,
-    incidence=8
+    elevation=False
 )
 
 
@@ -136,6 +134,8 @@ for shtr in cut_shifted_traces:
     shtr /= shtr.max()
 
 
+print(cut_shifted_traces)
+
 min_time = arrivals[0].time + t_min
 cu_times = cluster_utilities(labels=new_labels, points=All_Thresh_Peaks_arr)
 arrival_times = cu_times.estimate_travel_times(traces=cut_shifted_traces,
@@ -145,6 +145,8 @@ arrival_times = cu_times.estimate_travel_times(traces=cut_shifted_traces,
                                  distance=mean_dist,
                                  pred_x=PRED_BAZ_X,
                                  pred_y=PRED_BAZ_Y)
+
+
 rel_points = np.empty(All_Thresh_Peaks_arr.shape)
 rel_points[:,0] = All_Thresh_Peaks_arr[:,0] - PRED_BAZ_X
 rel_points[:,1] = All_Thresh_Peaks_arr[:,1] - PRED_BAZ_Y
@@ -178,7 +180,7 @@ Results_filepath_unfiltered = Res_dir + f"Clustering_Results_{fmin:.2f}_{fmax:.2
 # make new lines list
 
 newlines = cu.create_newlines(
-    st=st,
+    st=st_traces,
     file_path=Results_filepath,
     phase=phase,
     window=[t_min, t_max],
@@ -189,7 +191,7 @@ newlines = cu.create_newlines(
 )
 
 newlines_unfiltered = cu.create_newlines(
-    st=st,
+    st=st_traces,
     file_path=Results_filepath_unfiltered,
     phase=phase,
     window=[t_min, t_max],
@@ -202,40 +204,49 @@ newlines_unfiltered = cu.create_newlines(
 # cluster times 
 
 rel_times = arrival_times - arrivals[0].time
-core_samples_time, labels_time = dbscan(
-    X=rel_times[0].reshape(-1, 1), eps=1, 
-    min_samples=int(Boots * MinPts)
-)
+
 
 print(arrivals[0].time)
 print(arrival_times)
 print(rel_times)
+
 
 slowness_cluster = cu.group_points_clusters()[0]
 print(slowness_cluster[:,1])
 
 
 slows = np.sqrt((slowness_cluster[:,0] ** 2) + (slowness_cluster[:,1] ** 2))
-azimuths = np.degrees(np.arctan2(slowness_cluster[:,0], slowness_cluster[:,1]))  # * (180. / math.pi)
+azimuths = np.degrees(np.arctan2(slowness_cluster[:,0], slowness_cluster[:,1]))
 
 # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
 bazs = azimuths % -360 + 180
 
-print(mean_baz)
 
-vesp_lin = Vespagram_Lin(Traces,  sampling_rate = sampling_rate, geometry=geometry, 
-                         distance=mean_dist, baz=float(mean_baz), smin=0, smax=5, s_space=0.05)
 
-ny = int(np.round(((0 + 5) / 0.05) + 1))
-ys = np.linspace(0, 5, ny, endpoint=True)
-ntime = int(np.round(((t_max - t_min) * sampling_rate)))
-vesp_times = np.linspace(t_min, t_max, ntime, endpoint=True) + arrivals[0].time
-plot_times = np.arange(min_target, max_target + (1/sampling_rate), 1/sampling_rate)
+core_samples_time, labels_time = dbscan(
+X=rel_times[0].reshape(-1, 1), eps=1, 
+min_samples=int(Boots * MinPts)
+)
 
-for i, stack in enumerate(vesp_lin):
-    vesp_lin[i] = obspy.signal.filter.envelope(stack)
 
-# df = pd.DataFrame({"Slow_x":All_Thresh_Peaks_arr[:,0], "Slow_y":All_Thresh_Peaks_arr[:,1], "Labels":new_labels})
+slow_time_clusters = []
+baz_time_clusters = []
+
+for i,crt in enumerate(rel_times):
+    
+    core_samples_time, labels_time = dbscan(
+    X=crt.reshape(-1, 1), eps=1, 
+    min_samples=int(Boots * MinPts)
+    )
+
+    for p in range(np.amax(labels_time) + 1):
+        slow_time_clusters.append(slows[i][np.where(labels_time == p)])
+        baz_time_clusters.append(bazs[i][np.where(labels_time == p)])
+
+
+
+
+
 
 # plot!
 with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
