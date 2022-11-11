@@ -50,7 +50,7 @@ etime = event_time + max_target
 # trim the stream
 # Normalise and cut seismogram around defined window
 st = st.copy().trim(starttime=stime, endtime=etime)
-st = st.normalize()
+
 
 
 sample_size = len(st)
@@ -116,6 +116,12 @@ point_before = int(pred_point + (t_min * sampling_rate))
 point_after = int(pred_point + (t_max * sampling_rate))
 
 cut_shifted_traces = Shifted_Traces[:, point_before:point_after]
+
+# normalise cut shifted traces
+
+for shtr in cut_shifted_traces:
+    shtr /= shtr.max()
+
 
 # st_shifted = st.copy()
 # for index in range(len(st_shifted)):
