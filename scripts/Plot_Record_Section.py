@@ -119,4 +119,4 @@ plt.tight_layout()
 
 plt.savefig("Record_Section.pdf")
 
-plt.show()
+# plt.show()
