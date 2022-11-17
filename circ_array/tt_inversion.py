@@ -68,7 +68,7 @@ class SlowVecInversion():
 
         # get relative distances 
         # print(new_dists)
-        print(self.centre_station_dist, np.mean(new_dists))
+        # print(self.centre_station_dist, np.mean(new_dists))
         rel_dist = new_dists - self.centre_station_dist
         # print(rel_dist)
 
@@ -94,7 +94,7 @@ class SlowVecInversion():
                  : inverted slowness vector [baz, slow]        
         """
 
-        slow_vec = nl_lstsq(self.circ_wave, np.array(initial_slow_vec)).x
+        slow_vec = nl_lstsq(self.circ_wave, np.array(initial_slow_vec), loss='soft_l1', jac='3-point').x
 
 
         return slow_vec
