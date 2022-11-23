@@ -21,12 +21,8 @@ from Parameters_Bootstrap import *
 
 from array_info import array
 from cluster_utilities import cluster_utilities
-from shift_stack import shift_traces, linear_stack_baz_slow
+from shift_stack import shift_traces
 from obspy.taup import TauPyModel
-
-from slow_vec_calcs import get_slow_baz
-
-from vespagram import Vespagram_Lin
 
 
 model = TauPyModel(model=pred_model)
@@ -139,12 +135,12 @@ print(cut_shifted_traces)
 min_time = arrivals[0].time + t_min
 cu_times = cluster_utilities(labels=new_labels, points=All_Thresh_Peaks_arr)
 arrival_times = cu_times.estimate_travel_times(traces=cut_shifted_traces,
-                                 tmin=min_time,
-                                 sampling_rate=sampling_rate,
-                                 geometry=geometry,
-                                 distance=mean_dist,
-                                 pred_x=PRED_BAZ_X,
-                                 pred_y=PRED_BAZ_Y)
+                                               tmin=min_time,
+                                               sampling_rate=sampling_rate,
+                                               geometry=geometry,
+                                               distance=mean_dist,
+                                               pred_x=PRED_BAZ_X,
+                                               pred_y=PRED_BAZ_Y)
 
 
 rel_points = np.empty(All_Thresh_Peaks_arr.shape)
