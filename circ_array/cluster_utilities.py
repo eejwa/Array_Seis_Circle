@@ -11,6 +11,7 @@ from sklearn.neighbors import KDTree
 import os
 from obspy.taup import TauPyModel
 import obspy.signal
+from sklearn.cluster import dbscan
 
 
 
@@ -74,6 +75,52 @@ class cluster_utilities:
             points_clusters.append(points_cluster)
 
         return points_clusters
+
+
+    def get_bazs_slows_vecs(self, pred_x, pred_y):
+        """
+        From point and labels give the backazimuths 
+        horizontal slownesses and slowness vector 
+        deviations for each cluster.
+
+        Parameters
+        ----------
+
+        pred_x : float
+                x component of the predicted slowness vector.
+
+        pred_y : float
+                y component of the predicted slowness vector.
+
+
+        Returns
+        -------
+
+        info : 3D array of floats
+              Each row represents a cluster and column
+              a distribution of baz, slow, slow_vec_az, slow_vec_mag
+        """
+
+        xy_points = self.group_points_clusters()
+        
+        info = []
+
+        for cluster_points in xy_points:
+            x_slows = cluster_points[:,0]
+            y_slows = cluster_points[:,1]
+
+            rel_xs = x_slows - pred_x
+            rel_ys = y_slows - pred_y
+            
+            slows, bazs = get_slow_baz(x_slows, y_slows, dir_type="az")
+            azs = np.degrees(np.arctan2(rel_ys,rel_xs))
+            mags = np.sqrt(rel_xs**2 + rel_ys**2)
+
+            azs = np.where(azs<0, azs + 360, azs)
+
+            info.append([bazs, slows, azs, mags])
+
+        return info
 
     def eigsorted(self, cov):
         """
@@ -646,7 +693,7 @@ class cluster_utilities:
                   "stla_mean stlo_mean slow_pred slow_max slow_diff "
                   "slow_std_dev baz_pred baz_max baz_diff baz_std_dev "
                   "slow_x_pred slow_x_obs del_x_slow x_std_dev slow_y_pred slow_y_obs "
-                  "del_y_slow y_std_dev az az_std mag mag_std time_obs time_pred time_diff time_std_dev "
+                  "del_y_slow y_std_dev az az_std mag mag_std "
                   "error_ellipse_area ellispe_width ellispe_height "
                   "ellispe_theta ellipse_rel_density multi phase no_stations "
                   "stations t_window_start t_window_end Boots\n"
@@ -749,9 +796,6 @@ class cluster_utilities:
         for shtr in cut_shifted_traces:
             shtr /= shtr.max()
 
-        # get the min time of the traces
-        min_time = pred_time + t_min
-
         no_clusters = np.amax(self.labels) + 1
         means_xy, means_baz_slow = self.cluster_means()
         bazs_std, slows_std, slow_xs_std, slow_ys_std, azs_std, mags_std = self.cluster_std_devs(pred_x=PRED_BAZ_X, pred_y=PRED_BAZ_Y)
@@ -759,13 +803,6 @@ class cluster_utilities:
         ellipse_properties = self.cluster_ellipse_properties(std_dev=2)
         points_clusters = self.group_points_clusters()
 
-        arrival_times = self.estimate_travel_times(traces=cut_shifted_traces,
-                                                   tmin=min_time,
-                                                   sampling_rate=sampling_rate,
-                                                   geometry=geometry,
-                                                   distance=mean_dist,
-                                                   pred_x=PRED_BAZ_X,
-                                                   pred_y=PRED_BAZ_Y)
 
         # Option to filter based on ellipse size or vector deviation
         if Filter == True:
@@ -865,11 +902,6 @@ class cluster_utilities:
                                                                 mod='prem')
 
 
-                times = arrival_times[i]
-                mean_time = np.mean(times)
-                time_diff = mean_time - pred_time
-                times_std_dev = np.std(times)
-
                 # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
                 #     multi = 'm'
 
@@ -899,7 +931,6 @@ class cluster_utilities:
                             f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
                             f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
                             f"{del_y_slow:.2f} {y_std_dev:.2f} {az:.2f} {az_std_dev:.2f} {mag:.2f} {mag_std_dev:.2f} "
-                            f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
                             f"{error_ellipse_area:.2f} {width:.2f} {height:.2f} {theta:.2f} {mean_density:.2f} "
                             f"{multi} {phase} {no_stations} {','.join(stations)} "
                             f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
@@ -941,8 +972,416 @@ class cluster_utilities:
                         f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
                         f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
                         f"{del_y_slow:.2f} {y_std_dev:.2f} {az:.2f} {az_std_dev:.2f} {mag:.2f} {mag_std_dev:.2f} "
-                        f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
                         f"{error_ellipse_area:.2f} {width:.2f} {height:.2f} {theta:.2f} {mean_density:.2f} "
+                        f"{multi} {phase} {no_stations} {','.join(stations)} "
+                        f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                    )
+
+
+                    # there will be multiple lines so add these to this list.
+                    newlines.append(newline)
+
+                else:
+                    print("Filter needs to be True or False")
+                    exit()
+
+        else:
+            newline = ""
+            newlines.append(newline)
+
+        ## Write to file!
+
+        # now loop over file to see if I have this observation already
+        found = False
+        added = False  # just so i dont write it twice if i find the criteria in multiple lines
+        ## write headers to the file if it doesnt exist
+        line_list = []
+        if os.path.exists(file_path):
+            with open(file_path, "r") as Multi_file:
+                for line in Multi_file:
+                    if name in line and phase in line and f"{stla_mean:.2f}" in line:
+                        print("name and phase and stla in line, replacing")
+                        if added == False:
+                            line_list.extend(newlines)
+                            added = True
+                        else:
+                            print("already added to file")
+                        found = True
+                    else:
+                        line_list.append(line)
+        else:
+            with open(file_path, "w") as Multi_file:
+                Multi_file.write(header)
+                line_list.append(header)
+
+        if not found:
+            print("name or phase or stla not in line. Adding to the end.")
+            line_list.extend(newlines)
+        else:
+            pass
+
+        with open(file_path, "w") as Multi_file2:
+            Multi_file2.write("".join(line_list))
+
+
+        return newlines
+
+
+
+    def create_newlines_time(
+        self,
+        st,
+        file_path,
+        phase,
+        window,
+        Boots,
+        minpts,
+        eps=1,
+        slow_vec_error=3,
+        Filter=False,
+    ):
+        """
+        This function will create a list of lines with all relevant information to be stored in
+        the results file. The function write_to_cluster_file() will write these lines to a new
+        file and replace any of the lines with the same array location and target phase.
+
+        Parameters
+        ----------
+        st : Obspy stream object
+             Obspy stream object of sac files with event, arrival time and
+             station headers populated.
+
+        file_path : string
+                    Path to the results file to check the contents of.
+
+        phase : string
+                Target phase (e.g. SKS)
+
+        window : list of floats
+                 tmin and tmax describing the relative time window.
+
+        Boots : int
+                Number of bootstrap samples.
+
+        eps : float
+                  Epsilon value to find time clusters.
+
+        minpts : float
+                 minimum number of points to find clusters in time
+
+        slow_vec_error : float
+                         Maximum slowness vector deviation between the predicted
+                         and observed arrival. Arrival with larger deviations will
+                         be removed if Filter = True (below). Default is 3.
+
+        Filter : bool
+                 Do you want to filter out the arrivals (default = False)
+
+        Returns
+        -------
+            newlines: list of strings of the contents to write to the results file.
+
+        """
+
+        model = TauPyModel(model='prem')
+
+        newlines = []
+        header = ("Name evla evlo evdp reloc_evla reloc_evlo "
+                  "stla_mean stlo_mean slow_pred slow_max slow_diff "
+                  "slow_std_dev baz_pred baz_max baz_diff baz_std_dev "
+                  "slow_x_pred slow_x_obs del_x_slow x_std_dev slow_y_pred slow_y_obs "
+                  "del_y_slow y_std_dev az az_std mag mag_std time_obs time_pred time_diff time_std_dev "
+                  "error_ellipse_area ellispe_width ellispe_height "
+                  "ellispe_theta ellipse_rel_density multi phase no_stations "
+                  "stations t_window_start t_window_end Boots\n"
+                  )
+
+        from array_info import array
+
+        # extract a bunch of information from the stream
+        a = array(st)
+        event_time = a.eventtime()
+        geometry = a.geometry()
+        distances = a.distances(type="deg")
+        mean_dist = np.mean(distances)
+        stations = a.stations()
+        no_stations = len(stations)
+        sampling_rate = st[0].stats.sampling_rate
+        stlo_mean, stla_mean = np.mean(geometry[:, 0]), np.mean(geometry[:, 1])
+        # assume all traces in event are from one event
+        evdp = st[0].stats.sac.evdp
+        evlo = st[0].stats.sac.evlo
+        evla = st[0].stats.sac.evla
+        t_min = window[0]
+        t_max = window[1]
+        # get predicted times from the sac files
+        Target_phase_times, time_header_times = a.get_predicted_times(phase)
+
+        # the traces need to be trimmed to the same start and end time
+        # for the shifting and clipping traces to work (see later).
+        min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-100)
+        max_target = int(np.nanmax(Target_phase_times, axis=0)) + (100)
+
+        stime = event_time + min_target
+        etime = event_time + max_target
+
+
+        # trim the stream
+        # Normalise and cut seismogram around defined window
+        st = st.copy().trim(starttime=stime, endtime=etime)
+
+        # get predicted slownesses and backazimuths
+        predictions = a.pred_baz_slow(phases=[phase], one_eighty=True)
+
+        # find the line with the predictions for the phase of interest
+        row = np.where((predictions == phase))[0]
+
+        (
+            P,
+            S,
+            BAZ,
+            PRED_BAZ_X,
+            PRED_BAZ_Y,
+            PRED_AZ_X,
+            PRED_AZ_Y,
+            DIST,
+            TIME,
+        ) = predictions[row, :][0]
+        PRED_BAZ_X = float(PRED_BAZ_X)
+        PRED_BAZ_Y = float(PRED_BAZ_Y)
+        S = float(S)
+        BAZ = float(BAZ)
+
+        name = (
+            str(event_time.year)
+            + f"{event_time.month:02d}"
+            + f"{event_time.day:02d}"
+            + "_"
+            + f"{event_time.hour:02d}"
+            + f"{event_time.minute:02d}"
+            + f"{event_time.second:02d}"
+        )
+
+        a1 = array(st)
+        traces = a1.traces()
+        shifted_traces = shift_traces(traces=traces,
+                                      geometry=geometry,
+                                      abs_slow=float(S),
+                                      baz=float(BAZ),
+                                      distance=float(mean_dist),
+                                      centre_x=float(stlo_mean),
+                                      centre_y=float(stla_mean),
+                                      sampling_rate=sampling_rate)
+
+        # predict arrival time
+        arrivals = model.get_travel_times(
+            source_depth_in_km=evdp,
+            distance_in_degree=mean_dist,
+            phase_list=[phase]
+        )
+
+        pred_time = arrivals[0].time
+
+        # get point of the predicted arrival time
+        pred_point = int(sampling_rate * (pred_time - min_target))
+        # get points to clip window
+        point_before = int(pred_point + (t_min * sampling_rate))
+        point_after = int(pred_point + (t_max * sampling_rate))
+
+
+        # clip the traces
+        cut_shifted_traces = shifted_traces[:, point_before:point_after]
+
+        # normalise traces
+        for shtr in cut_shifted_traces:
+            shtr /= shtr.max()
+
+        # get the min time of the traces
+        min_time = pred_time + t_min
+
+        arrival_times = self.estimate_travel_times(traces=cut_shifted_traces,
+                                            tmin=min_time,
+                                            sampling_rate=sampling_rate,
+                                            geometry=geometry,
+                                            distance=mean_dist,
+                                            pred_x=PRED_BAZ_X,
+                                            pred_y=PRED_BAZ_Y)
+
+        rel_times = arrival_times - arrivals[0].time
+
+        no_clusters = np.amax(self.labels) + 1
+        points_clusters = self.group_points_clusters()
+        means_xy, means_baz_slow = self.cluster_means()
+
+        # Option to filter based on ellipse size or vector deviation
+        if Filter == True:
+            try:
+
+                distances = distance.cdist(
+                    np.array([[PRED_BAZ_X, PRED_BAZ_Y]]), means_xy, metric="euclidean"
+                )
+                number_arrivals_slow_space = np.where(distances < slow_vec_error)[
+                    0
+                ].shape[0]
+
+                number_arrivals = number_arrivals_slow_space
+            except:
+                multi = "t"
+                number_arrivals = 0
+
+        elif Filter == False:
+            number_arrivals = no_clusters
+
+        else:
+            print("Filter needs to be True or False")
+            exit()
+
+        if number_arrivals > 1:
+            multi = "y"
+
+        elif number_arrivals == 0:
+            print("no usable arrivals, exiting code")
+            # exit()
+            multi = "t"
+        elif number_arrivals == 1:
+            multi = "n"
+
+        else:
+            print("something went wrong in error estimates, exiting")
+            # exit()
+            multi = "t"
+
+        # make new line
+
+        # set counter to be zero, this will be used to label the arrivals as first second etc.
+        usable_arrivals = 0
+
+        cluster_info = self.get_bazs_slows_vecs(pred_x = PRED_BAZ_X, pred_y = PRED_BAZ_Y)
+
+        if no_clusters != 0:
+            for i in range(no_clusters):
+
+                times_in_slow_cluster = rel_times[i]
+
+                bazs, slows, azs, mags = cluster_info[i]
+                slow_xs = points_clusters[i][:,0]
+                slow_ys = points_clusters[i][:,1]
+
+                core_samples_time, labels_time = dbscan(
+                X=times_in_slow_cluster.reshape(-1, 1), eps=1, 
+                min_samples=int(minpts)
+                )
+
+                no_time_arrivals = np.amax(labels_time) + 1
+
+                if no_time_arrivals == 0:
+                    print('no clusters found in time, moving onto the next cluster')
+                    continue
+                else:
+                    pass
+
+                for p in range(np.amax(labels_time) + 1):
+
+
+                    tt = times_in_slow_cluster[np.where(labels_time == p)]
+                    slow_time_clusters = slows[np.where(labels_time == p)]
+                    baz_time_clusters = bazs[np.where(labels_time == p)]
+                    az_time_clusters = azs[np.where(labels_time == p)]
+                    mag_time_clusters = mags[np.where(labels_time == p)]
+                    slow_xs_time_clusters = slow_xs[np.where(labels_time == p)]
+                    slow_ys_time_clusters = slow_ys[np.where(labels_time == p)]
+
+                    # create label for the arrival
+                    # get information for that arrival
+                    baz_obs = circmean(baz_time_clusters)
+                    baz_diff = baz_obs - float(BAZ)
+
+                    slow_obs = np.mean(slow_time_clusters)
+                    slow_diff = slow_obs - float(S)
+
+                    slow_x_obs = np.mean(slow_xs_time_clusters)
+                    slow_y_obs = np.mean(slow_ys_time_clusters)
+
+                    del_x_slow = slow_x_obs - PRED_BAZ_X
+                    del_y_slow = slow_y_obs - PRED_BAZ_Y
+
+                    az_mean = circmean(az_time_clusters)
+                    mag_mean = np.mean(mag_time_clusters)
+
+                    baz_std_dev = circstd(baz_time_clusters)
+                    slow_std_dev = np.std(slow_time_clusters)
+
+                    x_std_dev = np.std(slow_xs_time_clusters)
+                    y_std_dev = np.std(slow_ys_time_clusters)
+
+                    az_std_dev = circstd(az_time_clusters)
+                    mag_std_dev = np.std(mag_time_clusters)
+
+                    # relocated event location
+                    reloc_evla, reloc_evlo = relocate_event_baz_slow(evla=evla,
+                                                                    evlo=evlo,
+                                                                    evdp=evdp,
+                                                                    stla=stla_mean,
+                                                                    stlo=stlo_mean,
+                                                                    baz=baz_obs,
+                                                                    slow=slow_obs,
+                                                                    phase=phase,
+                                                                    mod='prem')
+
+
+                    mean_time = np.mean(tt)
+                    time_diff = mean_time - pred_time
+                    times_std_dev = np.std(tt)
+
+                # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
+                #     multi = 'm'
+
+                if Filter == True:
+                    if mag_mean < slow_vec_error:
+
+                        # update the usable arrivals count
+                        usable_arrivals += 1
+                        name_label = name + "_" + str(usable_arrivals)
+
+                        # define the newline to be added to the file
+                        newline = (
+                            f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
+                            f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f} "
+                            f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
+                            f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
+                            f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                            f"{del_y_slow:.2f} {y_std_dev:.2f} {az_mean:.2f} {az_std_dev:.2f} {mag_mean:.2f} {mag_std_dev:.2f} "
+                            f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
+                            f"{multi} {phase} {no_stations} {','.join(stations)} "
+                            f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                        )
+
+                        # there will be multiple lines so add these to this list.
+                        newlines.append(newline)
+
+                    else:
+                        print(
+                            "The error for this arrival is too large, not analysing this any further"
+                        )
+
+                        newline = ""
+                        newlines.append(newline)
+
+                elif Filter == False:
+
+                    # update the usable arrivals count
+                    usable_arrivals += 1
+                    name_label = name + "_" + str(usable_arrivals)
+
+                    # define the newline to be added to the file
+                    newline = (
+                        f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
+                        f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f} "
+                        f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
+                        f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
+                        f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                        f"{del_y_slow:.2f} {y_std_dev:.2f} {az_mean:.2f} {az_std_dev:.2f} {mag_mean:.2f} {mag_std_dev:.2f} "
+                        f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
                         f"{multi} {phase} {no_stations} {','.join(stations)} "
                         f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
                     )
