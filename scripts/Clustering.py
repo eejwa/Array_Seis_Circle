@@ -186,6 +186,18 @@ newlines = cu.create_newlines(
     Filter=True,
 )
 
+newlines = cu.create_newlines_time(
+    st=st_traces,
+    file_path='./Results/test_time.txt',
+    phase=phase,
+    window=[t_min, t_max],
+    Boots=Boots,
+    eps=1,
+    slow_vec_error=slow_vec_error,
+    Filter=True,
+    minpts = Boots*MinPts
+)
+
 newlines_unfiltered = cu.create_newlines(
     st=st_traces,
     file_path=Results_filepath_unfiltered,
@@ -210,12 +222,14 @@ print(rel_times)
 slowness_cluster = cu.group_points_clusters()[0]
 print(slowness_cluster[:,1])
 
+cluster_info = cu.get_bazs_slows_vecs(pred_x = PRED_BAZ_X, pred_y = PRED_BAZ_Y)
 
-slows = np.sqrt((slowness_cluster[:,0] ** 2) + (slowness_cluster[:,1] ** 2))
-azimuths = np.degrees(np.arctan2(slowness_cluster[:,0], slowness_cluster[:,1]))
 
-# % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
-bazs = azimuths % -360 + 180
+# slows = np.sqrt((slowness_cluster[:,0] ** 2) + (slowness_cluster[:,1] ** 2))
+# azimuths = np.degrees(np.arctan2(slowness_cluster[:,0], slowness_cluster[:,1]))
+
+# # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
+# bazs = azimuths % -360 + 180
 
 
 
@@ -223,25 +237,6 @@ core_samples_time, labels_time = dbscan(
 X=rel_times[0].reshape(-1, 1), eps=1, 
 min_samples=int(Boots * MinPts)
 )
-
-
-slow_time_clusters = []
-baz_time_clusters = []
-
-for i,crt in enumerate(rel_times):
-    
-    core_samples_time, labels_time = dbscan(
-    X=crt.reshape(-1, 1), eps=1, 
-    min_samples=int(Boots * MinPts)
-    )
-
-    for p in range(np.amax(labels_time) + 1):
-        slow_time_clusters.append(slows[i][np.where(labels_time == p)])
-        baz_time_clusters.append(bazs[i][np.where(labels_time == p)])
-
-
-
-
 
 
 # plot!
@@ -289,7 +284,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
-        type='distance', scale=0.01
+        type='distance', scale=0.1
     )
 
     ax2.vlines(
@@ -309,6 +304,32 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         , color='green'
     )
 
+    for i,crt in enumerate(rel_times):
+        bazs, slows, azs, mags = cluster_info[i]
+        
+        core_samples_time, labels_time = dbscan(
+        X=crt.reshape(-1, 1), eps=1, 
+        min_samples=int(Boots * MinPts)
+        )
+
+        for p in range(np.amax(labels_time) + 1):
+            tt = crt[np.where(labels_time == p)]
+            mean_t = np.mean(tt)
+            std_t = np.std(tt)
+            ax2.vlines(
+            x=mean_t, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="pred_time"
+            , color='blue'
+            )
+            ax2.vlines(
+            x=mean_t - (std_t*2), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="pred_time"
+            , color='blue', linestyle='--', linewidth=1
+            )
+            ax2.vlines(
+            x=mean_t+(std_t*2), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="pred_time"
+            , color='blue', linestyle='--', linewidth=1
+            )
+
+
     ax2.set_title(f"Distance Record Section Aligned on Predicted {phase}")
 
     pdf.savefig()
@@ -323,7 +344,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
-        type='baz', scale=0.01
+        type='baz', scale=0.1
     )
 
     ax2.vlines(
@@ -335,7 +356,32 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         x=t_max, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="window max"
         , color='red'
     )
+    for i,crt in enumerate(rel_times):
+        bazs, slows, azs, mags = cluster_info[i]
+        
+        core_samples_time, labels_time = dbscan(
+        X=crt.reshape(-1, 1), eps=1, 
+        min_samples=int(Boots * MinPts)
+        )
 
+        for p in range(np.amax(labels_time) + 1):
+            tt = crt[np.where(labels_time == p)]
+            mean_t = np.mean(tt)
+            std_t = np.std(tt)
+            ax2.vlines(
+            x=mean_t, ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="pred_time"
+            , color='blue'
+            )
+            ax2.vlines(
+            x=mean_t - (std_t*2), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="pred_time"
+            , color='blue', linestyle='--', linewidth=1
+            )
+            ax2.vlines(
+            x=mean_t+(std_t*2), ymin=ax2.get_ylim()[0], ymax=ax2.get_ylim()[1], label="pred_time"
+            , color='blue', linestyle='--', linewidth=1
+            )
+
+   
     ax2.set_title(f"Backazimuth Record Section Aligned on Predicted {phase}")
 
 
@@ -381,7 +427,9 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
 
     fig = plt.figure(figsize=(10, 8))
     ax2 = fig.add_subplot(111)
-    ax2.hist(rel_times[0], 30, color='blue')
+
+    for rt in rel_times:
+        ax2.hist(rt, 30)
     ax2.set_xlabel("Relative arrival times (s)", fontsize=14)
     ax2.set_ylabel("Counts", fontsize=14)
     plt.savefig("travel_time_histogram.pdf")
@@ -392,12 +440,28 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     fig = plt.figure(figsize=(10, 8))
     ax2 = fig.add_subplot(111)
 
+
+    for i,crt in enumerate(rel_times):
+    
+        bazs, slows, azs, mags = cluster_info[i]
+        
+        core_samples_time, labels_time = dbscan(
+        X=crt.reshape(-1, 1), eps=1, 
+        min_samples=int(Boots * MinPts)
+        )
+
+        for p in range(np.amax(labels_time) + 1):
+            slow_time_cluster = slows[np.where(labels_time == p)]
+
+            ax2.scatter(rel_times[i][np.where(labels_time == p)],  slow_time_cluster, label=f"Cluster {i}_{p}")
+
+
     # v = ax2.contourf(plot_times[point_before:point_after], ys, vesp_lin[:, point_before:point_after], 50)
-    for p in range(np.amax(labels_time) + 1):
-        # if p == 0:
-        #     ax2.scatter(rel_times[0][np.where(labels_time == p)], slows[np.where(labels_time == p)], color='black', label=)
-        # else: 
-        ax2.scatter(rel_times[0][np.where(labels_time == p)],  slows[np.where(labels_time == p)], label=f"Cluster {p}")
+    # for p in range(np.amax(labels_time) + 1):
+    #     # if p == 0:
+    #     #     ax2.scatter(rel_times[0][np.where(labels_time == p)], slows[np.where(labels_time == p)], color='black', label=)
+    #     # else: 
+    #     ax2.scatter(rel_times[0][np.where(labels_time == p)],  slows[np.where(labels_time == p)], label=f"Cluster {p}")
     
     ax2.set_xlim([t_min, t_max])
     # ax2.set_ylim([2, 5])
@@ -412,12 +476,26 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     fig = plt.figure(figsize=(10, 8))
     ax2 = fig.add_subplot(111)
 
+
+    for i,crt in enumerate(rel_times):
+        bazs, slows, azs, mags = cluster_info[i]
+        
+        core_samples_time, labels_time = dbscan(
+        X=crt.reshape(-1, 1), eps=1, 
+        min_samples=int(Boots * MinPts)
+        )
+
+        for p in range(np.amax(labels_time) + 1):
+            baz_time_cluster = bazs[np.where(labels_time == p)]
+
+            ax2.scatter(rel_times[i][np.where(labels_time == p)],  baz_time_cluster, label=f"Cluster {i}_{p}")
+
     # v = ax2.contourf(plot_times[point_before:point_after], ys, vesp_lin[:, point_before:point_after], 50)
-    for p in range(np.amax(labels_time) + 1):
-        # if p == 0:
-        #     ax2.scatter(rel_times[0][np.where(labels_time == p)], bazs[np.where(labels_time == p)], color='black', label='noise')
-        # else: 
-        ax2.scatter(rel_times[0][np.where(labels_time == p)],  bazs[np.where(labels_time == p)], label=f"Cluster {p}")
+    # for p in range(np.amax(labels_time) + 1):
+    #     # if p == 0:
+    #     #     ax2.scatter(rel_times[0][np.where(labels_time == p)], bazs[np.where(labels_time == p)], color='black', label='noise')
+    #     # else: 
+    #     ax2.scatter(rel_times[0][np.where(labels_time == p)],  bazs[np.where(labels_time == p)], label=f"Cluster {p}")
     
     ax2.set_xlim([t_min, t_max])
     # ax2.set_ylim([1, 5])
