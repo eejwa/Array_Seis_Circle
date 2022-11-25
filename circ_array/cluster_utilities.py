@@ -1082,6 +1082,7 @@ class cluster_utilities:
             newlines: list of strings of the contents to write to the results file.
 
         """
+        from scipy.spatial.distance import cdist
 
         model = TauPyModel(model='prem')
 
@@ -1091,8 +1092,7 @@ class cluster_utilities:
                   "slow_std_dev baz_pred baz_max baz_diff baz_std_dev "
                   "slow_x_pred slow_x_obs del_x_slow x_std_dev slow_y_pred slow_y_obs "
                   "del_y_slow y_std_dev az az_std mag mag_std time_obs time_pred time_diff time_std_dev "
-                  "error_ellipse_area ellispe_width ellispe_height "
-                  "ellispe_theta ellipse_rel_density multi phase no_stations "
+                  "multi phase no_stations "
                   "stations t_window_start t_window_end Boots\n"
                   )
 
@@ -1217,7 +1217,7 @@ class cluster_utilities:
         if Filter == True:
             try:
 
-                distances = distance.cdist(
+                distances = cdist(
                     np.array([[PRED_BAZ_X, PRED_BAZ_Y]]), means_xy, metric="euclidean"
                 )
                 number_arrivals_slow_space = np.where(distances < slow_vec_error)[
@@ -1268,7 +1268,7 @@ class cluster_utilities:
                 slow_ys = points_clusters[i][:,1]
 
                 core_samples_time, labels_time = dbscan(
-                X=times_in_slow_cluster.reshape(-1, 1), eps=1, 
+                X=times_in_slow_cluster.reshape(-1, 1), eps=eps, 
                 min_samples=int(minpts)
                 )
 
@@ -1330,7 +1330,8 @@ class cluster_utilities:
 
 
                     mean_time = np.mean(tt)
-                    time_diff = mean_time - pred_time
+                    time_obs = mean_time + pred_time
+                    time_diff = mean_time
                     times_std_dev = np.std(tt)
 
                 # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
@@ -1351,7 +1352,7 @@ class cluster_utilities:
                             f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
                             f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
                             f"{del_y_slow:.2f} {y_std_dev:.2f} {az_mean:.2f} {az_std_dev:.2f} {mag_mean:.2f} {mag_std_dev:.2f} "
-                            f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
+                            f"{time_obs:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
                             f"{multi} {phase} {no_stations} {','.join(stations)} "
                             f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
                         )
