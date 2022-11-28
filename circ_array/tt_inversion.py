@@ -91,13 +91,17 @@ class SlowVecInversion():
         Returns
         -------
         slow_vec : 1d numpy array of floats
-                 : inverted slowness vector [baz, slow]        
+                 : inverted slowness vector [baz, slow]  
+
+        result : scipy non linear least squares object
+               : the full result from the inversion where users can 
+                 explore the results.       
         """
 
-        slow_vec = nl_lstsq(self.circ_wave, np.array(initial_slow_vec), loss='soft_l1', jac='3-point').x
+        slow_vec_result = nl_lstsq(self.circ_wave, np.array(initial_slow_vec), loss='arctan', jac='3-point')
+        slow_vec = slow_vec_result.x
 
-
-        return slow_vec
+        return slow_vec, slow_vec_result
 
 
     def invert_plane(self):
