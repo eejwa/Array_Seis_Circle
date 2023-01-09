@@ -60,7 +60,7 @@ def calculate_locus(P1, P2):
 
 
 # @jit(nopython=True, fastmath=True)
-def get_slow_baz(slow_x, slow_y, dir_type):
+def get_slow_baz_array(slow_x, slow_y, dir_type):
     """
     Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
 
@@ -101,6 +101,58 @@ def get_slow_baz(slow_x, slow_y, dir_type):
     #     baz += 360
     # if azimuth < 0:
     #     azimuth += 360
+
+
+
+    if dir_type == "baz":
+        return slow_mag, baz
+    elif dir_type == "az":
+        return slow_mag, azimuth
+    else:
+        pass
+
+@jit(nopython=True, fastmath=True)
+def get_slow_baz(slow_x, slow_y, dir_type):
+    """
+    Returns the backazimuth and slowness magnitude of a slowness vector given its x and y components.
+
+    Parameters
+    ----------
+    slow_x : float
+        X component of slowness vector.
+
+    slow_y : float
+        Y component of slowness vector.
+
+    dir_type : string
+        How do you want the direction to be measured, backazimuth (baz) or azimuth (az).
+
+    Returns
+    -------
+    slow_mag: float
+        Magnitude of slowness vector.
+    baz : float
+        Backazimuth of slowness vector
+    azimuth : float
+        Azimuth of slowness vector
+    """
+
+    slow_mag = np.sqrt(slow_x ** 2 + slow_y ** 2)
+    azimuth = np.degrees(np.arctan2(slow_x, slow_y))  # * (180. / math.pi)
+
+    # % = mod, returns the remainder from a division e.g. 5 mod 2 = 1
+    baz = azimuth % -360 + 180
+
+    # make baz positive if it's negative:
+    # baz = np.where(baz < 0, baz + 360, baz)
+    # azimuth = np.where(azimuth < 0, azimuth + 360, azimuth)
+    # baz = np.where(baz > 360, baz - 360, baz)
+    # azimuth = np.where(azimuth > 360, azimuth - 360, azimuth)
+
+    if baz < 0:
+        baz += 360
+    if azimuth < 0:
+        azimuth += 360
 
 
 

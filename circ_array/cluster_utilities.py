@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import circmean, circstd, circvar
 import obspy
-from slow_vec_calcs import get_slow_baz
+from slow_vec_calcs import get_slow_baz, get_slow_baz_array
 from array_info import array
 from utilities import myround
 from geo_sphere_calcs import relocate_event_baz_slow
@@ -112,7 +112,7 @@ class cluster_utilities:
             rel_xs = x_slows - pred_x
             rel_ys = y_slows - pred_y
             
-            slows, bazs = get_slow_baz(x_slows, y_slows, dir_type="az")
+            slows, bazs = get_slow_baz_array(x_slows, y_slows, dir_type="az")
             azs = np.degrees(np.arctan2(rel_ys,rel_xs))
             mags = np.sqrt(rel_xs**2 + rel_ys**2)
 
@@ -1334,11 +1334,41 @@ class cluster_utilities:
                     time_diff = mean_time
                     times_std_dev = np.std(tt)
 
-                # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
-                #     multi = 'm'
+                    # if error_ellipse_area <= error_criteria_area and error_ellipse_area > 1.0:
+                    #     multi = 'm'
 
-                if Filter == True:
-                    if mag_mean < slow_vec_error:
+                    if Filter == True:
+                        if mag_mean < slow_vec_error:
+
+                            # update the usable arrivals count
+                            usable_arrivals += 1
+                            name_label = name + "_" + str(usable_arrivals)
+
+                            # define the newline to be added to the file
+                            newline = (
+                                f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
+                                f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f} "
+                                f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
+                                f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
+                                f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
+                                f"{del_y_slow:.2f} {y_std_dev:.2f} {az_mean:.2f} {az_std_dev:.2f} {mag_mean:.2f} {mag_std_dev:.2f} "
+                                f"{time_obs:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
+                                f"{multi} {phase} {no_stations} {','.join(stations)} "
+                                f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                            )
+
+                            # there will be multiple lines so add these to this list.
+                            newlines.append(newline)
+
+                        else:
+                            print(
+                                "The error for this arrival is too large, not analysing this any further"
+                            )
+
+                            newline = ""
+                            newlines.append(newline)
+
+                    elif Filter == False:
 
                         # update the usable arrivals count
                         usable_arrivals += 1
@@ -1352,48 +1382,18 @@ class cluster_utilities:
                             f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
                             f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
                             f"{del_y_slow:.2f} {y_std_dev:.2f} {az_mean:.2f} {az_std_dev:.2f} {mag_mean:.2f} {mag_std_dev:.2f} "
-                            f"{time_obs:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
+                            f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
                             f"{multi} {phase} {no_stations} {','.join(stations)} "
                             f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
                         )
+
 
                         # there will be multiple lines so add these to this list.
                         newlines.append(newline)
 
                     else:
-                        print(
-                            "The error for this arrival is too large, not analysing this any further"
-                        )
-
-                        newline = ""
-                        newlines.append(newline)
-
-                elif Filter == False:
-
-                    # update the usable arrivals count
-                    usable_arrivals += 1
-                    name_label = name + "_" + str(usable_arrivals)
-
-                    # define the newline to be added to the file
-                    newline = (
-                        f"{name_label} {evla:.2f} {evlo:.2f} {evdp:.2f} {reloc_evla:.2f} "
-                        f"{reloc_evlo:.2f} {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} {slow_obs:.2f} "
-                        f"{slow_diff:.2f} {slow_std_dev:.2f} {BAZ:.2f} {baz_obs:.2f} {baz_diff:.2f} "
-                        f"{baz_std_dev:.2f} {PRED_BAZ_X:.2f} {slow_x_obs:.2f} "
-                        f"{del_x_slow:.2f} {x_std_dev:.2f} {PRED_BAZ_Y:.2f} {slow_y_obs:.2f} "
-                        f"{del_y_slow:.2f} {y_std_dev:.2f} {az_mean:.2f} {az_std_dev:.2f} {mag_mean:.2f} {mag_std_dev:.2f} "
-                        f"{mean_time:.2f} {pred_time:.2f} {time_diff:.2f} {times_std_dev:.2f} "
-                        f"{multi} {phase} {no_stations} {','.join(stations)} "
-                        f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
-                    )
-
-
-                    # there will be multiple lines so add these to this list.
-                    newlines.append(newline)
-
-                else:
-                    print("Filter needs to be True or False")
-                    exit()
+                        print("Filter needs to be True or False")
+                        exit()
 
         else:
             newline = ""
