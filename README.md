@@ -125,7 +125,7 @@ I would suggest cloning this onto your machine and add the path to circ_array to
     - ```$ conda env create -f Bootstrap_Cluster.yml ```
     - This contains some hefty packages like sklearn so may take a while on the 'configure environment stage'. Don't worry! It will happen eventually.
   - Then this environment can be activated by:
-    - ```$ conda activate Boots_Cluster ```
+    - ```$ conda activate boots_cluster ```
     - You will have to activate this environment every time you need to use the code.
 
   - To use the codes, add the path to Array_Seis_Circle to your $PYTHONPATH by:

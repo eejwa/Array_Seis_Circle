@@ -1,18 +1,18 @@
-name: Boots_Cluster
+name: boots_cluster
 channels:
-  - conda-forge
   - defaults
 dependencies:
+  - cartopy
   - numba
-  - netcdf4
-  - mpi4py
-  - seaborn
+  - matplotlib
   - obspy
   - scikit-image
-  - jupyter
+  - dask
   - ipython
-  - matplotlib=3.4.1
-  - basemap
-  - cartopy=0.20
+  - netcdf4
+  - jupyter
   - python
-prefix: /opt/anaconda3/envs/Boots_Cluster
+  - scikit-learn
+  - numpy=1.22
+  - mpi4py
+prefix: /opt/anaconda3/envs/boots_cluster
