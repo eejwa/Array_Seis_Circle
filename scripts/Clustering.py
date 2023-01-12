@@ -66,6 +66,7 @@ row = np.where((predictions == phase))[0]
 P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = predictions[
     row, :
 ][0]
+
 PRED_BAZ_X = float(PRED_BAZ_X)
 PRED_BAZ_Y = float(PRED_BAZ_Y)
 S = float(S)
@@ -130,8 +131,6 @@ for shtr in cut_shifted_traces:
     shtr /= shtr.max()
 
 
-print(cut_shifted_traces)
-
 min_time = arrivals[0].time + t_min
 cu_times = cluster_utilities(labels=new_labels, points=All_Thresh_Peaks_arr)
 arrival_times = cu_times.estimate_travel_times(traces=cut_shifted_traces,
@@ -149,6 +148,7 @@ rel_points[:,1] = All_Thresh_Peaks_arr[:,1] - PRED_BAZ_Y
 
 cu_rel = cluster_utilities(labels=new_labels, points=rel_points)
 
+print(new_labels)
 
 means_xy, means_baz_slow = cu_rel.cluster_means()
 mean_baz = means_baz_slow[0][0]
@@ -284,7 +284,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
-        type='distance', scale=0.1
+        type='distance', scale=0.01
     )
 
     ax2.vlines(
@@ -344,7 +344,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
         st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
-        type='baz', scale=0.1
+        type='baz', scale=0.01
     )
 
     ax2.vlines(
@@ -432,7 +432,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
         ax2.hist(rt, 30)
     ax2.set_xlabel("Relative arrival times (s)", fontsize=14)
     ax2.set_ylabel("Counts", fontsize=14)
-    plt.savefig("travel_time_histogram.pdf")
     pdf.savefig()
     plt.close()
 
@@ -468,7 +467,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     ax2.set_xlabel(f"Window Time Relative to {phase} (s)", fontsize=14)
     ax2.set_ylabel("$p$ ($s/^{\circ}$)", fontsize=14)
     plt.legend(loc='best')
-    plt.savefig("hslow_time_distribution.pdf")
     pdf.savefig()
     plt.close()
 
@@ -502,7 +500,6 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     ax2.set_xlabel(f"Window Time Relative to {phase} (s)", fontsize=14)
     ax2.set_ylabel("$\\theta$ ($^{\circ}$)", fontsize=14)
     plt.legend(loc='best')
-    plt.savefig("baz_time_distribution.pdf")
     pdf.savefig()
     plt.close()
 
