@@ -34,8 +34,8 @@ Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 # the traces need to be trimmed to the same start and end time
 # for the shifting and clipping traces to work (see later).
-min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-100)
-max_target = int(np.nanmax(Target_phase_times, axis=0)) + (100)
+min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
+max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
 
 stime = event_time + min_target
 etime = event_time + max_target
@@ -127,8 +127,9 @@ point_after = int(pred_point + (t_max * sampling_rate))
 
 cut_shifted_traces = Shifted_Traces[:, point_before:point_after]
 
-for shtr in cut_shifted_traces:
-    shtr /= shtr.max()
+# for shtr in cut_shifted_traces:
+#     shtr /= shtr.max()
+
 
 
 min_time = arrivals[0].time + t_min
@@ -283,7 +284,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
     st_record = st.filter(type='bandpass', freqmin=fmin, freqmax=fmax,corners=1, zerophase=True)
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
-        st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
+        st=st_record, phase=phase, tmin=cut_min, tmax=cut_max, align=True,
         type='distance', scale=0.01
     )
 
@@ -343,7 +344,7 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
 
     p = plotting(ax=ax2)
     p.plot_record_section_SAC(
-        st=st_record, phase=phase, tmin=-50, tmax=50, align=True,
+        st=st_record, phase=phase, tmin=cut_min, tmax=cut_max, align=True,
         type='baz', scale=0.01
     )
 
