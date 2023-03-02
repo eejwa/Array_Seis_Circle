@@ -12,7 +12,7 @@ import os
 from obspy.taup import TauPyModel
 import obspy.signal
 from sklearn.cluster import dbscan
-
+from Parameters_Bootstrap import *
 
 
 
@@ -685,7 +685,7 @@ class cluster_utilities:
             newlines: list of strings of the contents to write to the results file.
 
         """
-
+        
         model = TauPyModel(model='prem')
 
         newlines = []
@@ -719,8 +719,9 @@ class cluster_utilities:
 
         # the traces need to be trimmed to the same start and end time
         # for the shifting and clipping traces to work (see later).
-        min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-100)
-        max_target = int(np.nanmax(Target_phase_times, axis=0)) + (100)
+
+        min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
+        max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
 
         stime = event_time + min_target
         etime = event_time + max_target
@@ -1119,8 +1120,8 @@ class cluster_utilities:
 
         # the traces need to be trimmed to the same start and end time
         # for the shifting and clipping traces to work (see later).
-        min_target = int(np.nanmin(Target_phase_times, axis=0)) + (-100)
-        max_target = int(np.nanmax(Target_phase_times, axis=0)) + (100)
+        min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
+        max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
 
         stime = event_time + min_target
         etime = event_time + max_target
