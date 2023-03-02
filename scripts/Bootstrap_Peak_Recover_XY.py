@@ -14,6 +14,7 @@ from obspy.taup import TauPyModel
 import time
 from array_info import array
 from extract_peaks import findpeaks_XY
+from slow_vec_calcs import get_slow_baz
 
 model = TauPyModel(model=pred_model)
 from mpi4py import MPI
@@ -50,6 +51,7 @@ etime = event_time + max_target
 # trim the stream
 # Normalise and cut seismogram around defined window
 st = st.copy().trim(starttime=stime, endtime=etime)
+st = st.normalize()
 
 
 
@@ -133,7 +135,10 @@ for shtr in cut_shifted_traces:
 # ax = fig.add_subplot(111)
 # for f,trace in enumerate(cut_shifted_traces):
 #     ax.plot(trace + distances[f],color='black')
-#
+
+# plt.show()
+
+# plt.plot(np.mean(cut_shifted_traces, axis=0))
 # plt.show()
 
 # make lists to store the peaks, noise and theta-p plots
@@ -186,7 +191,7 @@ for i in range(0, processes_per_core):
     )
 
     Threshold_lin_array = np.copy(Smoothed_thresh_lin_array)
-    Threshold_lin_array[Smoothed_thresh_lin_array <= noise_mean * 3] = 0
+    Threshold_lin_array[Smoothed_thresh_lin_array <= noise_mean * threshold_multiplier] = 0
 
     sx_min = float(PRED_BAZ_X) + slow_min
     sx_max = float(PRED_BAZ_X) + slow_max
