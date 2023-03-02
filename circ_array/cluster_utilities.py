@@ -1294,7 +1294,7 @@ class cluster_utilities:
 
                     # create label for the arrival
                     # get information for that arrival
-                    baz_obs = circmean(baz_time_clusters)
+                    baz_obs = circmean(baz_time_clusters) + float(BAZ)
                     baz_diff = baz_obs - float(BAZ)
 
                     slow_obs = np.mean(slow_time_clusters)
