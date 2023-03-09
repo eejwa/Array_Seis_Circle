@@ -341,34 +341,34 @@ with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as
 
     ### plot stations
 
-    fig = plt.figure(figsize=(6, 6))
+    # fig = plt.figure(figsize=(6, 6))
 
-    # need to give a projection for the cartopy package
-    # to work. See a list here:
-    # https://scitools.org.uk/cartopy/docs/latest/crs/projections.html
-    ax = fig.add_subplot(111, projection=ccrs.PlateCarree(central_longitude=mean_lo))
+    # # need to give a projection for the cartopy package
+    # # to work. See a list here:
+    # # https://scitools.org.uk/cartopy/docs/latest/crs/projections.html
+    # ax = fig.add_subplot(111, projection=ccrs.PlateCarree(central_longitude=mean_lo))
 
-    p = plotting(ax=ax)
-    p.plot_stations(st)
-    ax.gridlines(
-        crs=ccrs.PlateCarree(),
-        draw_labels=True,
-        linewidth=0,
-        color="gray",
-        alpha=0.5,
-        linestyle="--",
-    )
+    # p = plotting(ax=ax)
+    # p.plot_stations(st)
+    # ax.gridlines(
+    #     crs=ccrs.PlateCarree(),
+    #     draw_labels=True,
+    #     linewidth=0,
+    #     color="gray",
+    #     alpha=0.5,
+    #     linestyle="--",
+    # )
 
-    pdf.savefig()
-    plt.close()
+    # pdf.savefig()
+    # plt.close()
 
-    ## plot great circle path
+    # ## plot great circle path
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection=ccrs.Robinson(central_longitude=mean_lo))
+    # fig = plt.figure(figsize=(6, 6))
+    # ax = fig.add_subplot(111, projection=ccrs.Robinson(central_longitude=mean_lo))
 
-    p = plotting(ax=ax)
-    p.plot_paths(st)
+    # p = plotting(ax=ax)
+    # p.plot_paths(st)
 
-    pdf.savefig()
-    plt.close()
+    # pdf.savefig()
+    # plt.close()
