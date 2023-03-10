@@ -107,7 +107,7 @@ class array:
             try:
                 geometry[i, 2] = tr.stats.sac.stel
             except:
-                geometry[i, 2] = tr.stats.sac.stdp
+                geometry[i, 2] = 0
 
         # get means of lon, lat, elevation
         center_x = geometry[:, 0].mean()
