@@ -947,7 +947,17 @@ class cluster_utilities:
                         ## change the labels
                         updated_labels = np.where(self.labels == i, -1, self.labels)
 
-                        newline = ""
+                        newline = (
+                        f"no_arrival {evla:.2f} {evlo:.2f} {evdp:.2f} nan "
+                        f"nan {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} nan "
+                        f"nan nan {BAZ:.2f} nan nan "
+                        f"nan {PRED_BAZ_X:.2f} nan "
+                        f"nan nan {PRED_BAZ_Y:.2f} nan "
+                        f"nan nan nan nan nan nan "
+                        f"nan nan nan nan nan "
+                        f"{multi} {phase} {no_stations} {','.join(stations)} "
+                        f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                    )
                         newlines.append(newline)
 
                 elif Filter == False:
@@ -987,7 +997,17 @@ class cluster_utilities:
                     exit()
 
         else:
-            newline = ""
+            newline = (
+                        f"no_arrival {evla:.2f} {evlo:.2f} {evdp:.2f} nan "
+                        f"nan {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} nan "
+                        f"nan nan {BAZ:.2f} nan nan "
+                        f"nan {PRED_BAZ_X:.2f} nan "
+                        f"nan nan {PRED_BAZ_Y:.2f} nan "
+                        f"nan nan nan nan nan nan "
+                        f"nan nan nan nan nan "
+                        f"{multi} {phase} {no_stations} {','.join(stations)} "
+                        f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                    )
             newlines.append(newline)
 
         ## Write to file!
@@ -1277,6 +1297,18 @@ class cluster_utilities:
 
                 if no_time_arrivals == 0:
                     print('no clusters found in time, moving onto the next cluster')
+                    newline = (
+                            f"no_arrival {evla:.2f} {evlo:.2f} {evdp:.2f} nan "
+                            f"nan {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} nan "
+                            f"nan nan {BAZ:.2f} nan nan "
+                            f"nan {PRED_BAZ_X:.2f} nan "
+                            f"nan nan {PRED_BAZ_Y:.2f} nan "
+                            f"nan nan nan nan nan nan "
+                            f"nan nan nan nan "
+                            f"{multi} {phase} {no_stations} {','.join(stations)} "
+                            f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                        )
+                    newlines.append(newline)
                     continue
                 else:
                     pass
@@ -1366,7 +1398,17 @@ class cluster_utilities:
                                 "The error for this arrival is too large, not analysing this any further"
                             )
 
-                            newline = ""
+                            newline = (
+                            f"no_arrival {evla:.2f} {evlo:.2f} {evdp:.2f} nan "
+                            f"nan {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} nan "
+                            f"nan nan {BAZ:.2f} nan nan "
+                            f"nan {PRED_BAZ_X:.2f} nan "
+                            f"nan nan {PRED_BAZ_Y:.2f} nan "
+                            f"nan nan nan nan nan nan "
+                            f"nan nan nan nan "
+                            f"{multi} {phase} {no_stations} {','.join(stations)} "
+                            f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                        )
                             newlines.append(newline)
 
                     elif Filter == False:
@@ -1397,7 +1439,17 @@ class cluster_utilities:
                         exit()
 
         else:
-            newline = ""
+            newline = (
+                            f"no_arrival {evla:.2f} {evlo:.2f} {evdp:.2f} nan "
+                            f"nan {stla_mean:.2f} {stlo_mean:.2f} {S:.2f} nan "
+                            f"nan nan {BAZ:.2f} nan nan "
+                            f"nan {PRED_BAZ_X:.2f} nan "
+                            f"nan nan {PRED_BAZ_Y:.2f} nan "
+                            f"nan nan nan nan nan nan "
+                            f"nan nan nan nan "
+                            f"{multi} {phase} {no_stations} {','.join(stations)} "
+                            f"{window[0]:.2f} {window[1]:.2f} {Boots}\n"
+                        )
             newlines.append(newline)
 
         ## Write to file!
