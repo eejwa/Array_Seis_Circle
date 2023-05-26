@@ -1,10 +1,11 @@
 cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 authors:
-  - family-names: Ward
-    given-names: James
-    orcid: https://orcid.org/0000-0001-5697-4590
-title: eejwa/Array_Seis_Circle: Alpha release
+  - family-names: "Ward"
+    given-names: "James"
+    orcid: "https://orcid.org/0000-0001-5697-4590"
+title: "Array_Seis_Circle: Alpha release"
 version: v0.1.0-alpha
 date-released: 2021-05-19
-doi: https://doi.org/10.5281/zenodo.7973945
+doi: 10.5281/zenodo.7973945
+url: "https://github.com/eejwa/Array_Seis_Circle/"
