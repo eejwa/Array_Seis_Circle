@@ -10,19 +10,21 @@ This python script will test:
 # import packages
 
 import obspy
-import circ_array as c
+from array_info import array
 
 # read in data as an obspy stream
 
 st = obspy.read('./data/19970525/*SAC')
 
-stations = c.get_stations(stream=st)
+a = array(st)
 
-geometry_degrees_absolute = c.get_geometry(stream=st, return_center=False, distance='degrees', verbose='False', relative='False')
-geometry_degrees_relative = c.get_geometry(stream=st, return_center=False, distance='degrees', verbose='False', relative='True')
+stations = a.stations()
 
-geometry_kilometres_absolute = c.get_geometry(stream=st, return_center=False, distance='km', verbose='False', relative='False')
-geometry_kilometres_relative = c.get_geometry(stream=st, return_center=False, distance='km', verbose='False', relative='True')
+geometry_degrees_absolute = a.geometry(return_center=False, distance='degrees', verbose='False', relative='False')
+geometry_degrees_relative = a.geometry(return_center=False, distance='degrees', verbose='False', relative='True')
+
+geometry_kilometres_absolute = a.geometry(return_center=False, distance='km', verbose='False', relative='False')
+geometry_kilometres_relative = a.geometry(return_center=False, distance='km', verbose='False', relative='True')
 
 # print(geometry_degrees_absolute)
 # print(geometry_degrees_relative)
@@ -30,8 +32,8 @@ geometry_kilometres_relative = c.get_geometry(stream=st, return_center=False, di
 # print(geometry_kilometres_absolute)
 # print(geometry_kilometres_relative)
 
-centre_degrees = c.get_geometry(stream=st, return_center=True, distance='degrees', verbose='False', relative='False')
-centre_kilometres = c.get_geometry(stream=st, return_center=True, distance='km', verbose='False', relative='False')
+centre_degrees = a.geometry(return_center=True, distance='degrees', verbose='False', relative='False')
+centre_kilometres = a.geometry(return_center=True, distance='km', verbose='False', relative='False')
 
 for i,tr in enumerate(st):
     print(tr.stats.station, tr.stats.sac.stlo, tr.stats.sac.stla)

@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
-import circ_array as c
-from circ_beam import BF_Spherical_XY_all, shift_traces, BF_Spherical_XY_PWS, BF_Spherical_XY_Lin
+from array_info import array 
+from beamforming_xy import BF_XY_all, BF_XY_PWS, BF_XY_Lin
+from shift_stack import shift_traces 
 from array_plotting import plotting
 
 
@@ -23,10 +24,10 @@ phase = 'SKS'
 phases = ['SKS', 'SKKS', 'ScS', 'Sdiff', 'sSKS', 'pSKS', 'sSKKS', 'PS']
 
 # frequency band
-fmin = 0.15
-fmax = 0.60
+fmin = 0.1
+fmax = 0.4
 
-rel_tmin = 20 # to be subtracted from shifted trace times
+rel_tmin = -20 # to be subtracted from shifted trace times
 rel_tmax = 30 # to be added to shifted trace times
 
 # shift traces doesnt work unless the stream is cut
@@ -37,20 +38,20 @@ cut_max = 50
 
 # define area around predictions to do analysis
 
-st = obspy.read('./data/19970521/*SAC')
-
+st = obspy.read('./data/19970529/*SAC')
+a = array(st)
 # get array metadata
-event_time = c.get_eventtime(st)
-geometry = c.get_geometry(st)
-distances = c.get_distances(st,type='deg')
+event_time = a.eventtime()
+geometry = a.geometry()
+distances = a.distances(type='deg')
 mean_dist = np.mean(distances)
-stations = c.get_stations(st)
+stations = a.stations()
 centre_x, centre_y =  np.mean(geometry[:, 0]),  np.mean(geometry[:, 1])
 sampling_rate=st[0].stats.sampling_rate
 evdp = st[0].stats.sac.evdp
 
 # get travel time information and define a window
-Target_phase_times, time_header_times = c.get_predicted_times(st,phase)
+Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 min_target = int(np.nanmin(Target_phase_times, axis=0)) - cut_min
 max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
@@ -63,9 +64,9 @@ etime = event_time + max_target
 st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
 
+
 # get predicted slownesses and backazimuths
-predictions = c.pred_baz_slow(
-    stream=st, phases=phases, one_eighty=True)
+predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
@@ -76,10 +77,10 @@ P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = prediction
 # filter
 st = st.filter('bandpass', freqmin=fmin, freqmax=fmax,
                   corners=4, zerophase=True)
-
+a_processed = array(st)
 # get the traces and phase traces
-Traces = c.get_traces(st)
-Phase_traces = c.get_phase_traces(st)
+Traces = a_processed.traces()
+Phase_traces = a_processed.phase_traces()
 
 
 # align the traces and phase traces
@@ -111,7 +112,7 @@ s_space = 0.05
 
 # run the beamforming!
 start = time.time()
-Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(traces=cut_shifted_traces, phase_traces=cut_shifted_phase_traces,
+Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_XY_all(traces=cut_shifted_traces, phase_traces=cut_shifted_phase_traces,
                                                         sampling_rate=np.float64(sampling_rate), geometry=geometry, distance=mean_dist,
                                                         sxmin=slow_min,sxmax=slow_max, symin=slow_min, symax=slow_max,
                                                         s_space=s_space, degree=4)
@@ -133,7 +134,7 @@ p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow
 plt.show()
 
 start = time.time()
-Lin_arr, Results_arr, peaks = BF_Spherical_XY_Lin(traces=cut_shifted_traces, sampling_rate=np.float64(sampling_rate),
+Lin_arr, Results_arr, peaks = BF_XY_Lin(traces=cut_shifted_traces, sampling_rate=np.float64(sampling_rate),
                                                         geometry=geometry, distance=mean_dist,
                                                         sxmin=slow_min,sxmax=slow_max, symin=slow_min,
                                                         symax=slow_max, s_space=s_space)
@@ -150,7 +151,7 @@ p.plot_TP_XY(tp=Lin_arr, peaks=peaks, sxmin=slow_min, sxmax=slow_max, symin=slow
 plt.show()
 
 start = time.time()
-PWS_arr, Results_arr, peaks = BF_Spherical_XY_PWS(traces=cut_shifted_traces, phase_traces=cut_shifted_phase_traces,
+PWS_arr, Results_arr, peaks = BF_XY_PWS(traces=cut_shifted_traces, phase_traces=cut_shifted_phase_traces,
                                                   sampling_rate=np.float64(sampling_rate), geometry=geometry, distance=mean_dist,
                                                   sxmin=slow_min,sxmax=slow_max, symin=slow_min, symax=slow_max,
                                                   s_space=s_space, degree=4)
