@@ -373,7 +373,7 @@ class plotting:
 
         self.ax.set_xlabel("p$_{x}$ (s/$^{\circ}$)", fontsize=14)
         self.ax.set_ylabel("p$_{y}$ (s/$^{\circ}$)", fontsize=14)
-        self.ax.set_title(title, fontsize=14)
+        self.ax.set_title(title, fontsize=16)
         self.add_circles(radii=radii, x=0, y=0, colour="white")
         self.add_lines(radius=10, x=0, y=0, angles=angles, colour="white")
 
@@ -498,9 +498,23 @@ class plotting:
 
         # if log, convert values
         if log == True:
-            self.ax.contourf(np.radians(bazs), slows, np.log(tp), contour_levels)
+            p = self.ax.contourf(np.radians(bazs), slows, np.log(tp), contour_levels)
+            cbar = plt.colorbar(
+                p,
+                label="Power",
+                ticks=np.linspace(0, tp.max(), 11),
+                drawedges=True,
+                ax=self.ax,
+            )
         elif log == False:
-            self.ax.contourf(np.radians(bazs), slows, tp, contour_levels)
+            p = self.ax.contourf(np.radians(bazs), slows, tp, contour_levels)
+            cbar = plt.colorbar(
+                p,
+                label="Power",
+                ticks=np.linspace(0, tp.max(), 11),
+                drawedges=True,
+                ax=self.ax,
+            )
         else:
             pass
 
@@ -702,7 +716,7 @@ class plotting:
         else:
             pass
 
-        plt.colorbar(v, label = 'Amplitude (m)')
+        plt.colorbar(v, label = 'Amplitude (m)', ax=self.ax)
 
         # if wanted, plot predictions
         if predictions is not None:
@@ -850,7 +864,7 @@ class plotting:
         """
 
         ## Plot the tp plot without the peaks
-
+        print('1')
         self.plot_TP_XY(
             tp=tp,
             peaks=None,
@@ -864,14 +878,12 @@ class plotting:
             contour_levels=contour_levels,
             predictions=predictions,
         )
-
         x_thresh = np.array(peaks)[:, 0].astype(float)
         y_thresh = np.array(peaks)[:, 1].astype(float)
 
         from cluster_utilities import cluster_utilities
 
         cu = cluster_utilities(labels=labels, points=peaks)
-
         means_xy, means_baz_slow = cu.cluster_means()
         covariance_matrices_clusters = cu.covariance_matrices()
         # create palette for the cluster points
@@ -879,7 +891,6 @@ class plotting:
         palette_inv = np.array(["grey", "green", "purple", "orange", "red", "blue"])
 
         # loop over the number of clusters
-
         for l in set(list(labels)):
             x_plot = x_thresh[np.where(labels == l)[0]]
             y_plot = y_thresh[np.where(labels == l)[0]]
@@ -928,8 +939,8 @@ class plotting:
                 label="Mean Cluster " + str(i + 1),
             )
 
-        self.ax.legend(loc="best")
-
+        
+        # self.ax.legend(loc='best')
         return
 
     def plot_stations(self, st):
