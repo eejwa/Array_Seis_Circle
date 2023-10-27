@@ -47,12 +47,12 @@ def pick_tw(stream, phase, tmin=-150, tmax=150, align=False):
             plt.close()
 
         return window
-    array = array(stream)
+    a = array(stream)
     # get the header with the times of the target phase in it
-    Target_time_header = array.get_t_header_pred_time(phase=phase)
+    Target_time_header = a.get_t_header_pred_time(phase=phase)
 
     # get the min and max predicted time of the phase at the array
-    Target_phase_times, time_header_times = array.get_predicted_times(
+    Target_phase_times, time_header_times = a.get_predicted_times(
         phase=phase
     )
 
@@ -69,7 +69,7 @@ def pick_tw(stream, phase, tmin=-150, tmax=150, align=False):
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111)
 
-    event_time = array.eventtime()
+    event_time = a.eventtime()
     stream_plot = stream.copy()
     stream_plot = stream_plot.trim(
         starttime=event_time + win_st, endtime=event_time + win_end
