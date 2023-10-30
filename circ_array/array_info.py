@@ -2,6 +2,7 @@ import numba as jit
 import numpy as np
 from scipy.signal import hilbert
 from obspy import UTCDateTime
+from obspy.signal.util import util_geo_km
 from geo_sphere_calcs import deg_km_az_baz
 from obspy.taup import TauPyModel
 from utilities import myround, clip_traces

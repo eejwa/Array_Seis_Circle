@@ -8,8 +8,8 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-import circ_array as c
-from circ_beam import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
+from array_info import array 
+from vespagram import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
 from array_plotting import plotting
 
 
@@ -23,17 +23,17 @@ fmin = 0.13
 fmax = 0.26
 
 st = obspy.read('./data/19970525/*SAC')
-
+a = array(st)
 # get array metadata
-event_time = c.get_eventtime(st)
-geometry = c.get_geometry(st)
-distances = c.get_distances(st,type='deg')
+event_time = a.eventtime()
+geometry = a.geometry()
+distances = a.distances(type='deg')
 mean_dist = np.mean(distances)
-stations = c.get_stations(st)
+stations = a.stations()
 
 
 # get travel time information and define a window
-Target_phase_times, time_header_times = c.get_predicted_times(st,phase)
+Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 avg_target_time = np.mean(Target_phase_times)
 min_target = int(np.nanmin(Target_phase_times, axis=0))
@@ -48,8 +48,7 @@ st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
 
 # get predicted slownesses and backazimuths
-predictions = c.pred_baz_slow(
-    stream=st, phases=phases, one_eighty=True)
+predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
@@ -66,9 +65,11 @@ s_step=0.1
 st = st.filter('bandpass', freqmin=fmin, freqmax=fmax,
                   corners=4, zerophase=True)
 
+a_processed = array(st)
+
 # get the traces and phase traces
-Traces = c.get_traces(st)
-Phase_traces = c.get_phase_traces(st)
+Traces = a_processed.traces()
+Phase_traces = a_processed.phase_traces()
 
 # get sampleing rate
 sampling_rate=st[0].stats.sampling_rate

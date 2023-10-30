@@ -176,6 +176,9 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
     val_b_points_sorted = val_points_sorted[:, 2]
     val_s_points_sorted = val_points_sorted[:, 1]
 
+    # get power values of top N points
+    val_points_power = val_points_sorted[:, 0]
+
     # this gives all the peaks in the array.
     b_peaks_space = bmin + (b_peak * bstep)
     s_peaks_space = smin + (s_peak * sstep)
@@ -189,4 +192,4 @@ def findpeaks_Pol(Array, smin, smax, bmin, bmax, sstep, bstep, N=10):
 
     peaks_combined_vals = np.array((b_peaks_baz_vals, s_peaks_baz_vals)).T
 
-    return peaks_combined_vals
+    return peaks_combined_vals, val_points_power

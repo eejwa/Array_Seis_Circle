@@ -14,8 +14,8 @@ from sklearn.metrics import mean_squared_error as mse
 from obspy.taup import TauPyModel
 model = TauPyModel(model="prem")
 
-import circ_array as c
-from circ_beam import calculate_time_shifts
+from array_info import array
+from shift_stack import calculate_time_shifts
 
 # parameters
 # phase of interest
@@ -31,21 +31,21 @@ evlo = st[0].stats.sac.evlo
 
 
 # get array metadata
-event_time = c.get_eventtime(st)
-geometry = c.get_geometry(st)
-distances = c.get_distances(st,type='deg')
+a = array(st)
+event_time = a.eventtime()
+geometry = a.geometry()
+distances = a.distances(type='deg')
 mean_dist = np.mean(distances)
-stations = c.get_stations(st)
+stations = a.stations()
 
 centre_x = np.mean(geometry[:,0])
 centre_y = np.mean(geometry[:,1])
 
 # get data
-Traces = c.get_traces(st)
+Traces = a.traces()
 
 # get predicted slowness and backazimuth
-predictions = c.pred_baz_slow(
-    stream=st, phases=[target_phase], one_eighty=True)
+predictions = a.pred_baz_slow(phases=[target_phase], one_eighty=True)
 
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == target_phase))[0]
@@ -54,12 +54,12 @@ P, S, BAZ, PRED_BAZ_X, PRED_BAZ_Y, PRED_AZ_X, PRED_AZ_Y, DIST, TIME = prediction
 S = float(S)
 BAZ = float(BAZ)
 
-shifts_circ, times_circ = calculate_time_shifts(traces=Traces, geometry=geometry,
+shifts_circ, times_circ = calculate_time_shifts(geometry=geometry,
                                       abs_slow=S, baz=BAZ, distance=mean_dist,
                                       centre_x=centre_x, centre_y=centre_y,
                                       type='circ')
 
-shifts_plane, times_plane = calculate_time_shifts(traces=Traces, geometry=geometry,
+shifts_plane, times_plane = calculate_time_shifts(geometry=geometry,
                                       abs_slow=S, baz=BAZ, distance=mean_dist,
                                       centre_x=centre_x, centre_y=centre_y,
                                       type='plane')
@@ -74,5 +74,5 @@ for d in distances:
 
 true_times = np.array(taup_times) - float(TIME)
 
-print(mse(true_times, times_circ))
-print(mse(true_times, times_plane))
+print('Difference between ray traced and curved wave predicted times:', mse(true_times, times_circ))
+print('Difference between ray traced and plane wave predicted times:', mse(true_times, times_plane))

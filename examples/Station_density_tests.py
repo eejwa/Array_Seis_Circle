@@ -7,28 +7,32 @@ import obspy
 import matplotlib.pyplot as plt
 import numpy as np
 
-import circ_array as c
-from circ_beam import BF_Spherical_XY_all, BF_Spherical_Pol_all
+from array_info import array
+from make_sub_array import get_station_density_KDE
+from beamforming_xy import BF_XY_Lin
 from array_plotting import plotting
 
 st = obspy.read('./data/19970525/*SAC')
-geometry = c.get_geometry(st)
+a = array(st)
+
+geometry = a.geometry()
 
 
 lons = geometry[:,0]
 lats = geometry[:,1]
 
-density = c.get_station_density_KDE(geometry)
+density = get_station_density_KDE(geometry)
 
 density = np.exp(density)
 fig = plt.figure(figsize=(8,8))
 ax = fig.add_subplot(1, 1, 1)
-s = ax.scatter(lons,lats,c=density)
-plt.colorbar(s)
+s = ax.scatter(lons,lats,c=density, label='stations', marker='^')
+plt.colorbar(s, ax=ax)
 ax.set_facecolor('black')
 ax.set_title('Density plot')
 ax.set_xlabel('Longitude ($^{\circ}$)')
 ax.set_ylabel('Latitude ($^{\circ}$)')
+ax.legend(loc='best')
 plt.show()
 
 
@@ -40,29 +44,27 @@ phase = 'SKS'
 phases = ['SKS','SKKS','ScS','Sdiff','sSKS','sSKKS','PS']
 
 # frequency band
-fmin = 0.13
-fmax = 0.52
+fmin = 0.1
+fmax = 0.4
 
 # define area around predictions to do analysis
 box_len = 3
 
 # get array metadata
-event_time = c.get_eventtime(st)
-geometry = c.get_geometry(st)
-distances = c.get_distances(st,type='deg')
+event_time = a.eventtime()
+distances = a.distances(type='deg')
 mean_dist = np.mean(distances)
-stations = c.get_stations(st)
-
+stations = a.stations()
 
 # get travel time information and define a window
-Target_phase_times, time_header_times = c.get_predicted_times(st,phase)
+Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 avg_target_time = np.mean(Target_phase_times)
 min_target_time = int(np.nanmin(Target_phase_times, axis=0))
 max_target_time = int(np.nanmax(Target_phase_times, axis=0))
 
 stime = event_time + min_target_time
-etime = event_time + max_target_time + 30
+etime = event_time + max_target_time + 0
 
 
 # trim the stream
@@ -71,8 +73,7 @@ st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
 
 # get predicted slownesses and backazimuths
-predictions = c.pred_baz_slow(
-    stream=st, phases=phases, one_eighty=True)
+predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
@@ -89,34 +90,38 @@ s_space = 0.05
 # filter
 st = st.filter('bandpass', freqmin=fmin, freqmax=fmax,
                   corners=4, zerophase=True)
-
 # get the traces and phase traces
-Traces = c.get_traces(st)
-Phase_traces = c.get_phase_traces(st)
+Traces = a.traces()
+Phase_traces = a.phase_traces()
 
-# get sampleing rate
+# get sampling rate
 sampling_rate=st[0].stats.sampling_rate
 
-
-for i,tr in enumerate(Traces):
-    Traces[i] /= (density[i])
-
-# Traces = c.get_traces(st)
+# weight by station density
+# for i,tr in enumerate(Traces):
+#     Traces[i] /= (density[i])
 
 # run the beamforming!
-
-Lin_arr, PWS_arr, F_arr, Results_arr, peaks = BF_Spherical_XY_all(traces=Traces, phase_traces=Phase_traces, sampling_rate=np.float64(
+Lin_arr, Results_arr, peaks = BF_XY_Lin(traces=Traces, sampling_rate=np.float64(
                                                         sampling_rate), geometry=geometry, distance=mean_dist, sxmin=slow_x_min,
-                                                        sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max, s_space=s_space, degree=2)
-
+                                                        sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max, s_space=s_space)
 fig = plt.figure(figsize=(10,5))
 ax = fig.add_subplot(121)
 p = plotting(ax)
 p.plot_TP_XY(tp=Lin_arr, peaks=peaks, sxmin=slow_x_min, sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max,
-          sstep=s_space, contour_levels=50, title="Lin Plot", predictions=predictions, log=False)
+          sstep=s_space, contour_levels=10, predictions=predictions, log=False, title='Not Weighted')
+
+for i,tr in enumerate(Traces):
+    Traces[i] /= (density[i] / density.max())
+
+Lin_arr, Results_arr, peaks = BF_XY_Lin(traces=Traces, sampling_rate=np.float64(
+                                                        sampling_rate), geometry=geometry, distance=mean_dist, sxmin=slow_x_min,
+                                                        sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max, s_space=s_space)
+
 ax = fig.add_subplot(122)
 p = plotting(ax)
-p.plot_TP_XY(tp=PWS_arr, peaks=peaks, sxmin=slow_x_min, sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max,
-          sstep=s_space, contour_levels=50, title="PWS Plot", predictions=predictions, log=False)
+p.plot_TP_XY(tp=Lin_arr, peaks=peaks, sxmin=slow_x_min, sxmax=slow_x_max, symin=slow_y_min, symax=slow_y_max,
+          sstep=s_space, contour_levels=10, predictions=predictions, log=False, title='Station Density Weighted')
+
 plt.tight_layout()
 plt.show()
