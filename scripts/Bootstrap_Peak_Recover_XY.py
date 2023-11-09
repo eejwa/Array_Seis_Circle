@@ -67,7 +67,8 @@ evdp = st[0].stats.sac.evdp
 
 # convert elevation to km
 geometry[:,2] /= 1000
-
+if phase not in phases:
+    phases.append(phase)
 # get predicted slownesses and backazimuths
 predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
@@ -138,7 +139,6 @@ cut_shifted_traces = Shifted_Traces[:, point_before:point_after]
 # make lists to store the peaks, noise and theta-p plots
 Lin_list = []
 Noise_list = []
-threshold_peaks_list = []
 
 ntrace = len(st)
 indices = list(np.arange(ntrace))
@@ -186,7 +186,7 @@ for i in range(0, processes_per_core):
     )
 
     Threshold_lin_array = np.copy(Smoothed_thresh_lin_array)
-    Threshold_lin_array[Smoothed_thresh_lin_array <= noise_mean * 3] = 0
+    Threshold_lin_array[Smoothed_thresh_lin_array <= noise_mean * 0] = 0
 
     sx_min = float(PRED_BAZ_X) + slow_min
     sx_max = float(PRED_BAZ_X) + slow_max
@@ -204,18 +204,23 @@ for i in range(0, processes_per_core):
         N=peak_number,
     )
 
+    print(peaks)
+
     sys.stdout.flush()
 
     # add the arrays to a list
     Lin_list.append(lin_tp)
     Noise_list.append(noise_mean)
-    threshold_peaks_list.append(peaks)
+    if i == 0:
+        threshold_peaks = peaks.copy()
+    else:
+        threshold_peaks =  np.vstack([threshold_peaks, peaks])
 
 Lin_mean = np.mean(np.array(Lin_list), axis=0)
+print(threshold_peaks)
 
-threshold_peaks_arr = np.array(threshold_peaks_list)
-threshold_peaks_arr = np.vstack(threshold_peaks_arr)
-
+threshold_peaks_arr = np.array(threshold_peaks)
+# threshold_peaks_arr = np.vstack(threshold_peaks_arr)
 comm.Barrier()  # wait for all cores to synchronize here
 
 

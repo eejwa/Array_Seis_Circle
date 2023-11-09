@@ -61,9 +61,16 @@ def break_sub_arrays(st, min_stat, min_dist, spacing):
     db = DBSCAN(eps=min_dist, min_samples=min_stat, metric="haversine").fit(lats_lons)
     labels = db.labels_
 
+    
+
     # Number of clusters in labels, ignoring noise if present.
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
     n_noise_ = list(labels).count(-1)
+    
+    if n_clusters_ == 0:
+        print('no stations meet the density criteria exiting')
+        return None, None, None, None
+
     core_samples = db.core_sample_indices_
 
     lons_core = lons[core_samples]

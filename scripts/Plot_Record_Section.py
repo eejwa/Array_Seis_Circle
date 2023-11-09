@@ -96,15 +96,15 @@ fig = plt.figure(figsize=(10, 8))
 ax1 = fig.add_subplot(121)
 
 p = plotting(ax=ax1)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False)
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True)
 
 ax2 = fig.add_subplot(122)
 
 p = plotting(ax=ax2)
-p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=False, type='baz')
+p.plot_record_section_SAC(st=st, phase=phase, tmin=tmin, tmax=tmax, align=True, type='baz')
 
 plt.tight_layout()
 
-plt.savefig("Record_Section.pdf")
+plt.savefig(f"Record_Section_{phase}.pdf")
 
-plt.show()
+# plt.show()

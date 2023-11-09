@@ -58,6 +58,9 @@ sampling_rate = st[0].stats.sampling_rate
 mean_lo = (evlo + centre_lo)/2
 mean_la = (evla + centre_la)/2
 
+if phase not in phases:
+    phases.append(phase)
+
 # get predicted slownesses and backazimuths
 predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
 
@@ -195,6 +198,7 @@ newlines_unfiltered = cu.create_newlines(
 # df = pd.DataFrame({"Slow_x":All_Thresh_Peaks_arr[:,0], "Slow_y":All_Thresh_Peaks_arr[:,1], "Labels":new_labels})
 
 # plot!
+print(no_clusters)
 with PdfPages(Res_dir + f"Clustering_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
     # clusters
     fig = plt.figure(figsize=(10, 8))
