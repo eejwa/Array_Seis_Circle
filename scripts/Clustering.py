@@ -43,6 +43,7 @@ etime = event_time + max_target
 # Normalise and cut seismogram around defined window
 st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
+st.resample(20, window="hann", no_filter=True)
 
 evla = st[0].stats.sac.evla
 evlo = st[0].stats.sac.evlo

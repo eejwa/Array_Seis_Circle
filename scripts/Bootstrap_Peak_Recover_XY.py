@@ -86,9 +86,14 @@ if Filt == True:
 else:
     pass
 
+st.resample(20, window="hann", no_filter=True)
+
 # get the traces and phase traces
 a_processed = array(st)
 Traces = a_processed.traces()
+
+incidence = np.sin((1/float(S))/8) #km/s
+incidence = 90 - np.degrees(incidence)
 
 # align the traces and phase traces
 Shifted_Traces = shift_traces(
@@ -100,8 +105,8 @@ Shifted_Traces = shift_traces(
     centre_x=float(centre_x),
     centre_y=float(centre_y),
     sampling_rate=sampling_rate,
-    elevation=False,
-    incidence=8
+    elevation=True,
+    incidence=incidence
 )
 
 
@@ -168,8 +173,8 @@ for i in range(0, processes_per_core):
         symin=slow_min,
         symax=slow_max,
         s_space=s_space,
-        elevation=False,
-        incidence=8
+        elevation=True,
+        incidence=incidence
     )
 
     end = time.time()

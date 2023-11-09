@@ -269,7 +269,7 @@ def calculate_time_shifts_elevation(
     # Now need to add the effect of station elevation on times and shifts
     # multiply the relative elevations by the cosine of the incidence
     # of the phase and the 1-D velocity of PREM (approx 4.5).
-    elevation_times = (geometry[:,2] - np.mean(geometry[:,2])) * np.cos(incidence) * 4.5
+    elevation_times = (geometry[:,2] - np.mean(geometry[:,2])) * (np.cos(np.radians(incidence)) * 8)
 
     times = times + elevation_times
     shifts = shifts + (elevation_times * -1)
