@@ -3,7 +3,7 @@
 import obspy
 import numpy as np
 import time
-
+import scipy 
 from array_info import array
 from vespagram import Vespagram_Lin, Vespagram_PWS, Baz_vespagram_PWS, Baz_vespagram_Lin
 from array_plotting import plotting
@@ -14,6 +14,7 @@ plt.style.use('ggplot')
 from Parameters_Vesp import *
 
 st = obspy.read(filepath)
+st = st.resample(20, window='hann',no_filter=True)
 a = array(st)
 # get array metadata
 event_time = a.eventtime()
@@ -26,7 +27,7 @@ stations = a.stations()
 Target_phase_times, time_header_times = a.get_predicted_times(phase)
 
 avg_target_time = np.mean(Target_phase_times)
-min_target = int(np.nanmin(Target_phase_times, axis=0)) - cut_min
+min_target = int(np.nanmin(Target_phase_times, axis=0)) + cut_min
 max_target = int(np.nanmax(Target_phase_times, axis=0)) + cut_max
 window = np.array([min_target, max_target])
 
@@ -38,8 +39,14 @@ etime = event_time + max_target
 st = st.copy().trim(starttime=stime, endtime=etime)
 st = st.normalize()
 
+
+if phase not in phases:
+    phases.append(phase)
+
 # get predicted slownesses and backazimuths
 predictions = a.pred_baz_slow(phases=phases, one_eighty=True)
+
+
 
 # find the line with the predictions for the phase of interest
 row = np.where((predictions == phase))[0]
@@ -54,6 +61,15 @@ st = st.filter("bandpass", freqmin=fmin, freqmax=fmax, corners=4, zerophase=True
 array_processed = array(st)
 Traces = array_processed.traces()
 Phase_traces = array_processed.phase_traces()
+
+mode_length = scipy.stats.mode([trace.shape[0] for trace in Traces])[0]
+print(mode_length)
+
+Traces = np.array([t for t in Traces if t.shape[0] == mode_length])
+Phase_traces = np.array([t for t in Phase_traces if t.shape[0] == mode_length])
+
+print(Traces.shape)
+print(Phase_traces.shape)
 
 # get sampleing rate
 sampling_rate = st[0].stats.sampling_rate
@@ -115,6 +131,9 @@ ax = fig.add_subplot(111)
 p = plotting(ax)
 
 
+print(min_target, max_target, sampling_rate)
+print((max_target - min_target)* sampling_rate)
+print(Traces.shape)
 p.plot_vespagram(
     vespagram=vesp,
     ymin=ymin,
@@ -125,10 +144,10 @@ p.plot_vespagram(
     sampling_rate=sampling_rate,
     title="%s Vespagram. %s Stacking" % (Vesp_type, Stack_type),
     predictions=predictions,
-    type="baz",
+    type=Vesp_type,
     envelope=True,
     normalise=True
 )
 
-plt.savefig('Vespagram.pdf')
-plt.show()
+plt.savefig(f'Vespagram_{phase}.pdf')
+# plt.show()
