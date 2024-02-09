@@ -97,8 +97,16 @@ if Man_Pick == True:
     rel_tmax = window[1]
 
 elif Man_Pick == False:
-    rel_tmin = t_min + np.min(TIME)
-    rel_tmax = t_max + np.max(TIME)
+    if Align == True:
+        rel_tmin = t_min
+        rel_tmax = t_max
+    else:
+        try:
+            rel_tmin = t_min + np.min(TIME)
+            rel_tmax = t_max + np.max(TIME)
+        except:
+            rel_tmin = t_min + float(TIME)
+            rel_tmax = t_max + float(TIME)
     window = np.array([t_min, t_max])
 else:
     print("Man_Pick needs to be set to True or False!")
@@ -124,14 +132,19 @@ if Align == True:
         incidence=8
     )
 
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(111)
-    for b,trace in enumerate(Shifted_Traces):
-        ax.plot(trace + distances[b], color='black')
+    # fig = plt.figure(figsize=(8,8))
+    # ax = fig.add_subplot(111)
+    # for b,trace in enumerate(Shifted_Traces):
+    #     ax.plot(trace + distances[b], color='black')
 
-    plt.show()
-    exit()
+    # plt.show()
 
+# nhs number 4008473149
+# excess code/password: 
+# - ppv argument, not up to date with literature.
+# - says not earth like because of this which is wrong
+# - maybe put in the paper itself 
+# - email everyone mc2 related about leaving. 
 
     Shifted_Phase_Traces = shift_traces(
         traces=Phase_traces,
@@ -232,6 +245,8 @@ elif Stack_type == "PWS":
     PWS_arr, Results_arr, peaks = BF_XY_PWS(
         phase_traces=cut_phase_traces, degree=degree, **kwarg_dict
     )
+
+    print(PWS_arr.max())
 
     peaks = np.c_[peaks, np.array(["PWS"])]
 
@@ -352,20 +367,20 @@ with PdfPages(Res_dir + f"TP_Summary_Plot_{fmin:.2f}_{fmax:.2f}.pdf") as pdf:
 
     ### plot great circle path
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+    # fig = plt.figure(figsize=(6, 6))
+    # ax = fig.add_subplot(111, projection=ccrs.Robinson())
 
-    p = plotting(ax=ax)
-    p.plot_paths(st)
+    # p = plotting(ax=ax)
+    # p.plot_paths(st)
 
-    pdf.savefig()
-    plt.close()
+    # pdf.savefig()
+    # plt.close()
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection=ccrs.Robinson())
+    # fig = plt.figure(figsize=(6, 6))
+    # ax = fig.add_subplot(111, projection=ccrs.Robinson())
 
-    p = plotting(ax=ax)
-    p.plot_stations(st)
+    # p = plotting(ax=ax)
+    # p.plot_stations(st)
 
-    pdf.savefig()
-    plt.close()
+    # pdf.savefig()
+    # plt.close()
