@@ -139,13 +139,6 @@ if Align == True:
 
     # plt.show()
 
-# nhs number 4008473149
-# excess code/password: 
-# - ppv argument, not up to date with literature.
-# - says not earth like because of this which is wrong
-# - maybe put in the paper itself 
-# - email everyone mc2 related about leaving. 
-
     Shifted_Phase_Traces = shift_traces(
         traces=Phase_traces,
         geometry=geometry,
